@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin – Catálogo Empleados</title>
+<title>Admin – Catálogo Colaboradores</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -175,7 +175,7 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-brand">🛠 Admin – Catálogo Empleados <span>Martimac Distribuidora</span></div>
+  <div class="topbar-brand">🛠 Admin – Catálogo Colaboradores <span>Martimac Distribuidora</span></div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbar-user"></span>
     <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
@@ -186,7 +186,7 @@
 <div class="page-tabs">
   <button class="page-tab active" onclick="showPage('products')">📦 Productos</button>
   <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
-  <button class="page-tab" onclick="showPage('users')">👤 Empleados</button>
+  <button class="page-tab" onclick="showPage('users')">👤 Colaboradores</button>
   <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
 </div>
 
@@ -198,7 +198,7 @@
     <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Productos activos</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Empleados registrados</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
   </div>
 
   <!-- ── PAGE: PRODUCTS ── -->
@@ -237,7 +237,7 @@
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Fecha</th><th>Pedido #</th><th>Empleado</th><th>Departamento</th>
+          <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th>
           <th>Total</th><th>Estado</th><th>Acciones</th>
         </tr></thead>
         <tbody id="orders-tbody">
@@ -252,7 +252,7 @@
     <div class="toolbar">
       <div class="search-field">
         <span>🔍</span>
-        <input type="text" id="user-search" placeholder="Buscar empleado…" oninput="filterUsers()">
+        <input type="text" id="user-search" placeholder="Buscar colaborador…" oninput="filterUsers()">
       </div>
       <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
     </div>
@@ -695,7 +695,7 @@ function openOrderDetail(id) {
     <div class="modal-title">Pedido ${o.id.slice(0,8).toUpperCase()}</div>
     <p style="font-size:14px;color:#6b7280;margin-bottom:16px">${fecha}</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:14px">
-      <div><strong>Empleado:</strong> ${esc(o.usuario_nombre||'—')}</div>
+      <div><strong>Colaborador:</strong> ${esc(o.usuario_nombre||'—')}</div>
       <div><strong>Correo:</strong> ${esc(o.usuario_email||'—')}</div>
       <div><strong>Departamento:</strong> ${esc(o.usuario_departamento||'—')}</div>
       <div><strong>Estado:</strong> ${esc(o.estado)}</div>
@@ -724,7 +724,7 @@ function openOrderDetail(id) {
 }
 
 function exportOrdersCSV() {
-  const rows = [['Fecha','Pedido','Empleado','Correo','Departamento','Total','Estado','Observaciones']];
+  const rows = [['Fecha','Pedido','Colaborador','Correo','Departamento','Total','Estado','Observaciones']];
   allOrders.forEach(o => {
     rows.push([
       new Date(o.fecha).toLocaleDateString('es-CR'),
@@ -744,9 +744,9 @@ function exportOrdersCSV() {
   a.click();
 }
 
-// ── EMPLEADOS (extraídos de pedidos únicos) ───────────────
+// ── COLABORADORES (extraídos de pedidos únicos) ───────────────
 async function loadUsers() {
-  // Obtenemos todos los pedidos y extraemos empleados únicos por nombre+cédula
+  // Obtenemos todos los pedidos y extraemos colaboradores únicos por nombre+cédula
   const { data, error } = await sb.from('pedidos')
     .select('usuario_nombre, usuario_email, usuario_departamento, fecha')
     .order('usuario_nombre');
@@ -773,7 +773,7 @@ function filterUsers() {
 function renderUsers(list) {
   const tbody = document.getElementById('users-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin empleados registrados</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
   }
   tbody.innerHTML = list.map(u => {
     const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';

@@ -208,10 +208,12 @@
         <span>🔍</span>
         <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
       </div>
+      <span id="prod-count" style="font-size:13px;color:#9ca3af;white-space:nowrap;"></span>
+      <button class="btn btn-secondary" onclick="loadProducts()">↻ Recargar</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
     <div id="products-list-wrap">
-      <div class="products-empty" id="products-loading">Cargando productos…</div>
+      <div class="products-empty">Cargando productos…</div>
     </div>
   </div>
 
@@ -473,55 +475,81 @@ async function loadStats() {
 
 // ── PRODUCTOS ────────────────────────────────────────────
 async function loadProducts() {
-  document.getElementById('products-list-wrap').innerHTML =
-    '<div class="products-empty" id="products-loading">Cargando productos…</div>';
+  const wrap = document.getElementById('products-list-wrap');
+  const counter = document.getElementById('prod-count');
+  if (wrap) wrap.innerHTML = '<div class="products-empty">Cargando productos…</div>';
+  if (counter) counter.textContent = '';
   const { data, error } = await sb.from('productos').select('*').order('nombre');
   if (error) {
-    document.getElementById('products-list-wrap').innerHTML =
-      '<div class="products-empty">Error al cargar productos. Verifica la conexión.</div>';
-    console.error(error); return;
+    if (wrap) wrap.innerHTML = '<div class="products-empty">Error al cargar: ' + esc(error.message) + '</div>';
+    console.error('loadProducts error:', error);
+    return;
   }
   allProducts = data || [];
+  if (counter) counter.textContent = allProducts.length + ' producto' + (allProducts.length !== 1 ? 's' : '');
   renderProducts(allProducts);
 }
 
 function filterProducts() {
   const q = document.getElementById('prod-search').value.toLowerCase();
-  renderProducts(allProducts.filter(p =>
+  const filtered = allProducts.filter(p =>
     (p.nombre||'').toLowerCase().includes(q) ||
     (p.codigo||'').toLowerCase().includes(q)  ||
     (p.marca ||'').toLowerCase().includes(q)
-  ));
+  );
+  const counter = document.getElementById('prod-count');
+  if (counter) counter.textContent = filtered.length + ' de ' + allProducts.length + ' productos';
+  renderProducts(filtered);
 }
 
 function renderProducts(list) {
   const wrap = document.getElementById('products-list-wrap');
+  if (!wrap) return;
   if (list.length === 0) {
     wrap.innerHTML = '<div class="products-empty">Sin productos. Crea uno con el botón <strong>+ Nuevo producto</strong>.</div>';
     return;
   }
-  const rows = list.map(p => {
-    const imgHtml = p.imagen
-      ? `<img src="${esc(p.imagen)}" class="pr-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="pr-thumb-empty" style="display:none">📦</div>`
-      : `<div class="pr-thumb-empty">📦</div>`;
-    const meta = [p.marca, p.spc, p.categoria, p.subcategoria].filter(Boolean).join(' · ');
-    return `
-      <div class="product-row">
-        <div style="display:flex;align-items:center;gap:0;flex-shrink:0">${imgHtml}</div>
-        <div class="pr-info">
-          <div class="pr-name">${esc(p.nombre)}</div>
-          ${meta ? `<div class="pr-meta">${esc(meta)}</div>` : ''}
-          <div class="pr-code">${esc(p.codigo)}</div>
-        </div>
-        <span class="badge ${p.activo?'badge-green':'badge-gray'}" style="flex-shrink:0">${p.activo?'Activo':'Inactivo'}</span>
-        <div class="pr-price">₡${(p.precio||0).toLocaleString('es-CR')}</div>
-        <div class="pr-actions">
-          <button class="btn btn-sm btn-secondary" onclick="editProduct('${esc(p.codigo)}')">✏ Editar</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteProduct('${esc(p.codigo)}','${esc(p.nombre)}')">🗑</button>
-        </div>
-      </div>`;
-  }).join('');
-  wrap.innerHTML = `<div class="products-wrap"><div class="products-list">${rows}</div></div>`;
+  let html = '<div class="products-wrap"><div class="products-list">';
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    const nombre      = esc(p.nombre      || '');
+    const codigo      = esc(p.codigo      || '');
+    const marca       = esc(p.marca       || '');
+    const spc         = esc(p.spc         || '');
+    const categoria   = esc(p.categoria   || '');
+    const subcateg    = esc(p.subcategoria|| '');
+    const precio      = (p.precio || 0).toLocaleString('es-CR');
+    const activo      = p.activo !== false;
+    const badgeClass  = activo ? 'badge-green' : 'badge-gray';
+    const badgeLabel  = activo ? 'Activo' : 'Inactivo';
+    const metaParts   = [marca, spc, categoria, subcateg].filter(Boolean);
+    const meta        = metaParts.join(' · ');
+
+    let imgHtml;
+    if (p.imagen) {
+      imgHtml = '<img src="' + esc(p.imagen) + '" class="pr-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+              + '<div class="pr-thumb-empty" style="display:none">📦</div>';
+    } else {
+      imgHtml = '<div class="pr-thumb-empty">📦</div>';
+    }
+
+    html += '<div class="product-row">';
+    html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
+    html +=   '<div class="pr-info">';
+    html +=     '<div class="pr-name">' + nombre + '</div>';
+    if (meta) html += '<div class="pr-meta">' + meta + '</div>';
+    html +=     '<div class="pr-code">' + codigo + '</div>';
+    html +=   '</div>';
+    html +=   '<span class="badge ' + badgeClass + '" style="flex-shrink:0">' + badgeLabel + '</span>';
+    html +=   '<div class="pr-price">&#x20A1;' + precio + '</div>';
+    html +=   '<div class="pr-actions">';
+    html +=     '<button class="btn btn-sm btn-secondary" onclick="editProduct(\'' + codigo + '\')">&#9999; Editar</button>';
+    html +=     '<button class="btn btn-sm btn-danger"    onclick="deleteProduct(\'' + codigo + '\',\'' + nombre + '\')">&#128465;</button>';
+    html +=   '</div>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+  wrap.innerHTML = html;
 }
 
 function openProductModal(product) {

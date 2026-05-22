@@ -881,25 +881,31 @@ function initAuth() {
 }
 
 async function onLogin(session) {
-  // Buscar el perfil canónico: primer pedido registrado con esta cédula
+  // Perfil canónico desde tabla usuarios (cédula = PK)
   try {
-    const { data: historial } = await sb.from('pedidos')
-      .select('usuario_nombre, usuario_departamento, usuario_lugar')
-      .eq('usuario_email', session.cedula)
-      .order('fecha', { ascending: true })
-      .limit(1);
-    if (historial && historial.length > 0) {
-      const perfil = historial[0];
+    const { data: perfil } = await sb.from('usuarios')
+      .select('nombre, departamento, lugar')
+      .eq('cedula', session.cedula)
+      .maybeSingle();
+    if (perfil) {
+      // Ya existe → usar el perfil guardado
       session = {
         ...session,
-        nombre:       perfil.usuario_nombre       || session.nombre,
-        departamento: perfil.usuario_departamento  || session.departamento,
-        lugar:        perfil.usuario_lugar         || session.lugar
+        nombre:       perfil.nombre       || session.nombre,
+        departamento: perfil.departamento || session.departamento,
+        lugar:        perfil.lugar        || session.lugar
       };
-      // Actualizar localStorage con el perfil canónico
-      localStorage.setItem('catalogo_session', JSON.stringify(session));
+    } else {
+      // Primer login → crear registro
+      await sb.from('usuarios').insert({
+        cedula:       session.cedula,
+        nombre:       session.nombre,
+        departamento: session.departamento,
+        lugar:        session.lugar
+      });
     }
-  } catch(e) { /* si falla la consulta se usa lo que digitó */ }
+    localStorage.setItem('catalogo_session', JSON.stringify(session));
+  } catch(e) { /* si falla se usa lo que digitó */ }
 
   currentUser = session;
 

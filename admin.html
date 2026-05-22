@@ -841,22 +841,13 @@ function openOrderDetail(id) {
 }
 
 
-// ── COLABORADORES (extraídos de pedidos únicos) ───────────────
+// ── COLABORADORES ─────────────────────────────────────────────
 async function loadUsers() {
-  // Obtenemos todos los pedidos y extraemos colaboradores únicos por nombre+cédula
-  const { data, error } = await sb.from('pedidos')
-    .select('usuario_nombre, usuario_email, usuario_departamento, usuario_lugar, fecha')
-    .order('usuario_nombre');
+  const { data, error } = await sb.from('usuarios')
+    .select('cedula, nombre, departamento, lugar, created_at')
+    .order('nombre');
   if (error) { console.error(error); return; }
-
-  // Deduplicar por cédula única (usuario_email), quedarse con el registro más reciente
-  const map = {};
-  (data || []).forEach(r => {
-    const key = (r.usuario_email||'').trim();
-    if (!key) return;
-    if (!map[key] || r.fecha > map[key].fecha) map[key] = r;
-  });
-  allUsers = Object.values(map).sort((a,b) => (a.usuario_nombre||'').localeCompare(b.usuario_nombre||''));
+  allUsers = data || [];
   document.getElementById('stat-users').textContent = allUsers.length;
   renderUsers(allUsers);
 }
@@ -864,8 +855,8 @@ async function loadUsers() {
 function filterUsers() {
   const q = document.getElementById('user-search').value.toLowerCase();
   renderUsers(allUsers.filter(u =>
-    (u.usuario_nombre||'').toLowerCase().includes(q) ||
-    (u.usuario_email ||'').toLowerCase().includes(q)
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
   ));
 }
 
@@ -876,13 +867,12 @@ function renderUsers(list) {
   }
   tbody.innerHTML = list.map(u => {
     const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
-    // usuario_email fue reutilizado para guardar la cédula
     return `<tr>
-      <td style="font-weight:600">${esc(u.usuario_nombre||'—')}</td>
-      <td>${esc(u.usuario_email||'—')}</td>
-      <td>${esc(u.usuario_departamento||'—')}</td>
-      <td>${esc(u.usuario_lugar||'—')}</td>
-      <td style="color:#9ca3af;font-size:13px">${new Date(u.fecha||u.created_at).toLocaleDateString('es-CR')}</td>
+      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+      <td>${esc(u.cedula||'—')}</td>
+      <td>${esc(u.departamento||'—')}</td>
+      <td>${esc(u.lugar||'—')}</td>
+      <td style="color:#9ca3af;font-size:13px">${fecha}</td>
     </tr>`;
   }).join('');
 }

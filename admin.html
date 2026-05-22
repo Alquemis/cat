@@ -298,11 +298,11 @@
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th>
+          <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th>
           <th>Total</th><th>Estado</th><th>Acciones</th>
         </tr></thead>
         <tbody id="orders-tbody">
-          <tr><td colspan="7" class="empty-table">Cargando…</td></tr>
+          <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -320,10 +320,10 @@
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Registro</th>
+          <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th>Registro</th>
         </tr></thead>
         <tbody id="users-tbody">
-          <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
+          <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -366,6 +366,10 @@
       <div class="form-field">
         <label>Precio (₡) *</label>
         <input type="number" id="f-precio" placeholder="0" min="0">
+      </div>
+      <div class="form-field">
+        <label>IVA (%)</label>
+        <input type="number" id="f-iva" placeholder="13" min="0" max="100" step="0.01">
       </div>
       <div class="form-field full">
         <label>Nombre completo *</label>
@@ -579,7 +583,9 @@ function renderProducts(list) {
     const spc         = esc(p.spc         || '');
     const categoria   = esc(p.categoria   || '');
     const subcateg    = esc(p.subcategoria|| '');
-    const precio      = (p.precio || 0).toLocaleString('es-CR');
+    const ivaRate     = p.iva != null ? p.iva : 13;
+    const precioIva   = Math.round((p.precio || 0) * (1 + ivaRate / 100));
+    const precio      = precioIva.toLocaleString('es-CR');
     const activo      = p.activo !== false;
     const badgeClass  = activo ? 'badge-green' : 'badge-gray';
     const badgeLabel  = activo ? 'Activo' : 'Inactivo';
@@ -624,6 +630,7 @@ function openProductModal(product) {
   document.getElementById('f-categoria').value   = product?.categoria   || '';
   document.getElementById('f-subcategoria').value= product?.subcategoria|| '';
   document.getElementById('f-precio').value      = product?.precio      || '';
+  document.getElementById('f-iva').value         = product?.iva != null ? product.iva : 13;
   document.getElementById('f-imagen').value      = product?.imagen      || '';
   document.getElementById('f-activo').value      = product?.activo === false ? 'false' : 'true';
   // Resetear estado del upload de imagen
@@ -660,6 +667,7 @@ async function saveProduct() {
     categoria:    document.getElementById('f-categoria').value.trim(),
     subcategoria: document.getElementById('f-subcategoria').value.trim(),
     precio:       parseInt(document.getElementById('f-precio').value) || 0,
+    iva:          parseFloat(document.getElementById('f-iva').value) || 13,
     imagen:       document.getElementById('f-imagen').value.trim(),
     activo:       document.getElementById('f-activo').value === 'true',
     updated_at:   new Date().toISOString()
@@ -713,7 +721,7 @@ function filterOrders() {
 function renderOrders(list) {
   const tbody = document.getElementById('orders-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos</td></tr>'; return;
   }
   const statusBadge = { pendiente:'badge-yellow', aprobado:'badge-blue', procesado:'badge-green', rechazado:'badge-red' };
   tbody.innerHTML = list.map(o => {
@@ -725,6 +733,7 @@ function renderOrders(list) {
         <td><code style="font-size:12px">${num}</code></td>
         <td style="font-weight:600">${esc(o.usuario_nombre||'—')}</td>
         <td>${esc(o.usuario_departamento||'—')}</td>
+        <td>${esc(o.usuario_lugar||'—')}</td>
         <td style="font-weight:700">₡${(o.total||0).toLocaleString('es-CR')}</td>
         <td>
           <select onchange="updateOrderStatus('${o.id}',this.value)"
@@ -757,8 +766,9 @@ function openOrderDetail(id) {
     <p style="font-size:14px;color:#6b7280;margin-bottom:16px">${fecha}</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:14px">
       <div><strong>Colaborador:</strong> ${esc(o.usuario_nombre||'—')}</div>
-      <div><strong>Correo:</strong> ${esc(o.usuario_email||'—')}</div>
+      <div><strong>Cédula:</strong> ${esc(o.usuario_email||'—')}</div>
       <div><strong>Departamento:</strong> ${esc(o.usuario_departamento||'—')}</div>
+      <div><strong>Lugar:</strong> ${esc(o.usuario_lugar||'—')}</div>
       <div><strong>Estado:</strong> ${esc(o.estado)}</div>
     </div>
     ${o.observaciones ? `<div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px"><strong>Observaciones:</strong> ${esc(o.observaciones)}</div>` : ''}
@@ -809,7 +819,7 @@ function exportOrdersCSV() {
 async function loadUsers() {
   // Obtenemos todos los pedidos y extraemos colaboradores únicos por nombre+cédula
   const { data, error } = await sb.from('pedidos')
-    .select('usuario_nombre, usuario_email, usuario_departamento, fecha')
+    .select('usuario_nombre, usuario_email, usuario_departamento, usuario_lugar, fecha')
     .order('usuario_nombre');
   if (error) { console.error(error); return; }
 
@@ -834,7 +844,7 @@ function filterUsers() {
 function renderUsers(list) {
   const tbody = document.getElementById('users-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
   }
   tbody.innerHTML = list.map(u => {
     const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
@@ -843,6 +853,7 @@ function renderUsers(list) {
       <td style="font-weight:600">${esc(u.usuario_nombre||'—')}</td>
       <td>${esc(u.usuario_email||'—')}</td>
       <td>${esc(u.usuario_departamento||'—')}</td>
+      <td>${esc(u.usuario_lugar||'—')}</td>
       <td style="color:#9ca3af;font-size:13px">${new Date(u.fecha||u.created_at).toLocaleDateString('es-CR')}</td>
     </tr>`;
   }).join('');

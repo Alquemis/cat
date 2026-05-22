@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facturación – Martimac</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; }
+
+  /* ── LOGIN ── */
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:400px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
+  .login-logo { height:52px;margin-bottom:10px; }
+  .login-title { font-size:20px;font-weight:700;color:#1f2937;margin-bottom:4px; }
+  .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
+  .login-field { margin-bottom:16px;text-align:left; }
+  .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
+  .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
+  .login-field input:focus { border-color:#1f2937; }
+  .login-btn { width:100%;padding:13px;background:#1f2937;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s; }
+  .login-btn:hover { background:#111827; }
+  .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
+  .login-error.show { display:block; }
+
+  /* ── TOPBAR ── */
+  .topbar { background:#1f2937;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#9ca3af;margin-left:10px; }
+  .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s; }
+  .topbar-logout:hover { background:#4b5563; }
+
+  /* ── TABS ── */
+  .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;gap:0; }
+  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s;display:flex;align-items:center;gap:8px; }
+  .page-tab:hover { color:#1f2937; }
+  .page-tab.active { color:#1f2937;border-bottom:3px solid #1f2937; }
+  .tab-badge { background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px; }
+  .tab-badge.hidden { display:none; }
+
+  /* ── LAYOUT ── */
+  .container { max-width:1280px;margin:0 auto;padding:32px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px; }
+  .search-field { flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#1f2937; }
+  .filter-select { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#1f2937;cursor:pointer; }
+  .filter-date { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#1f2937; }
+
+  /* ── TABLE ── */
+  .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  table { width:100%;border-collapse:collapse; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;white-space:nowrap; }
+  tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  .empty-table { text-align:center;color:#9ca3af;padding:48px 20px; }
+
+  /* ── BOTONES ── */
+  .btn { padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;white-space:nowrap; }
+  .btn-dark { background:#1f2937;color:#fff; }
+  .btn-dark:hover { background:#111827; }
+  .btn-ghost { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
+  .btn-ghost:hover { background:#e5e7eb; }
+  .btn-green { background:#16a34a;color:#fff; }
+  .btn-green:hover { background:#15803d; }
+  .btn-green:disabled { background:#9ca3af;cursor:not-allowed; }
+
+  /* ── BADGES ── */
+  .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap; }
+  .badge-yellow { background:#fef3c7;color:#92400e; }
+  .badge-green  { background:#d1fae5;color:#065f46; }
+
+  /* ── MODAL DETALLE ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal-card { background:#fff;border-radius:20px;padding:32px;width:100%;max-width:800px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px; }
+  .modal-title { font-size:18px;font-weight:700;color:#1f2937; }
+  .modal-fecha { font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px; }
+  .detail-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px; }
+  .detail-grid div { background:#f9fafb;border-radius:8px;padding:10px 12px; }
+  .detail-grid strong { display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px; }
+
+  /* ── STAT ── */
+  .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px; }
+  .stat-card { background:#fff;border-radius:14px;padding:18px 22px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:28px;font-weight:800;color:#1f2937; }
+  .stat-label { font-size:12px;color:#6b7280;margin-top:2px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width:768px) {
+    .topbar { padding:12px 16px; }
+    .container { padding:16px; }
+    .page-tabs { padding:0 12px;overflow-x:auto;scrollbar-width:none; }
+    .page-tabs::-webkit-scrollbar { display:none; }
+    .toolbar { gap:8px; }
+    .filter-select, .filter-date { font-size:13px;padding:8px 10px; }
+    thead th, tbody td { padding:10px 12px;font-size:13px; }
+    .detail-grid { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <img src="https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Martimac_Logo.webp" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
+    <div class="login-title">Facturación</div>
+    <div class="login-sub">Martimac Distribuidora — Área de Facturación</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">Facturación <span>Martimac Distribuidora</span></div>
+  <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
+</div>
+
+<!-- TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" id="tab-pendientes" onclick="showTab('pendientes')">
+    Pendientes <span class="tab-badge hidden" id="badge-pendientes">0</span>
+  </button>
+  <button class="page-tab" id="tab-historial" onclick="showTab('historial')">
+    Historial
+  </button>
+  <button class="page-tab" id="tab-settings" onclick="showTab('settings')">
+    ⚙ Configuración
+  </button>
+</div>
+
+<!-- ── PENDIENTES ── -->
+<div id="page-pendientes" class="container">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-count">—</div>
+      <div class="stat-label">Pedidos pendientes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total a facturar</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-field">
+      <span>🔍</span>
+      <input type="text" id="pend-search" placeholder="Buscar por nombre, departamento…" oninput="filterPendientes()">
+    </div>
+    <select class="filter-select" id="pend-lugar" onchange="filterPendientes()">
+      <option value="">Todos los lugares</option>
+      <option>Tres Ríos</option>
+      <option>Heredia</option>
+      <option>Grecia</option>
+    </select>
+    <button class="btn btn-ghost" onclick="loadPendientes()">↻ Actualizar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Pedido #</th>
+        <th>Colaborador</th>
+        <th>Departamento</th>
+        <th>Lugar</th>
+        <th>Total</th>
+        <th>Detalle</th>
+        <th>Acción</th>
+      </tr></thead>
+      <tbody id="pend-tbody">
+        <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── HISTORIAL ── -->
+<div id="page-historial" class="container" style="display:none">
+  <div class="toolbar">
+    <div class="search-field">
+      <span>🔍</span>
+      <input type="text" id="hist-search" placeholder="Buscar por nombre, departamento…" oninput="filterHistorial()">
+    </div>
+    <select class="filter-select" id="hist-lugar" onchange="filterHistorial()">
+      <option value="">Todos los lugares</option>
+      <option>Tres Ríos</option>
+      <option>Heredia</option>
+      <option>Grecia</option>
+    </select>
+    <input type="date" class="filter-date" id="hist-desde" onchange="filterHistorial()" title="Desde fecha">
+    <button class="btn btn-ghost" onclick="loadHistorial()">↻ Actualizar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Fecha pedido</th>
+        <th>Pedido #</th>
+        <th>Colaborador</th>
+        <th>Departamento</th>
+        <th>Lugar</th>
+        <th>Total</th>
+        <th>Detalle</th>
+      </tr></thead>
+      <tbody id="hist-tbody">
+        <tr><td colspan="7" class="empty-table">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── CONFIGURACIÓN ── -->
+<div id="page-settings" class="container" style="display:none">
+  <div style="max-width:480px;background:#fff;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.07)">
+    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:6px">Acceso a Facturación</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:24px">Cambia el usuario y contraseña de este panel de facturación.</div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Usuario</label>
+      <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Nueva contraseña</label>
+      <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Confirmar nueva contraseña</label>
+      <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
+    <button class="btn btn-dark" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="detail-modal" onclick="this.classList.remove('open')">
+  <div class="modal-card" onclick="event.stopPropagation()" id="detail-card"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SESSION_KEY = 'fact_session';
+
+let allPendientes = [];
+let allHistorial  = [];
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err  = document.getElementById('login-error');
+  err.classList.remove('show');
+  if (!user || !pass) { showErr('Ingresa usuario y contraseña.'); return; }
+
+  const { data, error } = await sb.from('app_config')
+    .select('key, value').in('key', ['fact_user', 'fact_pass']);
+
+  if (error) { showErr('Error de conexión. Intenta de nuevo.'); return; }
+
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  const okUser = (cfg.fact_user || 'admin') === user;
+  const okPass = (cfg.fact_pass || 'admin') === pass;
+
+  if (!okUser || !okPass) { showErr('Usuario o contraseña incorrectos.'); return; }
+
+  sessionStorage.setItem(SESSION_KEY, '1');
+  document.getElementById('login-overlay').classList.add('hidden');
+  init();
+}
+
+function doLogout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.classList.add('show');
+}
+
+function checkSession() {
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('login-overlay').classList.add('hidden');
+    init();
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+function init() {
+  loadPendientes();
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(tab) {
+  ['pendientes','historial','settings'].forEach(t => {
+    document.getElementById('page-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'historial' && allHistorial.length === 0) loadHistorial();
+  if (tab === 'settings') loadConfig();
+}
+
+// ── PENDIENTES ────────────────────────────────────────────────
+async function loadPendientes() {
+  document.getElementById('pend-tbody').innerHTML =
+    '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+
+  const { data, error } = await sb.from('pedidos')
+    .select('*, lineas_pedido(*)')
+    .eq('estado', 'pendiente')
+    .order('fecha', { ascending: true });
+
+  if (error) { console.error(error); return; }
+  allPendientes = data || [];
+  updatePendienteStats();
+  filterPendientes();
+}
+
+function updatePendienteStats() {
+  const count = allPendientes.length;
+  const total = allPendientes.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('stat-count').textContent = count;
+  document.getElementById('stat-total').textContent = '₡' + total.toLocaleString('es-CR');
+  const badge = document.getElementById('badge-pendientes');
+  badge.textContent = count;
+  badge.classList.toggle('hidden', count === 0);
+}
+
+function filterPendientes() {
+  const q     = document.getElementById('pend-search').value.toLowerCase();
+  const lugar = document.getElementById('pend-lugar').value;
+  const list  = allPendientes.filter(o => {
+    const matchQ = !q ||
+      (o.usuario_nombre     ||'').toLowerCase().includes(q) ||
+      (o.usuario_departamento||'').toLowerCase().includes(q) ||
+      (o.usuario_email      ||'').toLowerCase().includes(q);
+    const matchL = !lugar || (o.usuario_lugar||'') === lugar;
+    return matchQ && matchL;
+  });
+  renderPendientes(list);
+}
+
+function renderPendientes(list) {
+  const tbody = document.getElementById('pend-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos pendientes</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(o => {
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const num   = o.id.slice(0,8).toUpperCase();
+    return '<tr>' +
+      '<td>' + fecha + '</td>' +
+      '<td><code style="font-size:12px">' + esc(num) + '</code></td>' +
+      '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
+      '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
+      '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
+      '<td style="font-weight:700">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'pend\')">Ver detalle</button></td>' +
+      '<td><button class="btn btn-green" id="listo-' + o.id + '" onclick="marcarListo(\'' + o.id + '\')">✓ Listo</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function marcarListo(id) {
+  const btn = document.getElementById('listo-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  const { error } = await sb.from('pedidos')
+    .update({ estado: 'facturado' })
+    .eq('id', id);
+
+  if (error) {
+    alert('Error: ' + error.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Listo'; }
+    return;
+  }
+
+  // Remover del array y re-renderizar
+  allPendientes = allPendientes.filter(o => o.id !== id);
+  updatePendienteStats();
+  filterPendientes();
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────
+async function loadHistorial() {
+  document.getElementById('hist-tbody').innerHTML =
+    '<tr><td colspan="7" class="empty-table">Cargando…</td></tr>';
+
+  const { data, error } = await sb.from('pedidos')
+    .select('*, lineas_pedido(*)')
+    .eq('estado', 'facturado')
+    .order('fecha', { ascending: false });
+
+  if (error) { console.error(error); return; }
+  allHistorial = data || [];
+  filterHistorial();
+}
+
+function filterHistorial() {
+  const q     = document.getElementById('hist-search').value.toLowerCase();
+  const lugar = document.getElementById('hist-lugar').value;
+  const desde = document.getElementById('hist-desde').value;
+
+  const list = allHistorial.filter(o => {
+    const matchQ = !q ||
+      (o.usuario_nombre     ||'').toLowerCase().includes(q) ||
+      (o.usuario_departamento||'').toLowerCase().includes(q) ||
+      (o.usuario_email      ||'').toLowerCase().includes(q);
+    const matchL = !lugar || (o.usuario_lugar||'') === lugar;
+    const fecha  = (o.fecha||'').slice(0,10);
+    const matchD = !desde || fecha >= desde;
+    return matchQ && matchL && matchD;
+  });
+  renderHistorial(list);
+}
+
+function renderHistorial(list) {
+  const tbody = document.getElementById('hist-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos facturados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(o => {
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const num   = o.id.slice(0,8).toUpperCase();
+    return '<tr>' +
+      '<td>' + fecha + '</td>' +
+      '<td><code style="font-size:12px">' + esc(num) + '</code></td>' +
+      '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
+      '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
+      '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
+      '<td style="font-weight:700">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'hist\')">Ver detalle</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ── DETALLE ───────────────────────────────────────────────────
+function openDetail(id, source) {
+  const list = source === 'pend' ? allPendientes : allHistorial;
+  const o = list.find(x => x.id === id);
+  if (!o) return;
+
+  const fecha  = new Date(o.fecha).toLocaleString('es-CR');
+  const lineas = o.lineas_pedido || [];
+  const total  = (o.total||0).toLocaleString('es-CR');
+  const subtotalSinIva = Math.round((o.total||0) / 1.13).toLocaleString('es-CR');
+  const iva    = ((o.total||0) - Math.round((o.total||0) / 1.13)).toLocaleString('es-CR');
+
+  document.getElementById('detail-card').innerHTML =
+    '<div class="modal-header">' +
+      '<div class="modal-title">Pedido ' + o.id.slice(0,8).toUpperCase() + '</div>' +
+      '<div class="modal-fecha">' + fecha + '</div>' +
+    '</div>' +
+    '<div class="detail-grid">' +
+      '<div><strong>Colaborador</strong>' + esc(o.usuario_nombre||'—') + '</div>' +
+      '<div><strong>Cédula</strong>' + esc(o.usuario_email||'—') + '</div>' +
+      '<div><strong>Departamento</strong>' + esc(o.usuario_departamento||'—') + '</div>' +
+      '<div><strong>Lugar</strong>' + esc(o.usuario_lugar||'—') + '</div>' +
+    '</div>' +
+    (o.observaciones ? '<div style="background:#fffbeb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px;border:1px solid #fde68a"><strong>Observaciones:</strong> ' + esc(o.observaciones) + '</div>' : '') +
+    '<div class="table-wrap" style="margin-bottom:16px">' +
+      '<table>' +
+        '<thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Subtotal</th></tr></thead>' +
+        '<tbody>' +
+          lineas.map(l =>
+            '<tr>' +
+              '<td><code style="font-size:12px">' + esc(l.producto_codigo||'') + '</code></td>' +
+              '<td style="text-align:center;font-weight:600">' + (l.cantidad||0) + '</td>' +
+              '<td>' + esc(l.producto_nombre||'') + '</td>' +
+              '<td>₡' + (l.precio_unitario||0).toLocaleString('es-CR') + '</td>' +
+              '<td style="font-weight:700">₡' + (l.subtotal||0).toLocaleString('es-CR') + '</td>' +
+            '</tr>'
+          ).join('') +
+        '</tbody>' +
+      '</table>' +
+    '</div>' +
+    '<div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px">' +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span>₡' + subtotalSinIva + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span>₡' + iva + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span>₡' + total + '</span></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;margin-top:16px">' +
+      '<button class="btn btn-ghost" style="flex:1;padding:13px" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-' + o.id + '">📋 Copiar pedido</button>' +
+      '<button class="btn btn-dark" style="flex:1;padding:13px" onclick="document.getElementById(\'detail-modal\').classList.remove(\'open\')">Cerrar</button>' +
+    '</div>';
+
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+// ── COPIAR PEDIDO ─────────────────────────────────────────────
+function copiarPedido(id) {
+  const allOrders = [...allPendientes, ...allHistorial];
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+
+  const lineas = o.lineas_pedido || [];
+  const texto = lineas.map(l => (l.producto_codigo||'') + '\t' + (l.cantidad||0)).join('\n');
+
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('copy-btn-' + id);
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ ¡Copiado!';
+      btn.disabled = true;
+      setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+    }
+  }).catch(() => {
+    // Fallback para navegadores sin clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('copy-btn-' + id);
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ ¡Copiado!';
+      btn.disabled = true;
+      setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+    }
+  });
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+async function loadConfig() {
+  const { data } = await sb.from('app_config').select('key, value').in('key',['fact_user','fact_pass']);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('cfg-user').value  = cfg.fact_user || 'admin';
+  document.getElementById('cfg-pass').value  = '';
+  document.getElementById('cfg-pass2').value = '';
+  document.getElementById('cfg-msg').style.display = 'none';
+}
+
+async function saveConfig() {
+  const user  = document.getElementById('cfg-user').value.trim();
+  const pass  = document.getElementById('cfg-pass').value.trim();
+  const pass2 = document.getElementById('cfg-pass2').value.trim();
+  const btn   = document.getElementById('cfg-btn');
+  const msg   = document.getElementById('cfg-msg');
+
+  const showMsg = (text, ok) => {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = ok ? '1px solid #86efac' : '1px solid #fca5a5';
+    msg.style.color  = ok ? '#15803d' : '#dc2626';
+  };
+
+  if (!user) { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
+  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const updates = [{ key: 'fact_user', value: user }];
+  if (pass) updates.push({ key: 'fact_pass', value: pass });
+
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (error) { showMsg('Error al guardar: ' + error.message, false); }
+  else {
+    showMsg('✅ Credenciales actualizadas correctamente.', true);
+    document.getElementById('cfg-pass').value  = '';
+    document.getElementById('cfg-pass2').value = '';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+
+// ── VIEWPORT ZOOM — pantallas menores a 580px ─────────────────
+(function() {
+  var DESIGN_W = 580;
+  function applyZoom() {
+    var vw = window.innerWidth;
+    if (vw < DESIGN_W) {
+      document.documentElement.style.zoom = (vw / DESIGN_W).toFixed(4);
+    } else {
+      document.documentElement.style.zoom = '';
+    }
+  }
+  window.addEventListener('resize', applyZoom);
+  applyZoom();
+})();
+
+// ── ARRANQUE ──────────────────────────────────────────────────
+checkSession();
+</script>
+
+</body>
+</html>

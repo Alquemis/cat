@@ -806,8 +806,7 @@ async function submitOrder() {
   if (pedErr) {
     confirmBtn.disabled = false;
     confirmBtn.textContent = 'Confirmar y Enviar';
-    alert('Error al enviar el pedido. Intenta de nuevo.
-' + pedErr.message);
+    alert('Error al enviar el pedido. Intenta de nuevo.\n' + pedErr.message);
     return;
   }
 

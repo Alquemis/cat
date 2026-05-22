@@ -408,11 +408,16 @@
     <div class="login-sub">Martimac Distribuidora — Acceso exclusivo colaboradores</div>
     <div class="login-field">
       <label for="login-nombre">Nombre completo</label>
-      <input type="text" id="login-nombre" placeholder="Ej. María García" autocomplete="name" autocapitalize="words">
+      <input type="text" id="login-nombre" placeholder="" autocomplete="name" autocapitalize="words">
     </div>
     <div class="login-field">
       <label for="login-cedula">Número de cédula</label>
-      <input type="text" id="login-cedula" placeholder="Ej. 1-1234-5678" autocomplete="off" inputmode="numeric">
+      <input type="text" id="login-cedula" placeholder="" autocomplete="off" inputmode="numeric" oninput="checkCedulaDash(this)">
+      <span id="cedula-dash-warn" style="display:none;font-size:12px;color:#dc2626;margin-top:4px;">Ingresa solo números, sin guiones.</span>
+    </div>
+    <div class="login-field">
+      <label for="login-depto">Departamento</label>
+      <input type="text" id="login-depto" placeholder="" autocomplete="organization-title" autocapitalize="words">
     </div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar al catálogo</button>
     <div class="login-error" id="login-error"></div>
@@ -520,7 +525,7 @@ const TABS = {"ALIMENTOS": {"type": "category", "label": "Categoría", "options"
 // ============================================================
 //  ESTADO DE LA APP
 // ============================================================
-let currentUser    = null;   // { nombre, cedula }
+let currentUser    = null;   // { nombre, cedula, departamento }
 let CATALOG        = []; // se rellena desde Supabase
 let cart           = [];     // [{product, qty}]
 let activeTab      = null;
@@ -532,18 +537,16 @@ let heroTimer      = null;
 //  AUTENTICACIÓN — nombre + cédula, sin registro
 // ============================================================
 function initAuth() {
-  // Recuperar sesión guardada en localStorage
   const saved = localStorage.getItem('catalogo_session');
   if (saved) {
     try {
       const session = JSON.parse(saved);
-      if (session.nombre && session.cedula) {
+      if (session.nombre && session.cedula && session.departamento) {
         onLogin(session);
         return;
       }
     } catch(e) {}
   }
-  // Sin sesión: mostrar login
   document.getElementById('login-overlay').classList.remove('hidden');
 }
 
@@ -578,23 +581,36 @@ function onLogout() {
   document.getElementById('login-error').classList.remove('show');
   document.getElementById('login-nombre').value = '';
   document.getElementById('login-cedula').value = '';
+  document.getElementById('login-depto').value  = '';
+  document.getElementById('cedula-dash-warn').style.display = 'none';
   updateCartBadge();
+}
+
+function checkCedulaDash(input) {
+  const warn = document.getElementById('cedula-dash-warn');
+  if (input.value.includes('-')) {
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
 }
 
 function doLogin() {
   const nombre = document.getElementById('login-nombre').value.trim();
   const cedula = document.getElementById('login-cedula').value.trim();
+  const depto  = document.getElementById('login-depto').value.trim();
   const btn    = document.getElementById('login-btn');
-  const errEl  = document.getElementById('login-error');
 
-  errEl.classList.remove('show');
+  document.getElementById('login-error').classList.remove('show');
 
   if (!nombre) { showLoginError('Por favor ingresa tu nombre completo.'); return; }
   if (!cedula)  { showLoginError('Por favor ingresa tu número de cédula.'); return; }
+  if (cedula.includes('-')) { showLoginError('La cédula debe ser solo números, sin guiones.'); return; }
+  if (!depto)   { showLoginError('Por favor ingresa tu departamento.'); return; }
 
   btn.disabled = true; btn.textContent = 'Ingresando…';
 
-  const session = { nombre, cedula };
+  const session = { nombre, cedula, departamento: depto };
   localStorage.setItem('catalogo_session', JSON.stringify(session));
 
   btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
@@ -612,11 +628,14 @@ function doLogout() {
 
 // Enter key en login
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('login-cedula').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
   document.getElementById('login-nombre').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('login-cedula').focus();
+  });
+  document.getElementById('login-cedula').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-depto').focus();
+  });
+  document.getElementById('login-depto').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
   });
 });
 
@@ -796,8 +815,8 @@ async function submitOrder() {
   // Insertar pedido (sin usuario_id — auth libre)
   const { data: pedido, error: pedErr } = await sb.from('pedidos').insert({
     usuario_nombre:   currentUser.nombre,
-    usuario_email:    currentUser.cedula,   // reutilizamos campo para almacenar cédula
-    usuario_departamento: '',
+    usuario_email:    currentUser.cedula,
+    usuario_departamento: currentUser.departamento || '',
     total,
     observaciones: notas,
     estado: 'pendiente'

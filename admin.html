@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Catálogo Empleados</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; }
+
+  /* ── LOGIN ── */
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
+  .login-logo { height:52px;margin-bottom:10px; }
+  .login-title { font-size:20px;font-weight:700;color:#1f2937;margin-bottom:4px; }
+  .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
+  .login-field { margin-bottom:16px;text-align:left; }
+  .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
+  .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
+  .login-field input:focus { border-color:#1f2937; }
+  .login-btn { width:100%;padding:13px;background:#1f2937;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px; }
+  .login-btn:hover { background:#111827; }
+  .login-btn:disabled { background:#9ca3af;cursor:not-allowed; }
+  .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
+  .login-error.show { display:block; }
+
+  /* ── LAYOUT ── */
+  .topbar { background:#1f2937;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#9ca3af;margin-left:10px; }
+  .topbar-right { display:flex;align-items:center;gap:16px; }
+  .topbar-user { font-size:13px;color:#d1d5db; }
+  .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer; }
+  .topbar-logout:hover { background:#4b5563; }
+
+  .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;gap:0; }
+  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s; }
+  .page-tab:hover { color:#1f2937; }
+  .page-tab.active { color:#1f2937;border-bottom:3px solid #1f2937; }
+
+  .container { max-width:1200px;margin:0 auto;padding:32px; }
+
+  /* ── CARDS ── */
+  .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px; }
+  .stat-card { background:#fff;border-radius:14px;padding:20px 24px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:32px;font-weight:800;color:#1f2937; }
+  .stat-label { font-size:13px;color:#6b7280;margin-top:4px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
+  .search-field { flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#1f2937; }
+  .btn { padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s; }
+  .btn-primary { background:#1f2937;color:#fff; }
+  .btn-primary:hover { background:#111827; }
+  .btn-secondary { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
+  .btn-secondary:hover { background:#e5e7eb; }
+  .btn-danger { background:#fee2e2;color:#dc2626; }
+  .btn-danger:hover { background:#fecaca; }
+  .btn-sm { padding:6px 12px;font-size:12px;border-radius:7px; }
+  .btn-success { background:#d1fae5;color:#065f46; }
+  .btn-success:hover { background:#a7f3d0; }
+
+  /* ── TABLE ── */
+  .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  table { width:100%;border-collapse:collapse; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb; }
+  tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:#fafafa; }
+  .product-thumb { width:44px;height:44px;border-radius:8px;object-fit:contain;background:#f3f4f6;border:1px solid #e5e7eb; }
+  .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+  .badge-green { background:#d1fae5;color:#065f46; }
+  .badge-gray  { background:#f3f4f6;color:#6b7280; }
+  .badge-yellow { background:#fef3c7;color:#92400e; }
+  .badge-red   { background:#fee2e2;color:#dc2626; }
+  .badge-blue  { background:#dbeafe;color:#1e40af; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal-card { background:#fff;border-radius:20px;padding:36px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .modal-title { font-size:19px;font-weight:700;color:#1f2937;margin-bottom:20px; }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  .form-field { display:flex;flex-direction:column;gap:5px; }
+  .form-field.full { grid-column:1/-1; }
+  .form-field label { font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px; }
+  .form-field input,.form-field select,.form-field textarea {
+    padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;
+    font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;
+  }
+  .form-field input:focus,.form-field select:focus,.form-field textarea:focus { border-color:#1f2937; }
+  .form-field textarea { resize:vertical;min-height:60px; }
+  .modal-btns { display:flex;gap:12px;margin-top:24px; }
+  .modal-btns .btn { flex:1;padding:13px; }
+
+  /* ── ORDERS ── */
+  .order-detail { background:#f9fafb;border-radius:10px;padding:14px;margin-top:8px;font-size:13px;display:none; }
+  .order-detail.open { display:block; }
+  .order-detail table { font-size:13px; }
+  .order-detail thead th { font-size:11px;padding:8px 12px; }
+  .order-detail tbody td { padding:8px 12px; }
+
+  .empty-table { text-align:center;padding:60px 20px;color:#9ca3af; }
+
+  @media(max-width:768px) {
+    .container { padding:20px 16px; }
+    .form-grid { grid-template-columns:1fr; }
+    .topbar { padding:12px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-card">
+    <img src="../Imagenes/Martimac_Logo.png" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
+    <div class="login-title">Panel Administrativo</div>
+    <div class="login-sub">Acceso restringido — solo administradores</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">🛠 Admin – Catálogo Empleados <span>Martimac Distribuidora</span></div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbar-user"></span>
+    <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" onclick="showPage('products')">📦 Productos</button>
+  <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
+  <button class="page-tab" onclick="showPage('users')">👤 Empleados</button>
+  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+  <!-- ── STATS ── -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Productos activos</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Empleados registrados</div></div>
+  </div>
+
+  <!-- ── PAGE: PRODUCTS ── -->
+  <div id="page-products">
+    <div class="toolbar">
+      <div class="search-field">
+        <span>🔍</span>
+        <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
+      </div>
+      <button class="btn btn-secondary" onclick="importBaseProducts()">⬆ Importar lista base</button>
+      <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Imagen</th><th>Código</th><th>Nombre</th><th>Marca</th>
+          <th>Categoría</th><th>Precio (₡)</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="products-tbody">
+          <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAGE: ORDERS ── -->
+  <div id="page-orders" style="display:none">
+    <div class="toolbar">
+      <div class="search-field">
+        <span>🔍</span>
+        <input type="text" id="order-search" placeholder="Buscar por nombre o correo…" oninput="filterOrders()">
+      </div>
+      <select id="order-status-filter" onchange="filterOrders()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="aprobado">Aprobado</option>
+        <option value="procesado">Procesado</option>
+        <option value="rechazado">Rechazado</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      <button class="btn btn-primary" onclick="exportOrdersCSV()">⬇ Exportar CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Pedido #</th><th>Empleado</th><th>Departamento</th>
+          <th>Total</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="orders-tbody">
+          <tr><td colspan="7" class="empty-table">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAGE: USERS ── -->
+  <div id="page-users" style="display:none">
+    <div class="toolbar">
+      <div class="search-field">
+        <span>🔍</span>
+        <input type="text" id="user-search" placeholder="Buscar empleado…" oninput="filterUsers()">
+      </div>
+      <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Registro</th>
+        </tr></thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SETTINGS ── -->
+  <div id="page-settings" style="display:none">
+    <div style="max-width:480px;margin:0 auto;padding-top:8px;">
+      <div class="stat-card" style="margin-bottom:24px;">
+        <div style="font-size:16px;font-weight:700;color:#1f2937;margin-bottom:4px;">Credenciales de acceso</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel administrativo.</div>
+        <div class="form-field" style="margin-bottom:14px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
+          <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        </div>
+        <div class="form-field" style="margin-bottom:14px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Nueva contraseña</label>
+          <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        </div>
+        <div class="form-field" style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirmar nueva contraseña</label>
+          <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        </div>
+        <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
+        <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal-card">
+    <div class="modal-title" id="product-modal-title">Nuevo Producto</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Código *</label>
+        <input type="text" id="f-codigo" placeholder="PP088001">
+      </div>
+      <div class="form-field">
+        <label>Precio (₡) *</label>
+        <input type="number" id="f-precio" placeholder="0" min="0">
+      </div>
+      <div class="form-field full">
+        <label>Nombre completo *</label>
+        <input type="text" id="f-nombre" placeholder="Nombre del producto">
+      </div>
+      <div class="form-field">
+        <label>Marca</label>
+        <input type="text" id="f-marca" placeholder="BIOLAND">
+      </div>
+      <div class="form-field">
+        <label>Línea</label>
+        <select id="f-spc">
+          <option value="Cuidado personal">Cuidado personal</option>
+          <option value="Alimentos">Alimentos</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Categoría</label>
+        <input type="text" id="f-categoria" placeholder="Capilar, Facial, Galletas…">
+      </div>
+      <div class="form-field">
+        <label>Subcategoría</label>
+        <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…">
+      </div>
+      <div class="form-field full">
+        <label>URL Imagen</label>
+        <input type="text" id="f-imagen" placeholder="../Imagenes/…">
+      </div>
+      <div class="form-field">
+        <label>Estado</label>
+        <select id="f-activo">
+          <option value="true">Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
+      <button class="btn btn-primary" id="save-product-btn" onclick="saveProduct()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="order-detail-modal">
+  <div class="modal-card" id="order-detail-card">
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── ESTADO ───────────────────────────────────────────────
+let currentUser    = null;
+let allProducts    = [];
+let allOrders      = [];
+let allUsers       = [];
+let editingProduct = null;
+
+// ── AUTH — usuario/contraseña en app_config ───────────────
+async function initAuth() {
+  // Recuperar sesión guardada
+  const saved = localStorage.getItem('admin_session');
+  if (saved === 'ok') {
+    await onLogin();
+    return;
+  }
+  document.getElementById('login-overlay').classList.remove('hidden');
+}
+
+async function onLogin() {
+  currentUser = 'admin';
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('topbar-user').textContent = 'Administrador';
+  await loadStats();
+  await loadProducts();
+}
+
+function onLogout() {
+  currentUser = null;
+  localStorage.removeItem('admin_session');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const btn  = document.getElementById('login-btn');
+  const err  = document.getElementById('login-error');
+
+  if (!user || !pass) { err.textContent = 'Completa todos los campos.'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Verificando…'; err.classList.remove('show');
+
+  try {
+    const { data, error } = await sb.from('app_config')
+      .select('key, value')
+      .in('key', ['admin_user', 'admin_pass']);
+
+    if (error) throw error;
+
+    const cfg    = {};
+    (data || []).forEach(r => { cfg[r.key] = r.value; });
+    const okUser = (cfg.admin_user || 'admin') === user;
+    const okPass = (cfg.admin_pass || 'admin') === pass;
+
+    if (okUser && okPass) {
+      localStorage.setItem('admin_session', 'ok');
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      await onLogin();
+    } else {
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      err.textContent = 'Usuario o contraseña incorrectos.';
+      err.classList.add('show');
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Ingresar';
+    err.textContent = 'Error de conexión. Verifica tu red e intenta de nuevo.';
+    err.classList.add('show');
+  }
+}
+
+function doLogout() { onLogout(); }
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+
+// ── PAGES ────────────────────────────────────────────────
+function showPage(page) {
+  ['products','orders','users','settings'].forEach(p => {
+    document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
+  });
+  document.querySelectorAll('.page-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['products','orders','users','settings'][i] === page);
+  });
+  if (page==='orders'   && allOrders.length===0) loadOrders();
+  if (page==='users'    && allUsers.length===0)  loadUsers();
+  if (page==='settings') loadConfig();
+}
+
+// ── STATS ────────────────────────────────────────────────
+async function loadStats() {
+  const [{ count: cp }, { count: co }, { count: cat }] = await Promise.all([
+    sb.from('productos').select('*', {count:'exact',head:true}).eq('activo',true),
+    sb.from('pedidos').select('*',   {count:'exact',head:true}).eq('estado','pendiente'),
+    sb.from('pedidos').select('*',   {count:'exact',head:true})
+  ]);
+  document.getElementById('stat-products').textContent     = cp ?? '—';
+  document.getElementById('stat-orders').textContent       = co ?? '—';
+  document.getElementById('stat-orders-total').textContent  = cat ?? '—';
+  document.getElementById('stat-users').textContent        = '—';
+}
+
+// ── PRODUCTOS ────────────────────────────────────────────
+async function loadProducts() {
+  const { data, error } = await sb.from('productos').select('*').order('nombre');
+  if (error) { console.error(error); return; }
+  allProducts = data || [];
+  renderProducts(allProducts);
+}
+
+function filterProducts() {
+  const q = document.getElementById('prod-search').value.toLowerCase();
+  renderProducts(allProducts.filter(p =>
+    (p.nombre||'').toLowerCase().includes(q) ||
+    (p.codigo||'').toLowerCase().includes(q)  ||
+    (p.marca ||'').toLowerCase().includes(q)
+  ));
+}
+
+function renderProducts(list) {
+  const tbody = document.getElementById('products-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin productos. Usa "Importar lista base" o crea uno nuevo.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${p.imagen ? `<img src="${esc(p.imagen)}" class="product-thumb" onerror="this.style.display='none'">` : '—'}</td>
+      <td><code style="font-size:12px">${esc(p.codigo)}</code></td>
+      <td style="max-width:220px;font-weight:600">${esc(p.nombre)}</td>
+      <td>${esc(p.marca||'—')}</td>
+      <td>${esc(p.categoria||'—')}</td>
+      <td style="font-weight:700">₡${(p.precio||0).toLocaleString('es-CR')}</td>
+      <td><span class="badge ${p.activo?'badge-green':'badge-gray'}">${p.activo?'Activo':'Inactivo'}</span></td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="editProduct('${esc(p.codigo)}')">✏ Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${esc(p.codigo)}','${esc(p.nombre)}')" style="margin-left:6px">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openProductModal(product) {
+  editingProduct = product ? product.codigo : null;
+  document.getElementById('product-modal-title').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
+  document.getElementById('f-codigo').value      = product?.codigo      || '';
+  document.getElementById('f-codigo').readOnly   = !!product;
+  document.getElementById('f-nombre').value      = product?.nombre      || '';
+  document.getElementById('f-marca').value       = product?.marca       || '';
+  document.getElementById('f-spc').value         = product?.spc         || 'Cuidado personal';
+  document.getElementById('f-categoria').value   = product?.categoria   || '';
+  document.getElementById('f-subcategoria').value= product?.subcategoria|| '';
+  document.getElementById('f-precio').value      = product?.precio      || '';
+  document.getElementById('f-imagen').value      = product?.imagen      || '';
+  document.getElementById('f-activo').value      = product?.activo === false ? 'false' : 'true';
+  document.getElementById('product-modal').classList.add('open');
+}
+
+function closeProductModal() {
+  document.getElementById('product-modal').classList.remove('open');
+  editingProduct = null;
+}
+
+function editProduct(codigo) {
+  const p = allProducts.find(x => x.codigo === codigo);
+  if (p) openProductModal(p);
+}
+
+async function saveProduct() {
+  const btn = document.getElementById('save-product-btn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const payload = {
+    codigo:       document.getElementById('f-codigo').value.trim().toUpperCase(),
+    nombre:       document.getElementById('f-nombre').value.trim(),
+    marca:        document.getElementById('f-marca').value.trim(),
+    spc:          document.getElementById('f-spc').value,
+    categoria:    document.getElementById('f-categoria').value.trim(),
+    subcategoria: document.getElementById('f-subcategoria').value.trim(),
+    precio:       parseInt(document.getElementById('f-precio').value) || 0,
+    imagen:       document.getElementById('f-imagen').value.trim(),
+    activo:       document.getElementById('f-activo').value === 'true',
+    updated_at:   new Date().toISOString()
+  };
+
+  if (!payload.codigo || !payload.nombre) {
+    alert('Código y Nombre son obligatorios.'); btn.disabled=false; btn.textContent='Guardar'; return;
+  }
+
+  let error;
+  if (editingProduct) {
+    ({ error } = await sb.from('productos').update(payload).eq('codigo', editingProduct));
+  } else {
+    ({ error } = await sb.from('productos').insert(payload));
+  }
+
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { alert('Error: ' + error.message); return; }
+  closeProductModal();
+  await loadProducts();
+  await loadStats();
+}
+
+async function deleteProduct(codigo, nombre) {
+  if (!confirm(`¿Eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
+  const { error } = await sb.from('productos').delete().eq('codigo', codigo);
+  if (error) { alert('Error: ' + error.message); return; }
+  await loadProducts();
+  await loadStats();
+}
+
+// Importar PRODUCTS del catálogo base
+async function importBaseProducts() {
+  const { count } = await sb.from('productos').select('*', {count:'exact',head:true});
+  if (count > 0) {
+    if (!confirm(`La tabla ya tiene ${count} productos.\n¿Deseas agregar los que falten de la lista base?`)) return;
+  }
+  const BASE_PRODUCTS = [{"id":"PP088006","n":"SED 6 X 35G GALLETA AVENA FRUTOS ROJOS","b":"SEED","spc":"Alimentos","c":"Galletas","s":"Galleta Dulce","pr":1094,"img":"../Imagenes/Seed/PP088006.webp"},{"id":"PP088008","n":"BFA 30ML SERUM FACIAL BIO COLAGENO","b":"BIOLAND","spc":"Cuidado personal","c":"Facial","s":"Cuidado","pr":5119,"img":"../Imagenes/Cuidado%20Personal/Suero Facial/PP088008.jpg"},{"id":"PP088013","n":"BCA 400ML 2 EN 1 ROMERO","b":"BIOLAND","spc":"Cuidado personal","c":"Capilar","s":"Shampoo","pr":3172,"img":"../Imagenes/Cuidado%20Personal/2 en 1/PP088013.jpg"},{"id":"PP088022","n":"BCA 400ML SHAMPOO ALOE VERA","b":"BIOLAND","spc":"Cuidado personal","c":"Capilar","s":"Shampoo","pr":3172,"img":"../Imagenes/Cuidado%20Personal/Shampoo/PP088022.jpg"},{"id":"PP088036","n":"TDV 400ML SHAMPOO ROMERO","b":"TERRE DE VIE","spc":"Cuidado personal","c":"Capilar","s":"Shampoo","pr":3730,"img":"../Imagenes/SHA%20Romero.jpg"},{"id":"PT067014","n":"BFA 150ML CREMA ALOE VERA HIDRATANTE","b":"BIOLAND","spc":"Cuidado personal","c":"Facial","s":"Cuidado","pr":2721,"img":"../Imagenes/Cuidado%20Personal/Crema Facial/PT067014.jpg"},{"id":"PT096001","n":"SED 100G PALITO AJONJOLI","b":"SEED","spc":"Alimentos","c":"Palitos","s":"Palito orignal","pr":724,"img":"../Imagenes/Seed/PT096001.webp"},{"id":"PT096052","n":"SED 300G GRANOLA MIEL ALMENDRAS","b":"SEED","spc":"Alimentos","c":"Granolas y Barras","s":"Granola","pr":1456,"img":"../Imagenes/Seed/PT096052.webp"}];
+
+  const toInsert = BASE_PRODUCTS.map(p => ({
+    codigo: p.id, nombre: p.n, marca: p.b, spc: p.spc,
+    categoria: p.c, subcategoria: p.s, precio: p.pr, imagen: p.img, activo: true
+  }));
+
+  const { error } = await sb.from('productos').upsert(toInsert, { onConflict: 'codigo' });
+  if (error) { alert('Error al importar: ' + error.message); return; }
+  alert(`✅ Importación completada.\n\nPara importar el catálogo completo (~150 productos), ve al README y sigue las instrucciones de "Importar catálogo completo".`);
+  await loadProducts();
+  await loadStats();
+}
+
+// ── PEDIDOS ──────────────────────────────────────────────
+async function loadOrders() {
+  const { data, error } = await sb.from('pedidos')
+    .select('*, lineas_pedido(*)').order('fecha', {ascending:false});
+  if (error) { console.error(error); return; }
+  allOrders = data || [];
+  renderOrders(allOrders);
+}
+
+function filterOrders() {
+  const q  = document.getElementById('order-search').value.toLowerCase();
+  const st = document.getElementById('order-status-filter').value;
+  renderOrders(allOrders.filter(o =>
+    (st === '' || o.estado === st) &&
+    ((o.usuario_nombre||'').toLowerCase().includes(q) ||
+     (o.usuario_email ||'').toLowerCase().includes(q))
+  ));
+}
+
+function renderOrders(list) {
+  const tbody = document.getElementById('orders-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return;
+  }
+  const statusBadge = { pendiente:'badge-yellow', aprobado:'badge-blue', procesado:'badge-green', rechazado:'badge-red' };
+  tbody.innerHTML = list.map(o => {
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const num   = o.id.slice(0,8).toUpperCase();
+    return `
+      <tr>
+        <td>${fecha}</td>
+        <td><code style="font-size:12px">${num}</code></td>
+        <td style="font-weight:600">${esc(o.usuario_nombre||'—')}</td>
+        <td>${esc(o.usuario_departamento||'—')}</td>
+        <td style="font-weight:700">₡${(o.total||0).toLocaleString('es-CR')}</td>
+        <td>
+          <select onchange="updateOrderStatus('${o.id}',this.value)"
+            style="padding:4px 8px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-weight:600">
+            ${['pendiente','aprobado','procesado','rechazado'].map(s =>
+              `<option value="${s}" ${o.estado===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function updateOrderStatus(id, estado) {
+  const { error } = await sb.from('pedidos').update({ estado }).eq('id', id);
+  if (error) alert('Error: ' + error.message);
+  else await loadStats();
+}
+
+function openOrderDetail(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  const fecha = new Date(o.fecha).toLocaleString('es-CR');
+  const lineas = (o.lineas_pedido || []);
+  document.getElementById('order-detail-card').innerHTML = `
+    <div class="modal-title">Pedido ${o.id.slice(0,8).toUpperCase()}</div>
+    <p style="font-size:14px;color:#6b7280;margin-bottom:16px">${fecha}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:14px">
+      <div><strong>Empleado:</strong> ${esc(o.usuario_nombre||'—')}</div>
+      <div><strong>Correo:</strong> ${esc(o.usuario_email||'—')}</div>
+      <div><strong>Departamento:</strong> ${esc(o.usuario_departamento||'—')}</div>
+      <div><strong>Estado:</strong> ${esc(o.estado)}</div>
+    </div>
+    ${o.observaciones ? `<div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px"><strong>Observaciones:</strong> ${esc(o.observaciones)}</div>` : ''}
+    <div class="table-wrap" style="margin-bottom:20px">
+      <table>
+        <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          ${lineas.map(l => `
+            <tr>
+              <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
+              <td>${esc(l.producto_nombre)}</td>
+              <td style="text-align:center">${l.cantidad}</td>
+              <td>₡${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
+              <td style="font-weight:700">₡${(l.subtotal||0).toLocaleString('es-CR')}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="text-align:right;font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px">
+      TOTAL: ₡${(o.total||0).toLocaleString('es-CR')}
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('order-detail-modal').classList.remove('open')">Cerrar</button>`;
+  document.getElementById('order-detail-modal').classList.add('open');
+}
+
+function exportOrdersCSV() {
+  const rows = [['Fecha','Pedido','Empleado','Correo','Departamento','Total','Estado','Observaciones']];
+  allOrders.forEach(o => {
+    rows.push([
+      new Date(o.fecha).toLocaleDateString('es-CR'),
+      o.id.slice(0,8).toUpperCase(),
+      o.usuario_nombre||'',
+      o.usuario_email||'',
+      o.usuario_departamento||'',
+      o.total||0,
+      o.estado||'',
+      (o.observaciones||'').replace(/,/g,';')
+    ]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'pedidos_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── EMPLEADOS (extraídos de pedidos únicos) ───────────────
+async function loadUsers() {
+  // Obtenemos todos los pedidos y extraemos empleados únicos por nombre+cédula
+  const { data, error } = await sb.from('pedidos')
+    .select('usuario_nombre, usuario_email, usuario_departamento, fecha')
+    .order('usuario_nombre');
+  if (error) { console.error(error); return; }
+
+  // Deduplicar por nombre+cédula, quedarse con el registro más reciente
+  const map = {};
+  (data || []).forEach(r => {
+    const key = (r.usuario_nombre||'') + '|' + (r.usuario_email||'');
+    if (!map[key] || r.fecha > map[key].fecha) map[key] = r;
+  });
+  allUsers = Object.values(map).sort((a,b) => (a.usuario_nombre||'').localeCompare(b.usuario_nombre||''));
+  renderUsers(allUsers);
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u =>
+    (u.usuario_nombre||'').toLowerCase().includes(q) ||
+    (u.usuario_email ||'').toLowerCase().includes(q)
+  ));
+}
+
+function renderUsers(list) {
+  const tbody = document.getElementById('users-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin empleados registrados</td></tr>'; return;
+  }
+  tbody.innerHTML = list.map(u => {
+    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
+    // usuario_email fue reutilizado para guardar la cédula
+    return `<tr>
+      <td style="font-weight:600">${esc(u.usuario_nombre||'—')}</td>
+      <td>${esc(u.usuario_email||'—')}</td>
+      <td>${esc(u.usuario_departamento||'—')}</td>
+      <td style="color:#9ca3af;font-size:13px">${new Date(u.fecha||u.created_at).toLocaleDateString('es-CR')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────
+async function loadConfig() {
+  const { data } = await sb.from('app_config').select('key, value').in('key',['admin_user','admin_pass']);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('cfg-user').value = cfg.admin_user || 'admin';
+  document.getElementById('cfg-pass').value  = '';
+  document.getElementById('cfg-pass2').value = '';
+  document.getElementById('cfg-msg').style.display = 'none';
+}
+
+async function saveConfig() {
+  const user  = document.getElementById('cfg-user').value.trim();
+  const pass  = document.getElementById('cfg-pass').value.trim();
+  const pass2 = document.getElementById('cfg-pass2').value.trim();
+  const btn   = document.getElementById('cfg-btn');
+  const msg   = document.getElementById('cfg-msg');
+
+  const showMsg = (text, ok) => {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = `1px solid ${ok ? '#86efac' : '#fca5a5'}`;
+    msg.style.color  = ok ? '#166534' : '#dc2626';
+  };
+
+  if (!user)          { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
+  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const updates = [{ key: 'admin_user', value: user }];
+  if (pass) updates.push({ key: 'admin_pass', value: pass });
+
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (error) { showMsg('Error al guardar: ' + error.message, false); }
+  else {
+    showMsg('✅ Credenciales actualizadas correctamente.', true);
+    document.getElementById('cfg-pass').value  = '';
+    document.getElementById('cfg-pass2').value = '';
+    // Actualizar sesión — no cerrar al cambiar credenciales
+  }
+}
+
+// ── HELPER ───────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ── INIT ─────────────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>

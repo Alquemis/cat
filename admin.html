@@ -6,7 +6,7 @@
 <title>Admin – Catálogo Colaboradores</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; }
 
   /* ── LOGIN ── */
@@ -254,16 +254,11 @@
 <!-- CONTENT -->
 <div class="container">
 
-  <!-- ── STATS ── -->
-  <div class="stat-grid" id="stat-grid">
-    <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Productos activos</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
-  </div>
-
   <!-- ── PAGE: PRODUCTS ── -->
   <div id="page-products">
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Productos activos</div></div>
+    </div>
     <div class="toolbar">
       <div class="search-field">
         <span>🔍</span>
@@ -280,36 +275,74 @@
 
   <!-- ── PAGE: ORDERS ── -->
   <div id="page-orders" style="display:none">
-    <div class="toolbar">
-      <div class="search-field">
-        <span>🔍</span>
-        <input type="text" id="order-search" placeholder="Buscar por nombre o correo…" oninput="filterOrders()">
-      </div>
-      <select id="order-status-filter" onchange="filterOrders()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <option value="">Todos los estados</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="aprobado">Aprobado</option>
-        <option value="procesado">Procesado</option>
-        <option value="rechazado">Rechazado</option>
-      </select>
-      <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-      <button class="btn btn-primary" onclick="exportOrdersCSV()">⬇ Exportar CSV</button>
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th>
-          <th>Total</th><th>Estado</th><th>Acciones</th>
-        </tr></thead>
-        <tbody id="orders-tbody">
-          <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
-        </tbody>
-      </table>
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
+      <button id="otab-pend" onclick="showOrdersTab('pend')"
+        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #1f2937;color:#1f2937;">
+        Pendientes <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+      </button>
+      <button id="otab-hist" onclick="showOrdersTab('hist')"
+        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Historial
+      </button>
+    </div>
+
+    <!-- Pendientes -->
+    <div id="opage-pend">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="pend-search" placeholder="Buscar por nombre…" oninput="filterAdminPend()">
+        </div>
+        <select id="pend-lugar" onchange="filterAdminPend()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th><th>Total</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="pend-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div id="opage-hist" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="hist-search" placeholder="Buscar por nombre…" oninput="filterAdminHist()">
+        </div>
+        <select id="hist-lugar" onchange="filterAdminHist()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="hist-desde" onchange="filterAdminHist()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th><th>Total</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="hist-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <!-- ── PAGE: USERS ── -->
   <div id="page-users" style="display:none">
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
+    </div>
     <div class="toolbar">
       <div class="search-field">
         <span>🔍</span>
@@ -438,7 +471,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ── ESTADO ───────────────────────────────────────────────
 let currentUser    = null;
 let allProducts    = [];
-let allOrders      = [];
+let allAdminPend   = [];
+let allAdminHist   = [];
 let allUsers       = [];
 let editingProduct = null;
 
@@ -520,22 +554,16 @@ function showPage(page) {
   document.querySelectorAll('.page-tab').forEach((t,i) => {
     t.classList.toggle('active', ['products','orders','users','settings'][i] === page);
   });
-  if (page==='orders'   && allOrders.length===0) loadOrders();
+  if (page==='orders'   && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
   if (page==='users'    && allUsers.length===0)  loadUsers();
   if (page==='settings') loadConfig();
 }
 
 // ── STATS ────────────────────────────────────────────────
 async function loadStats() {
-  const [{ count: cp }, { count: co }, { count: cat }] = await Promise.all([
-    sb.from('productos').select('*', {count:'exact',head:true}).eq('activo',true),
-    sb.from('pedidos').select('*',   {count:'exact',head:true}).eq('estado','pendiente'),
-    sb.from('pedidos').select('*',   {count:'exact',head:true})
-  ]);
-  document.getElementById('stat-products').textContent     = cp ?? '—';
-  document.getElementById('stat-orders').textContent       = co ?? '—';
-  document.getElementById('stat-orders-total').textContent  = cat ?? '—';
-  document.getElementById('stat-users').textContent        = '—';
+  // Productos activos
+  const { count: cp } = await sb.from('productos').select('*', {count:'exact',head:true}).eq('activo',true);
+  document.getElementById('stat-products').textContent = cp ?? '—';
 }
 
 // ── PRODUCTOS ────────────────────────────────────────────
@@ -700,30 +728,58 @@ async function deleteProduct(codigo, nombre) {
 }
 
 // ── PEDIDOS ──────────────────────────────────────────────
+
 async function loadOrders() {
-  const { data, error } = await sb.from('pedidos')
-    .select('*, lineas_pedido(*)').order('fecha', {ascending:false});
-  if (error) { console.error(error); return; }
-  allOrders = data || [];
-  renderOrders(allOrders);
+  const [resPend, resHist] = await Promise.all([
+    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
+    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','facturado').order('fecha', {ascending:false})
+  ]);
+  allAdminPend = resPend.data || [];
+  allAdminHist = resHist.data || [];
+  // stats pedidos
+  document.getElementById('stat-orders').textContent       = allAdminPend.length;
+  document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
+  // badge sub-tab
+  const badge = document.getElementById('obadge-pend');
+  if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
+  filterAdminPend();
+  filterAdminHist();
 }
 
-function filterOrders() {
-  const q  = document.getElementById('order-search').value.toLowerCase();
-  const st = document.getElementById('order-status-filter').value;
-  renderOrders(allOrders.filter(o =>
-    (st === '' || o.estado === st) &&
-    ((o.usuario_nombre||'').toLowerCase().includes(q) ||
-     (o.usuario_email ||'').toLowerCase().includes(q))
+function showOrdersTab(tab) {
+  ['pend','hist'].forEach(t => {
+    document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('otab-' + t);
+    btn.style.borderBottom = t === tab ? '3px solid #1f2937' : '3px solid transparent';
+    btn.style.color = t === tab ? '#1f2937' : '#6b7280';
+  });
+}
+
+function filterAdminPend() {
+  const q     = (document.getElementById('pend-search').value || '').toLowerCase();
+  const lugar = document.getElementById('pend-lugar').value;
+  renderAdminOrders('pend-tbody', allAdminPend.filter(o =>
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar)
   ));
 }
 
-function renderOrders(list) {
-  const tbody = document.getElementById('orders-tbody');
+function filterAdminHist() {
+  const q     = (document.getElementById('hist-search').value || '').toLowerCase();
+  const lugar = document.getElementById('hist-lugar').value;
+  const desde = document.getElementById('hist-desde').value;
+  renderAdminOrders('hist-tbody', allAdminHist.filter(o =>
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  ));
+}
+
+function renderAdminOrders(tbodyId, list) {
+  const tbody = document.getElementById(tbodyId);
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return;
   }
-  const statusBadge = { pendiente:'badge-yellow', aprobado:'badge-blue', procesado:'badge-green', rechazado:'badge-red' };
   tbody.innerHTML = list.map(o => {
     const fecha = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num   = o.id.slice(0,8).toUpperCase();
@@ -735,85 +791,55 @@ function renderOrders(list) {
         <td>${esc(o.usuario_departamento||'—')}</td>
         <td>${esc(o.usuario_lugar||'—')}</td>
         <td style="font-weight:700">₡${(o.total||0).toLocaleString('es-CR')}</td>
-        <td>
-          <select onchange="updateOrderStatus('${o.id}',this.value)"
-            style="padding:4px 8px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-weight:600">
-            ${['pendiente','aprobado','procesado','rechazado'].map(s =>
-              `<option value="${s}" ${o.estado===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`
-            ).join('')}
-          </select>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>
-        </td>
+        <td><button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button></td>
       </tr>`;
   }).join('');
 }
 
-async function updateOrderStatus(id, estado) {
-  const { error } = await sb.from('pedidos').update({ estado }).eq('id', id);
-  if (error) alert('Error: ' + error.message);
-  else await loadStats();
-}
-
 function openOrderDetail(id) {
-  const o = allOrders.find(x => x.id === id);
+  const o = [...allAdminPend, ...allAdminHist].find(x => x.id === id);
   if (!o) return;
-  const fecha = new Date(o.fecha).toLocaleString('es-CR');
+  const fecha  = new Date(o.fecha).toLocaleString('es-CR');
   const lineas = (o.lineas_pedido || []);
+  const total  = o.total || 0;
+  const subtotalSinIva = Math.round(total / 1.13);
+  const iva = total - subtotalSinIva;
   document.getElementById('order-detail-card').innerHTML = `
-    <div class="modal-title">Pedido ${o.id.slice(0,8).toUpperCase()}</div>
-    <p style="font-size:14px;color:#6b7280;margin-bottom:16px">${fecha}</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;font-size:14px">
-      <div><strong>Colaborador:</strong> ${esc(o.usuario_nombre||'—')}</div>
-      <div><strong>Cédula:</strong> ${esc(o.usuario_email||'—')}</div>
-      <div><strong>Departamento:</strong> ${esc(o.usuario_departamento||'—')}</div>
-      <div><strong>Lugar:</strong> ${esc(o.usuario_lugar||'—')}</div>
-      <div><strong>Estado:</strong> ${esc(o.estado)}</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px">
+      <div class="modal-title">Pedido ${o.id.slice(0,8).toUpperCase()}</div>
+      <div style="font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px">${fecha}</div>
     </div>
-    ${o.observaciones ? `<div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px"><strong>Observaciones:</strong> ${esc(o.observaciones)}</div>` : ''}
-    <div class="table-wrap" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px">
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong>${esc(o.usuario_nombre||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cédula</strong>${esc(o.usuario_email||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Departamento</strong>${esc(o.usuario_departamento||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Lugar</strong>${esc(o.usuario_lugar||'—')}</div>
+    </div>
+    ${o.observaciones ? `<div style="background:#fffbeb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px;border:1px solid #fde68a"><strong>Observaciones:</strong> ${esc(o.observaciones)}</div>` : ''}
+    <div class="table-wrap" style="margin-bottom:16px">
       <table>
-        <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr></thead>
+        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Subtotal</th></tr></thead>
         <tbody>
           ${lineas.map(l => `
             <tr>
               <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
+              <td style="text-align:center;font-weight:600">${l.cantidad}</td>
               <td>${esc(l.producto_nombre)}</td>
-              <td style="text-align:center">${l.cantidad}</td>
               <td>₡${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
               <td style="font-weight:700">₡${(l.subtotal||0).toLocaleString('es-CR')}</td>
             </tr>`).join('')}
         </tbody>
       </table>
     </div>
-    <div style="text-align:right;font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px">
-      TOTAL: ₡${(o.total||0).toLocaleString('es-CR')}
+    <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span>₡${iva.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span>₡${total.toLocaleString('es-CR')}</span></div>
     </div>
-    <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('order-detail-modal').classList.remove('open')">Cerrar</button>`;
+    <button class="btn btn-primary" style="width:100%;padding:13px" onclick="document.getElementById('order-detail-modal').classList.remove('open')">Cerrar</button>`;
   document.getElementById('order-detail-modal').classList.add('open');
 }
 
-function exportOrdersCSV() {
-  const rows = [['Fecha','Pedido','Colaborador','Correo','Departamento','Total','Estado','Observaciones']];
-  allOrders.forEach(o => {
-    rows.push([
-      new Date(o.fecha).toLocaleDateString('es-CR'),
-      o.id.slice(0,8).toUpperCase(),
-      o.usuario_nombre||'',
-      o.usuario_email||'',
-      o.usuario_departamento||'',
-      o.total||0,
-      o.estado||'',
-      (o.observaciones||'').replace(/,/g,';')
-    ]);
-  });
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
-  a.download = 'pedidos_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-}
 
 // ── COLABORADORES (extraídos de pedidos únicos) ───────────────
 async function loadUsers() {
@@ -823,13 +849,15 @@ async function loadUsers() {
     .order('usuario_nombre');
   if (error) { console.error(error); return; }
 
-  // Deduplicar por nombre+cédula, quedarse con el registro más reciente
+  // Deduplicar por cédula única (usuario_email), quedarse con el registro más reciente
   const map = {};
   (data || []).forEach(r => {
-    const key = (r.usuario_nombre||'') + '|' + (r.usuario_email||'');
+    const key = (r.usuario_email||'').trim();
+    if (!key) return;
     if (!map[key] || r.fecha > map[key].fecha) map[key] = r;
   });
   allUsers = Object.values(map).sort((a,b) => (a.usuario_nombre||'').localeCompare(b.usuario_nombre||''));
+  document.getElementById('stat-users').textContent = allUsers.length;
   renderUsers(allUsers);
 }
 
@@ -1008,6 +1036,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── HELPER ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ── TOUCH GESTURES ────────────────────────────────────────────
+(function() {
+  var sx = 0, sy = 0, tgt = null;
+  var PAGES = ['products','orders','users','settings'];
+
+  function currentPage() {
+    for (var i = 0; i < PAGES.length; i++) {
+      var el = document.getElementById('page-' + PAGES[i]);
+      if (el && el.style.display !== 'none') return PAGES[i];
+    }
+    return 'products';
+  }
+  function isScrollableX(el) {
+    while (el && el !== document.body) {
+      var s = window.getComputedStyle(el);
+      if (s.overflowX === 'auto' || s.overflowX === 'scroll') return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+
+    // Swipe abajo sobre el fondo de un modal → cerrar
+    if (ady > 70 && dy > 0 && ady > adx) {
+      document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+        var card = m.querySelector('.modal-card');
+        if (!card || !card.contains(tgt)) m.classList.remove('open');
+      });
+      return;
+    }
+
+    // Swipe horizontal → cambiar página
+    if (adx < 60 || ady > adx * 0.65 || isScrollableX(tgt)) return;
+    var idx = PAGES.indexOf(currentPage());
+    if (dx < 0 && idx < PAGES.length - 1) showPage(PAGES[idx + 1]);
+    else if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);
+  }, { passive: true });
+})();
 
 // ── INIT ─────────────────────────────────────────────────
 initAuth();

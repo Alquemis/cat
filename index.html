@@ -7,7 +7,7 @@
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #fafafa; color: #1a1a1a; min-height: 100vh; overflow-x: hidden;
@@ -150,56 +150,129 @@
   .user-dropdown-item.danger:hover { background: #fef2f2; }
   .user-dropdown-sep { height: 1px; background: #f3f4f6; margin: 0; }
 
-  /* Panel Mis Pedidos */
-  .orders-drawer {
-    position: fixed; top: 0; right: -480px; bottom: 0;
-    width: 480px; max-width: 100vw;
-    background: #fff; z-index: 502;
-    display: flex; flex-direction: column;
-    box-shadow: -4px 0 32px rgba(0,0,0,0.15);
-    transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
+  /* ========== MIS PEDIDOS — LISTA ========== */
+  #modal-mis-pedidos {
+    position: fixed; inset: 0; z-index: 600;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
   }
-  .orders-drawer.open { right: 0; }
-  .orders-drawer-header {
+  #modal-mis-pedidos.open { opacity: 1; pointer-events: auto; }
+  .mp-card {
+    background: #fff; border-radius: 20px;
+    width: 100%; max-width: 520px; max-height: 85vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    transform: translateY(20px); transition: transform 0.25s;
+  }
+  #modal-mis-pedidos.open .mp-card { transform: translateY(0); }
+  .mp-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 24px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
   }
-  .orders-drawer-title { font-size: 17px; font-weight: 700; color: #1f2937; }
-  .orders-drawer-close {
+  .mp-title { font-size: 17px; font-weight: 700; color: #1f2937; }
+  .mp-close {
     background: #f3f4f6; border: none; border-radius: 50%;
     width: 32px; height: 32px; font-size: 16px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; color: #6b7280;
     transition: background 0.2s;
   }
-  .orders-drawer-close:hover { background: #e5e7eb; }
-  .orders-drawer-body { flex: 1; overflow-y: auto; padding: 16px 24px; }
+  .mp-close:hover { background: #e5e7eb; }
+  .mp-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  /* Filas de la lista */
+  .mpc-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 12px; border-radius: 12px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .mpc-row:hover { background: #f3f4f6; }
+  .mpc-row.selected { background: #dcfce7; }
+  .mpc-row + .mpc-row { border-top: 1px solid #f3f4f6; }
+  .mpc-left { flex: 1; min-width: 0; }
+  .mpc-num { font-size: 12px; font-weight: 700; color: #6b7280; font-family: monospace; }
+  .mpc-date { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+  .mpc-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; flex-shrink: 0; }
+  .mpc-total { font-size: 15px; font-weight: 800; color: #1f2937; flex-shrink: 0; }
+  .mpc-arrow { font-size: 14px; color: #d1d5db; flex-shrink: 0; }
+  .mp-empty  { text-align: center; padding: 60px 20px; color: #9ca3af; }
+  .mp-loading { text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 14px; }
 
-  /* Order cards */
-  .order-card {
-    border: 1px solid #e5e7eb; border-radius: 12px;
-    margin-bottom: 14px; overflow: hidden;
+  /* ========== MIS PEDIDOS — DETALLE ========== */
+  #modal-pedido-det {
+    position: fixed; inset: 0; z-index: 610;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.22s;
   }
-  .order-card-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; background: #f9fafb; cursor: pointer;
-    gap: 10px;
+  #modal-pedido-det.open { opacity: 1; pointer-events: auto; }
+  .mpd-card {
+    background: #fff; border-radius: 20px;
+    width: 100%; max-width: 540px; max-height: 88vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    transform: translateY(24px); transition: transform 0.22s;
   }
-  .order-card-head:hover { background: #f3f4f6; }
-  .order-card-num { font-size: 12px; font-weight: 700; color: #6b7280; font-family: monospace; }
-  .order-card-date { font-size: 12px; color: #9ca3af; }
-  .order-card-total { font-size: 15px; font-weight: 800; color: #1f2937; margin-left: auto; }
-  .order-card-toggle { font-size: 11px; color: #9ca3af; margin-left: 8px; transition: transform 0.2s; }
-  .order-card.expanded .order-card-toggle { transform: rotate(180deg); }
-  .order-card-status { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-  .order-card-body { display: none; padding: 12px 16px; border-top: 1px solid #f3f4f6; }
-  .order-card.expanded .order-card-body { display: block; }
-  .order-line { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f9fafb; font-size: 13px; color: #374151; gap: 8px; }
-  .order-line:last-child { border-bottom: none; }
-  .order-line-name { flex: 1; }
-  .order-line-qty { color: #9ca3af; font-size: 12px; flex-shrink: 0; }
-  .order-line-sub { font-weight: 700; color: #1f2937; flex-shrink: 0; }
-  .orders-empty { text-align: center; padding: 60px 20px; color: #9ca3af; }
-  .orders-loading { text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 14px; }
+  #modal-pedido-det.open .mpd-card { transform: translateY(0); }
+  .mpd-top {
+    padding: 20px 22px 16px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
+  }
+  .mpd-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .mpd-num { font-size: 13px; font-weight: 700; color: #6b7280; font-family: monospace; }
+  .mpd-fecha { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+  .mpd-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; flex-shrink: 0; margin-top: 2px; }
+  .mpd-body { flex: 1; overflow-y: auto; padding: 16px 22px; }
+  .mpd-user { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f3f4f6; }
+  .mpd-user-name { font-size: 14px; font-weight: 700; color: #1f2937; }
+  .mpd-user-sub { font-size: 12px; color: #6b7280; margin-top: 3px; }
+  .mpd-line {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid #f9fafb;
+  }
+  .mpd-line:last-child { border-bottom: none; }
+  .mpd-img {
+    width: 48px; height: 48px; border-radius: 10px; object-fit: cover;
+    background: #f3f4f6; flex-shrink: 0;
+  }
+  .mpd-img-ph {
+    width: 48px; height: 48px; border-radius: 10px;
+    background: #f3f4f6; display: flex; align-items: center;
+    justify-content: center; font-size: 24px; flex-shrink: 0;
+  }
+  .mpd-line-info { flex: 1; min-width: 0; }
+  .mpd-line-name { font-size: 13px; font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mpd-line-qty { font-size: 12px; color: #6b7280; margin-top: 3px; }
+  .mpd-line-sub { font-size: 14px; font-weight: 700; color: #1f2937; flex-shrink: 0; }
+  .mpd-totals { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+  .mpd-total-row { display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; margin-bottom: 5px; }
+  .mpd-total-final {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #1f2937; border-radius: 10px; padding: 12px 16px;
+    margin-top: 8px;
+    font-size: 15px; font-weight: 800; color: #fff;
+  }
+  .mpd-footer {
+    padding: 14px 22px; border-top: 1px solid #e5e7eb; flex-shrink: 0;
+    display: flex; gap: 10px;
+  }
+  .mpd-btn-dl {
+    flex: 1; padding: 12px; background: #16a34a; color: #fff;
+    border: none; border-radius: 12px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .mpd-btn-dl:hover { background: #15803d; }
+  .mpd-btn-dl:disabled { background: #86efac; cursor: not-allowed; }
+  .mpd-btn-close {
+    flex: 1; padding: 12px; background: #f3f4f6; color: #374151;
+    border: none; border-radius: 12px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .mpd-btn-close:hover { background: #e5e7eb; }
 
   /* Cart button */
   .cart-btn {
@@ -688,15 +761,36 @@
 <div id="banner-area"></div>
 <div id="dynamic-area"></div>
 
-<!-- ========== MIS PEDIDOS DRAWER ========== -->
-<div class="cart-overlay" id="orders-overlay" onclick="closeMyOrders()" style="display:none;opacity:0;pointer-events:none;"></div>
-<div class="orders-drawer" id="orders-drawer">
-  <div class="orders-drawer-header">
-    <div class="orders-drawer-title">📋 Mis Pedidos</div>
-    <button class="orders-drawer-close" onclick="closeMyOrders()">✕</button>
+<!-- ========== MIS PEDIDOS — LISTA ========== -->
+<div id="modal-mis-pedidos" onclick="if(event.target===this)closeMyOrders()">
+  <div class="mp-card">
+    <div class="mp-header">
+      <div class="mp-title">📋 Mis Pedidos</div>
+      <button class="mp-close" onclick="closeMyOrders()">✕</button>
+    </div>
+    <div class="mp-body" id="orders-body">
+      <div class="mp-loading">Cargando…</div>
+    </div>
   </div>
-  <div class="orders-drawer-body" id="orders-body">
-    <div class="orders-loading">Cargando…</div>
+</div>
+
+<!-- ========== MIS PEDIDOS — DETALLE ========== -->
+<div id="modal-pedido-det" onclick="if(event.target===this)closePedidoDet()">
+  <div class="mpd-card">
+    <div class="mpd-top">
+      <div class="mpd-top-row">
+        <div>
+          <div class="mpd-num" id="mpd-num"></div>
+          <div class="mpd-fecha" id="mpd-fecha"></div>
+        </div>
+        <span class="mpd-status" id="mpd-status"></span>
+      </div>
+    </div>
+    <div class="mpd-body" id="mpd-body"></div>
+    <div class="mpd-footer">
+      <button class="mpd-btn-dl" id="mpd-btn-dl" onclick="descargarPedidoDetalle()">⬇ Descargar copia</button>
+      <button class="mpd-btn-close" onclick="closePedidoDet()">Cerrar</button>
+    </div>
   </div>
 </div>
 
@@ -715,10 +809,10 @@
     </div>
     <div class="cart-footer" id="cart-footer" style="display:none;">
       <div class="cart-total-row">
-        <span class="cart-total-label">Total estimado</span>
+        <span class="cart-total-label">Total</span>
         <span class="cart-total-val" id="cart-total">₡0</span>
       </div>
-      <button class="checkout-btn" onclick="openOrderModal()">Enviar pedido a Facturación →</button>
+      <button class="checkout-btn" id="cart-send-btn" onclick="openOrderModal()">Enviar pedido a Facturación →</button>
     </div>
   </div>
 </div>
@@ -732,12 +826,8 @@
 <div class="modal-overlay" id="order-modal">
   <div class="modal-card" id="modal-card">
     <div class="modal-title">📋 Confirmar Pedido</div>
-    <div class="modal-sub">Revisa tu pedido. Se enviará a Facturación y el monto se descontará de tu salario.</div>
+    <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación.</div>
     <div class="modal-summary" id="modal-summary"></div>
-    <div class="modal-notes">
-      <label>Observaciones (opcional)</label>
-      <textarea id="order-notes" placeholder="Ej. Entregar en recepción, el martes…"></textarea>
-    </div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeOrderModal()">Cancelar</button>
       <button class="modal-confirm" id="modal-confirm-btn" onclick="submitOrder()">Confirmar y Enviar</button>
@@ -769,6 +859,7 @@ let CATALOG        = []; // se rellena desde Supabase
 let cart           = [];     // [{product, qty}]
 let activeTab      = null;
 let activeButton   = null;
+let _lastOrder     = null; // guarda último pedido para descarga
 let heroIdx        = 0;
 let heroTimer      = null;
 
@@ -790,6 +881,26 @@ function initAuth() {
 }
 
 async function onLogin(session) {
+  // Buscar el perfil canónico: primer pedido registrado con esta cédula
+  try {
+    const { data: historial } = await sb.from('pedidos')
+      .select('usuario_nombre, usuario_departamento, usuario_lugar')
+      .eq('usuario_email', session.cedula)
+      .order('fecha', { ascending: true })
+      .limit(1);
+    if (historial && historial.length > 0) {
+      const perfil = historial[0];
+      session = {
+        ...session,
+        nombre:       perfil.usuario_nombre       || session.nombre,
+        departamento: perfil.usuario_departamento  || session.departamento,
+        lugar:        perfil.usuario_lugar         || session.lugar
+      };
+      // Actualizar localStorage con el perfil canónico
+      localStorage.setItem('catalogo_session', JSON.stringify(session));
+    }
+  } catch(e) { /* si falla la consulta se usa lo que digitó */ }
+
   currentUser = session;
 
   // Actualizar UI topbar
@@ -902,27 +1013,17 @@ document.addEventListener('click', function(e) {
 // ── MIS PEDIDOS ──────────────────────────────────────────
 async function openMyOrders() {
   closeUserMenu();
-  const overlay = document.getElementById('orders-overlay');
-  const drawer  = document.getElementById('orders-drawer');
-  overlay.style.display = 'block';
-  setTimeout(() => overlay.style.opacity = '1', 10);
-  overlay.style.pointerEvents = 'auto';
-  drawer.classList.add('open');
+  document.getElementById('modal-mis-pedidos').classList.add('open');
   await loadMyOrders();
 }
 
 function closeMyOrders() {
-  const overlay = document.getElementById('orders-overlay');
-  const drawer  = document.getElementById('orders-drawer');
-  overlay.style.opacity = '0';
-  overlay.style.pointerEvents = 'none';
-  setTimeout(() => overlay.style.display = 'none', 300);
-  drawer.classList.remove('open');
+  document.getElementById('modal-mis-pedidos').classList.remove('open');
 }
 
 async function loadMyOrders() {
   const body = document.getElementById('orders-body');
-  body.innerHTML = '<div class="orders-loading">Cargando historial…</div>';
+  body.innerHTML = '<div class="mp-loading">Cargando historial…</div>';
   try {
     const { data, error } = await sb
       .from('pedidos')
@@ -932,52 +1033,124 @@ async function loadMyOrders() {
     if (error) throw error;
     renderMyOrders(data || []);
   } catch(e) {
-    body.innerHTML = '<div class="orders-empty">No se pudo cargar el historial.</div>';
+    body.innerHTML = '<div class="mp-empty">No se pudo cargar el historial.</div>';
   }
 }
 
 function renderMyOrders(list) {
   const body = document.getElementById('orders-body');
   if (list.length === 0) {
-    body.innerHTML = '<div class="orders-empty">Aún no tienes pedidos registrados.</div>';
+    body.innerHTML = '<div class="mp-empty">Aún no tienes pedidos registrados.</div>';
     return;
   }
+  window._myOrdersList = list;
   const statusColors = {
     pendiente: 'background:#fef3c7;color:#92400e',
-    aprobado:  'background:#dbeafe;color:#1e40af',
-    procesado: 'background:#d1fae5;color:#065f46',
-    rechazado: 'background:#fee2e2;color:#dc2626'
+    facturado: 'background:#dcfce7;color:#166534'
   };
   body.innerHTML = list.map((o, idx) => {
-    const fecha  = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
-    const num    = o.id.slice(0,8).toUpperCase();
-    const total  = (o.total || 0).toLocaleString('es-CR');
+    const num = (o.id || '').slice(0, 8).toUpperCase();
+    const fechaRaw = o.fecha ? new Date(o.fecha) : null;
+    const fecha = fechaRaw
+      ? fechaRaw.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '—';
     const sColor = statusColors[o.estado] || 'background:#f3f4f6;color:#6b7280';
-    const lineas = (o.lineas_pedido || []);
-    const linesHtml = lineas.map(l =>
-      '<div class="order-line">' +
-        '<span class="order-line-name">' + esc(l.producto_nombre || '') + '</span>' +
-        '<span class="order-line-qty">x' + l.cantidad + '</span>' +
-        '<span class="order-line-sub">&#x20A1;' + (l.subtotal||0).toLocaleString('es-CR') + '</span>' +
-      '</div>'
-    ).join('');
-    return '<div class="order-card" id="oc-' + idx + '">' +
-      '<div class="order-card-head" onclick="toggleOrderCard(' + idx + ')">' +
-        '<div>' +
-          '<div class="order-card-num">#' + num + '</div>' +
-          '<div class="order-card-date">' + fecha + '</div>' +
-        '</div>' +
-        '<span class="order-card-status" style="' + sColor + '">' + (o.estado||'') + '</span>' +
-        '<div class="order-card-total">&#x20A1;' + total + '</div>' +
-        '<span class="order-card-toggle">▼</span>' +
-      '</div>' +
-      '<div class="order-card-body">' + linesHtml + '</div>' +
-    '</div>';
+    const total = (o.total || 0).toLocaleString('es-CR');
+    return `<div class="mpc-row" id="mpc-row-${idx}" onclick="openPedidoDet(${idx})">
+      <div class="mpc-left">
+        <div class="mpc-num">#${num}</div>
+        <div class="mpc-date">${fecha}</div>
+      </div>
+      <span class="mpc-status" style="${sColor}">${escHtml(o.estado || '')}</span>
+      <div class="mpc-total">₡${total}</div>
+      <span class="mpc-arrow">›</span>
+    </div>`;
   }).join('');
 }
 
-function toggleOrderCard(idx) {
-  document.getElementById('oc-' + idx).classList.toggle('expanded');
+// ── DETALLE PEDIDO ────────────────────────────────────────
+let _currentDetIdx = null;
+
+function openPedidoDet(idx) {
+  const o = window._myOrdersList && window._myOrdersList[idx];
+  if (!o) return;
+  // Marcar fila seleccionada
+  document.querySelectorAll('.mpc-row').forEach(r => r.classList.remove('selected'));
+  const rowEl = document.getElementById('mpc-row-' + idx);
+  if (rowEl) rowEl.classList.add('selected');
+
+  _currentDetIdx = idx;
+  const statusColors = {
+    pendiente: 'background:#fef3c7;color:#92400e',
+    facturado: 'background:#dcfce7;color:#166534'
+  };
+  const sColor = statusColors[o.estado] || 'background:#f3f4f6;color:#6b7280';
+  const fechaRaw = o.fecha ? new Date(o.fecha) : null;
+  const fecha = fechaRaw
+    ? fechaRaw.toLocaleString('es-CR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—';
+  document.getElementById('mpd-num').textContent   = '#' + (o.id || '').slice(0, 8).toUpperCase();
+  document.getElementById('mpd-fecha').textContent = fecha;
+  const statusEl = document.getElementById('mpd-status');
+  statusEl.textContent = o.estado || '';
+  statusEl.style.cssText = sColor;
+
+  const subtotalSinIva = Math.round((o.total || 0) / 1.13);
+  const iva = (o.total || 0) - subtotalSinIva;
+  const total = (o.total || 0).toLocaleString('es-CR');
+
+  const linesHtml = (o.lineas_pedido || []).map(l => {
+    const prod = CATALOG.find(p => p.id === l.producto_codigo);
+    const imgSrc = prod && prod.img ? prod.img : null;
+    const imgHtml = imgSrc
+      ? `<img src="${escAttr(imgSrc)}" class="mpd-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="mpd-img-ph" style="display:none">📦</div>`
+      : `<div class="mpd-img-ph">📦</div>`;
+    const unitPrice = l.cantidad > 0 ? Math.round((l.subtotal || 0) / l.cantidad) : 0;
+    return `<div class="mpd-line">
+      ${imgHtml}
+      <div class="mpd-line-info">
+        <div class="mpd-line-name">${escHtml(l.producto_nombre || '')}</div>
+        <div class="mpd-line-qty">Cant: ${l.cantidad} &nbsp;·&nbsp; ₡${unitPrice.toLocaleString('es-CR')} c/u</div>
+      </div>
+      <div class="mpd-line-sub">₡${(l.subtotal || 0).toLocaleString('es-CR')}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('mpd-body').innerHTML = `
+    <div class="mpd-user">
+      <div class="mpd-user-name">${escHtml(currentUser.nombre)}</div>
+      <div class="mpd-user-sub">${escHtml(currentUser.departamento)}${currentUser.lugar ? ' · ' + escHtml(currentUser.lugar) : ''} · Cédula: ${escHtml(currentUser.cedula)}</div>
+    </div>
+    ${linesHtml}
+    <div class="mpd-totals">
+      <div class="mpd-total-row"><span>Subtotal sin IVA</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span></div>
+      <div class="mpd-total-row"><span>IVA 13%</span><span>₡${iva.toLocaleString('es-CR')}</span></div>
+      <div class="mpd-total-final"><span>TOTAL</span><span>₡${total}</span></div>
+    </div>`;
+
+  document.getElementById('modal-pedido-det').classList.add('open');
+}
+
+function closePedidoDet() {
+  document.getElementById('modal-pedido-det').classList.remove('open');
+  _currentDetIdx = null;
+}
+
+async function descargarPedidoDetalle() {
+  const o = window._myOrdersList && _currentDetIdx !== null && window._myOrdersList[_currentDetIdx];
+  if (!o) return;
+  const btn = document.getElementById('mpd-btn-dl');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
+  const items = (o.lineas_pedido || []).map(l => {
+    const prod = CATALOG.find(p => p.id === l.producto_codigo);
+    return {
+      product: prod || { n: l.producto_nombre || '', img: null, pr: l.cantidad > 0 ? Math.round((l.subtotal || 0) / l.cantidad) : 0, iva: 13 },
+      qty: l.cantidad
+    };
+  });
+  const fechaStr = o.fecha ? new Date(o.fecha).toLocaleString('es-CR') : '—';
+  await descargarCopiaRecibo({ id: o.id, fecha: fechaStr, items, total: o.total || 0, usuario: currentUser });
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Descargar copia'; }
 }
 
 // Enter key en login
@@ -1008,10 +1181,57 @@ async function loadProductsFromDB() {
         pr: r.precio, img: r.imagen,
         iva: r.iva != null ? r.iva : 13
       }));
+      loadCart(); // restaurar carrito guardado tras tener el catálogo
     }
   } catch(e) {
     console.error('Error cargando productos:', e);
   }
+}
+
+// ============================================================
+//  PERSISTENCIA DEL CARRITO
+// ============================================================
+const CART_KEY = 'catalogo_cart';
+const CART_TTL = 7 * 24 * 60 * 60 * 1000; // 1 semana
+
+function saveCart() {
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify({
+      cedula:  currentUser ? currentUser.cedula : null,
+      items:   cart,
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function loadCart() {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data.savedAt || Date.now() - data.savedAt > CART_TTL) {
+      localStorage.removeItem(CART_KEY); return;
+    }
+    if (currentUser && data.cedula && data.cedula !== currentUser.cedula) return;
+
+    const restored = [];
+    (data.items || []).forEach(function(item) {
+      if (!item.product) return;
+      var live = CATALOG.find(function(p) { return p.id === item.product.id; });
+      if (live) {
+        // Producto activo: usar precio actualizado del catálogo
+        restored.push({ product: live, qty: item.qty });
+      } else {
+        // Producto desactivado: marcar agotado
+        restored.push({ product: Object.assign({}, item.product, { agotado: true }), qty: item.qty });
+      }
+    });
+    if (restored.length > 0) {
+      cart = restored;
+      updateCartBadge();
+      refreshAddButtons();
+    }
+  } catch(e) {}
 }
 
 // ============================================================
@@ -1036,6 +1256,7 @@ function removeFromCart(productId) {
   renderCartItems();
   updateCartBadge();
   refreshAddButtons();
+  saveCart();
 }
 
 function updateQty(productId, delta) {
@@ -1044,6 +1265,7 @@ function updateQty(productId, delta) {
   item.qty = Math.max(1, item.qty + delta);
   renderCartItems();
   updateCartBadge();
+  saveCart();
 }
 
 function updateCartBadge() {
@@ -1105,6 +1327,7 @@ function closeQadd() {
 
 function confirmQadd() {
   _qaddWasNew = false;
+  saveCart();
   refreshAddButtons(); // pintar verde solo al confirmar
   document.getElementById('qadd-overlay').classList.remove('open');
   _qaddId = null;
@@ -1166,16 +1389,33 @@ function renderCartItems() {
     footer.style.display = 'none'; return;
   }
   footer.style.display = 'block';
-  const total = cart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const activeItems = cart.filter(i => !i.product.agotado);
+  const total = activeItems.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
   document.getElementById('cart-total').textContent = '₡' + total.toLocaleString('es-CR');
 
   container.innerHTML = cart.map(item => {
     const p = item.product;
+    const agotado = !!p.agotado;
     const unitPrice = priceIva(p);
     const sub = (unitPrice * item.qty).toLocaleString('es-CR');
     const imgHtml = p.img
       ? `<img src="${escAttr(p.img)}" alt="" onerror="this.style.display='none'">`
       : (p.b==='SEED'||p.b==='SODIET' ? '🍪' : '🧴');
+
+    if (agotado) {
+      return `
+        <div class="cart-item" style="opacity:.45;filter:grayscale(1)">
+          <div class="cart-item-img">${imgHtml}</div>
+          <div class="cart-item-info">
+            <div class="cart-item-name">${escHtml(p.n)}
+              <span style="display:inline-block;margin-left:6px;background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;vertical-align:middle;letter-spacing:.4px">AGOTADO</span>
+            </div>
+            <div class="cart-item-price" style="text-decoration:line-through;color:#9ca3af">₡${unitPrice.toLocaleString('es-CR')} c/u</div>
+          </div>
+          <button class="cart-item-remove" onclick="removeFromCart('${p.id}')" title="Eliminar">✕</button>
+        </div>`;
+    }
+
     return `
       <div class="cart-item">
         <div class="cart-item-img">${imgHtml}</div>
@@ -1193,13 +1433,18 @@ function renderCartItems() {
         <button class="cart-item-remove" onclick="removeFromCart('${p.id}')" title="Eliminar">✕</button>
       </div>`;
   }).join('');
+
+  // Deshabilitar "Enviar a Facturación" si todos los ítems están agotados
+  const sendBtn = document.getElementById('cart-send-btn');
+  if (sendBtn) sendBtn.disabled = activeItems.length === 0;
 }
 
 // ============================================================
 //  PEDIDO
 // ============================================================
 function openOrderModal() {
-  if (cart.length === 0) return;
+  const activeItems = cart.filter(i => !i.product.agotado);
+  if (activeItems.length === 0) return;
   closeCart();
   closeQadd();
   showOrderForm();
@@ -1207,10 +1452,11 @@ function openOrderModal() {
 }
 
 function showOrderForm() {
-  const total = cart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const activeCart = cart.filter(i => !i.product.agotado);
+  const total = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
   const subtotalSinIva = Math.round(total / 1.13);
   const ivaAmt = total - subtotalSinIva;
-  let summaryHtml = cart.map(item => `
+  let summaryHtml = activeCart.map(item => `
     <div class="modal-summary-item">
       <span>${escHtml(item.product.n)} × ${item.qty}</span>
       <span>₡${(priceIva(item.product) * item.qty).toLocaleString('es-CR')}</span>
@@ -1226,11 +1472,12 @@ function showOrderForm() {
 
   document.getElementById('modal-card').innerHTML = `
     <div class="modal-title">📋 Confirmar Pedido</div>
-    <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación y el monto se descontará de tu salario.</div>
+    <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación.</div>
     <div class="modal-summary">${summaryHtml}</div>
-    <div class="modal-notes">
-      <label>Observaciones (opcional)</label>
-      <textarea id="order-notes" placeholder="Ej. Entregar en recepción, el martes…"></textarea>
+    <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:20px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Método de pago</div>
+      <div style="font-size:13px;font-weight:600;color:#1e3a8a">Transferencia Bancaria Martimac</div>
+      <div style="font-size:13px;font-weight:700;color:#1e3a8a;letter-spacing:.5px;margin-top:2px">CR35010200009548363672</div>
     </div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeOrderModal()">Cancelar</button>
@@ -1248,8 +1495,9 @@ async function submitOrder() {
   confirmBtn.disabled = true;
   confirmBtn.textContent = 'Enviando…';
 
-  const notas  = (document.getElementById('order-notes')?.value || '').trim();
-  const total  = cart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const notas      = (document.getElementById('order-notes')?.value || '').trim();
+  const activeCart = cart.filter(i => !i.product.agotado);
+  const total      = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
 
   // Insertar pedido (sin usuario_id — auth libre)
   const { data: pedido, error: pedErr } = await sb.from('pedidos').insert({
@@ -1269,8 +1517,8 @@ async function submitOrder() {
     return;
   }
 
-  // Insertar líneas
-  const lineas = cart.map(item => ({
+  // Insertar líneas (solo ítems activos)
+  const lineas = activeCart.map(item => ({
     pedido_id:        pedido.id,
     producto_codigo:  item.product.id,
     producto_nombre:  item.product.n,
@@ -1280,21 +1528,232 @@ async function submitOrder() {
   }));
   await sb.from('lineas_pedido').insert(lineas);
 
-  // Éxito
+  // Guardar para descarga antes de limpiar
+  _lastOrder = {
+    id:      pedido.id,
+    fecha:   new Date().toLocaleString('es-CR'),
+    items:   activeCart,
+    total:   total,
+    usuario: { ...currentUser }
+  };
+
+  // Éxito — limpiar carrito completo (incluyendo agotados)
   cart = [];
+  saveCart();
   updateCartBadge();
   document.getElementById('modal-card').innerHTML = `
     <div class="order-success">
       <div class="order-success-icon">✅</div>
       <div class="order-success-title">¡Pedido enviado!</div>
       <div class="order-success-sub">
-        Tu pedido fue registrado exitosamente.<br>
-        Facturación lo procesará y el monto de <strong>₡${total.toLocaleString('es-CR')}</strong>
-        será descontado de tu próximo salario.<br><br>
+        Tu pedido fue registrado exitosamente.<br><br>
         Número de pedido: <strong>${pedido.id.slice(0,8).toUpperCase()}</strong>
       </div>
-      <button class="modal-confirm" style="margin-top:24px;width:100%" onclick="closeOrderModal()">Cerrar</button>
+      <div style="display:flex;gap:10px;margin-top:24px">
+        <button class="modal-confirm" style="flex:1;background:#16a34a" id="btn-descargar-recibo" onclick="descargarCopiaRecibo()">⬇ Descargar copia</button>
+        <button class="modal-confirm" style="flex:1" onclick="closeOrderModal()">Cerrar</button>
+      </div>
     </div>`;
+}
+
+// ============================================================
+//  DESCARGA COPIA DE PEDIDO (Canvas → JPG)
+// ============================================================
+async function descargarCopiaRecibo(orderData) {
+  const data = orderData || _lastOrder;
+  if (!data) return;
+  const btn = orderData ? null : document.getElementById('btn-descargar-recibo');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
+
+  const { id, fecha, items, total, usuario } = data;
+  const W = 600, PAD = 36, IMG_S = 48, ROW_H = 68;
+  const subtotalSinIva = Math.round(total / 1.13);
+  const iva = total - subtotalSinIva;
+  const H = 300 + items.length * ROW_H + 140;
+
+  // Cargar imágenes de productos
+  const imgEls = await Promise.all(items.map(item => new Promise(res => {
+    if (!item.product.img) { res(null); return; }
+    const i = new Image(); i.crossOrigin = 'anonymous';
+    i.onload = () => res(i); i.onerror = () => res(null);
+    setTimeout(() => res(null), 4000);
+    i.src = item.product.img;
+  })));
+
+  // Intentar cargar logo
+  const logoEl = await new Promise(res => {
+    const i = new Image(); i.crossOrigin = 'anonymous';
+    i.onload = () => res(i); i.onerror = () => res(null);
+    setTimeout(() => res(null), 4000);
+    i.src = 'https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Martimac_Logo.webp';
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2; canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  // Helper: rounded rect path
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+
+  // Fondo blanco
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+
+  // Header blanco con logo
+  if (logoEl) {
+    const lh = 36, lw = lh * (logoEl.width / logoEl.height);
+    ctx.drawImage(logoEl, PAD, (88 - lh) / 2, lw, lh);
+  } else {
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 18px system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Martimac Distribuidora', PAD, 44);
+  }
+
+  // Número pedido y fecha (derecha)
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#1f2937';
+  ctx.font = 'bold 13px system-ui, sans-serif';
+  ctx.fillText('#' + id.slice(0, 8).toUpperCase(), W - PAD, 32);
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillText(fecha, W - PAD, 56);
+  ctx.textAlign = 'left';
+
+  // Línea divisoria bajo header
+  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, 88); ctx.lineTo(W, 88); ctx.stroke();
+
+  let y = 104;
+
+  // Info usuario
+  ctx.fillStyle = '#1f2937'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(usuario.nombre, PAD, y);
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui, sans-serif';
+  ctx.fillText(usuario.departamento + (usuario.lugar ? '  ·  ' + usuario.lugar : ''), PAD, y + 18);
+  ctx.fillText('Cédula: ' + usuario.cedula, PAD, y + 34);
+  y += 54;
+
+  // Divider
+  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 14;
+
+  // Cabecera columnas
+  ctx.fillStyle = '#9ca3af'; ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('PRODUCTO', PAD + IMG_S + 12, y);
+  ctx.textAlign = 'right';
+  ctx.fillText('SUBTOTAL', W - PAD, y);
+  ctx.textAlign = 'left';
+  y += 12;
+
+  // Items
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]; const p = item.product; const img = imgEls[i];
+
+    // Imagen producto
+    if (img) {
+      ctx.save();
+      rr(PAD, y, IMG_S, IMG_S, 8); ctx.clip();
+      ctx.drawImage(img, PAD, y, IMG_S, IMG_S);
+      ctx.restore();
+    } else {
+      rr(PAD, y, IMG_S, IMG_S, 8);
+      ctx.fillStyle = '#f3f4f6'; ctx.fill();
+      ctx.fillStyle = '#9ca3af'; ctx.font = '22px serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('📦', PAD + IMG_S / 2, y + IMG_S / 2);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+
+    const tx = PAD + IMG_S + 12;
+    // Nombre (truncar si necesario)
+    ctx.fillStyle = '#1f2937'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+    let name = p.n; const maxW = W - tx - PAD - 90;
+    while (ctx.measureText(name).width > maxW && name.length > 6) name = name.slice(0, -1);
+    if (name !== p.n) name += '…';
+    ctx.fillText(name, tx, y + 16);
+
+    ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui, sans-serif';
+    ctx.fillText('Cant: ' + item.qty + '   ₡' + priceIva(p).toLocaleString('es-CR') + ' c/u', tx, y + 34);
+
+    // Subtotal
+    ctx.textAlign = 'right'; ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 14px system-ui, sans-serif';
+    ctx.fillText('₡' + (priceIva(p) * item.qty).toLocaleString('es-CR'), W - PAD, y + 26);
+    ctx.textAlign = 'left';
+
+    y += ROW_H;
+
+    // Separador entre ítems
+    if (i < items.length - 1) {
+      ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(tx, y - 8); ctx.lineTo(W - PAD, y - 8); ctx.stroke();
+    }
+  }
+
+  y += 8;
+  // Divider totales
+  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 16;
+
+  // Subtotal sin IVA
+  ctx.fillStyle = '#6b7280'; ctx.font = '13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('Subtotal sin IVA', PAD, y);
+  ctx.textAlign = 'right'; ctx.fillText('₡' + subtotalSinIva.toLocaleString('es-CR'), W - PAD, y);
+  ctx.textAlign = 'left'; y += 22;
+
+  ctx.fillText('IVA 13%', PAD, y);
+  ctx.textAlign = 'right'; ctx.fillText('₡' + iva.toLocaleString('es-CR'), W - PAD, y);
+  ctx.textAlign = 'left'; y += 20;
+
+  // Caja TOTAL
+  rr(PAD, y, W - PAD * 2, 46, 10);
+  ctx.fillStyle = '#1f2937'; ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 15px system-ui, sans-serif'; ctx.textBaseline = 'middle';
+  ctx.fillText('TOTAL', PAD + 16, y + 23);
+  ctx.textAlign = 'right'; ctx.font = 'bold 18px system-ui, sans-serif';
+  ctx.fillText('₡' + total.toLocaleString('es-CR'), W - PAD - 16, y + 23);
+  ctx.textAlign = 'left'; y += 60;
+
+  // Bloque método de pago
+  rr(PAD, y, W - PAD * 2, 56, 10);
+  ctx.fillStyle = '#eff6ff'; ctx.fill();
+  ctx.strokeStyle = '#bfdbfe'; ctx.lineWidth = 1.5;
+  rr(PAD, y, W - PAD * 2, 56, 10); ctx.stroke();
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#1e40af'; ctx.font = 'bold 10px system-ui, sans-serif';
+  ctx.fillText('MÉTODO DE PAGO', W / 2, y + 16);
+  ctx.fillStyle = '#1e3a8a'; ctx.font = '600 12px system-ui, sans-serif';
+  ctx.fillText('Transferencia Bancaria Martimac', W / 2, y + 32);
+  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.fillText('CR35010200009548363672', W / 2, y + 47);
+  ctx.textAlign = 'left';
+  y += 68;
+
+  // Footer
+  ctx.fillStyle = '#d1d5db'; ctx.font = '10px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  ctx.fillText('Martimac Distribuidora  ·  Generado el ' + new Date().toLocaleDateString('es-CR'), W / 2, y);
+  ctx.textAlign = 'left';
+
+  // Descargar
+  const link = document.createElement('a');
+  link.download = 'Pedido_' + id.slice(0, 8).toUpperCase() + '.jpg';
+  link.href = canvas.toDataURL('image/jpeg', 0.93);
+  link.click();
+
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Descargar copia'; }
 }
 
 // ============================================================
@@ -1518,6 +1977,65 @@ function clearSearch() {
   inp.focus();
   goToFullCatalog();
 }
+
+// ============================================================
+//  TOUCH GESTURES
+// ============================================================
+(function() {
+  var sx = 0, sy = 0, tgt = null;
+  var TAB_ORDER = [null, 'ALIMENTOS', 'CAPILAR', 'FACIAL', 'CORPORAL', 'PACKS'];
+
+  function isScrollableX(el) {
+    while (el && el !== document.body) {
+      var s = window.getComputedStyle(el);
+      if (s.overflowX === 'auto' || s.overflowX === 'scroll') return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+
+    // Swipe abajo → cerrar modales por el fondo
+    if (ady > 70 && dy > 0 && ady > adx) {
+      var cartOverlay  = document.getElementById('cart-overlay');
+      var qaddOverlay  = document.getElementById('qadd-overlay');
+      var orderModal   = document.getElementById('order-modal');
+      var mpModal      = document.getElementById('modal-mis-pedidos');
+      var cartCard     = document.querySelector('.cart-modal');
+      var qaddCard     = document.querySelector('.qadd-card');
+      var orderCard    = document.querySelector('#order-modal .modal-card');
+      var mpCard       = document.querySelector('.mp-card');
+      if (cartOverlay && cartOverlay.classList.contains('open')  && cartCard  && !cartCard.contains(tgt))  closeCart();
+      if (qaddOverlay && qaddOverlay.classList.contains('open')  && qaddCard  && !qaddCard.contains(tgt))  closeQadd();
+      if (orderModal  && orderModal.classList.contains('open')   && orderCard && !orderCard.contains(tgt)) orderModal.classList.remove('open');
+      var detModal = document.getElementById('modal-pedido-det');
+      var detCard  = document.querySelector('.mpd-card');
+      if (detModal && detModal.classList.contains('open') && detCard && !detCard.contains(tgt)) closePedidoDet();
+      else if (mpModal && mpModal.classList.contains('open') && mpCard && !mpCard.contains(tgt)) closeMyOrders();
+      return;
+    }
+
+    // Swipe horizontal → cambiar categoría
+    if (adx < 60 || ady > adx * 0.65 || isScrollableX(tgt)) return;
+    var idx = TAB_ORDER.indexOf(activeTab);
+    if (idx === -1) idx = 0;
+    if (dx < 0 && idx < TAB_ORDER.length - 1) {
+      var next = TAB_ORDER[idx + 1];
+      if (next) selectTab(next); else goHome();
+    } else if (dx > 0 && idx > 0) {
+      var prev = TAB_ORDER[idx - 1];
+      if (prev) selectTab(prev); else goHome();
+    }
+  }, { passive: true });
+})();
 
 // ============================================================
 //  VIEWPORT ZOOM — pantallas menores a 550px

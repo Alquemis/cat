@@ -116,6 +116,40 @@
   .img-status-ok  { color:#059669; font-weight:600; }
   .img-status-err { color:#dc2626; }
   .img-status-ing { color:#6b7280; }
+
+  /* ── PRODUCT ROWS ── */
+  .products-list { display:flex;flex-direction:column;gap:0; }
+  .product-row {
+    display:flex;align-items:center;gap:16px;
+    background:#fff;border-bottom:1px solid #f0f2f5;
+    padding:14px 20px;transition:background .15s;
+  }
+  .product-row:first-child { border-radius:14px 14px 0 0; }
+  .product-row:last-child  { border-radius:0 0 14px 14px; border-bottom:none; }
+  .product-row:only-child  { border-radius:14px; border-bottom:none; }
+  .product-row:hover { background:#fafbfc; }
+  .pr-thumb {
+    width:60px;height:60px;flex-shrink:0;border-radius:10px;
+    object-fit:contain;background:#f3f4f6;border:1px solid #e5e7eb;
+  }
+  .pr-thumb-empty {
+    width:60px;height:60px;flex-shrink:0;border-radius:10px;
+    background:#f3f4f6;border:1px solid #e5e7eb;display:flex;
+    align-items:center;justify-content:center;font-size:22px;color:#d1d5db;
+  }
+  .pr-info { flex:1;min-width:0; }
+  .pr-name {
+    font-size:14px;font-weight:700;color:#1f2937;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:3px;
+  }
+  .pr-meta { font-size:12px;color:#9ca3af; }
+  .pr-meta b { color:#6b7280; }
+  .pr-code { font-family:monospace;font-size:11px;color:#9ca3af;margin-top:2px; }
+  .pr-price { font-size:16px;font-weight:800;color:#1f2937;white-space:nowrap;flex-shrink:0; }
+  .pr-actions { display:flex;gap:8px;flex-shrink:0; }
+  .products-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  .products-empty { text-align:center;padding:60px 20px;color:#9ca3af;background:#fff;border-radius:14px;border:1px solid #e5e7eb; }
 </style>
 </head>
 <body>
@@ -174,19 +208,10 @@
         <span>🔍</span>
         <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
       </div>
-      <button class="btn btn-secondary" onclick="importBaseProducts()">⬆ Importar lista base</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>Imagen</th><th>Código</th><th>Nombre</th><th>Marca</th>
-          <th>Categoría</th><th>Precio (₡)</th><th>Estado</th><th>Acciones</th>
-        </tr></thead>
-        <tbody id="products-tbody">
-          <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
-        </tbody>
-      </table>
+    <div id="products-list-wrap">
+      <div class="products-empty" id="products-loading">Cargando productos…</div>
     </div>
   </div>
 
@@ -448,8 +473,14 @@ async function loadStats() {
 
 // ── PRODUCTOS ────────────────────────────────────────────
 async function loadProducts() {
+  document.getElementById('products-list-wrap').innerHTML =
+    '<div class="products-empty" id="products-loading">Cargando productos…</div>';
   const { data, error } = await sb.from('productos').select('*').order('nombre');
-  if (error) { console.error(error); return; }
+  if (error) {
+    document.getElementById('products-list-wrap').innerHTML =
+      '<div class="products-empty">Error al cargar productos. Verifica la conexión.</div>';
+    console.error(error); return;
+  }
   allProducts = data || [];
   renderProducts(allProducts);
 }
@@ -464,25 +495,33 @@ function filterProducts() {
 }
 
 function renderProducts(list) {
-  const tbody = document.getElementById('products-tbody');
+  const wrap = document.getElementById('products-list-wrap');
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin productos. Usa "Importar lista base" o crea uno nuevo.</td></tr>';
+    wrap.innerHTML = '<div class="products-empty">Sin productos. Crea uno con el botón <strong>+ Nuevo producto</strong>.</div>';
     return;
   }
-  tbody.innerHTML = list.map(p => `
-    <tr>
-      <td>${p.imagen ? `<img src="${esc(p.imagen)}" class="product-thumb" onerror="this.style.display='none'">` : '—'}</td>
-      <td><code style="font-size:12px">${esc(p.codigo)}</code></td>
-      <td style="max-width:220px;font-weight:600">${esc(p.nombre)}</td>
-      <td>${esc(p.marca||'—')}</td>
-      <td>${esc(p.categoria||'—')}</td>
-      <td style="font-weight:700">₡${(p.precio||0).toLocaleString('es-CR')}</td>
-      <td><span class="badge ${p.activo?'badge-green':'badge-gray'}">${p.activo?'Activo':'Inactivo'}</span></td>
-      <td>
-        <button class="btn btn-sm btn-secondary" onclick="editProduct('${esc(p.codigo)}')">✏ Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${esc(p.codigo)}','${esc(p.nombre)}')" style="margin-left:6px">🗑</button>
-      </td>
-    </tr>`).join('');
+  const rows = list.map(p => {
+    const imgHtml = p.imagen
+      ? `<img src="${esc(p.imagen)}" class="pr-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="pr-thumb-empty" style="display:none">📦</div>`
+      : `<div class="pr-thumb-empty">📦</div>`;
+    const meta = [p.marca, p.spc, p.categoria, p.subcategoria].filter(Boolean).join(' · ');
+    return `
+      <div class="product-row">
+        <div style="display:flex;align-items:center;gap:0;flex-shrink:0">${imgHtml}</div>
+        <div class="pr-info">
+          <div class="pr-name">${esc(p.nombre)}</div>
+          ${meta ? `<div class="pr-meta">${esc(meta)}</div>` : ''}
+          <div class="pr-code">${esc(p.codigo)}</div>
+        </div>
+        <span class="badge ${p.activo?'badge-green':'badge-gray'}" style="flex-shrink:0">${p.activo?'Activo':'Inactivo'}</span>
+        <div class="pr-price">₡${(p.precio||0).toLocaleString('es-CR')}</div>
+        <div class="pr-actions">
+          <button class="btn btn-sm btn-secondary" onclick="editProduct('${esc(p.codigo)}')">✏ Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProduct('${esc(p.codigo)}','${esc(p.nombre)}')">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="products-wrap"><div class="products-list">${rows}</div></div>`;
 }
 
 function openProductModal(product) {
@@ -559,26 +598,6 @@ async function deleteProduct(codigo, nombre) {
   if (!confirm(`¿Eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
   const { error } = await sb.from('productos').delete().eq('codigo', codigo);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadProducts();
-  await loadStats();
-}
-
-// Importar PRODUCTS del catálogo base
-async function importBaseProducts() {
-  const { count } = await sb.from('productos').select('*', {count:'exact',head:true});
-  if (count > 0) {
-    if (!confirm(`La tabla ya tiene ${count} productos.\n¿Deseas agregar los que falten de la lista base?`)) return;
-  }
-  const BASE_PRODUCTS = [{"id":"PP088006","n":"SED 6 X 35G GALLETA AVENA FRUTOS ROJOS","b":"SEED","spc":"Alimentos","c":"Galletas","s":"Galleta Dulce","pr":1094,"img":"../Imagenes/Seed/PP088006.webp"},{"id":"PP088008","n":"BFA 30ML SERUM FACIAL BIO COLAGENO","b":"BIOLAND","spc":"Cuidado personal","c":"Facial","s":"Cuidado","pr":5119,"img":"../Imagenes/Cuidado%20Personal/Suero Facial/PP088008.jpg"},{"id":"PP088013","n":"BCA 400ML 2 EN 1 ROMERO","b":"BIOLAND","spc":"Cuidado personal","c":"Capilar","s":"Shampoo","pr":3172,"img":"../Imagenes/Cuidado%20Personal/2 en 1/PP088013.jpg"},{"id":"PP088022","n":"BCA 400ML SHAMPOO ALOE VERA","b":"BIOLAND","spc":"Cuidado personal","c":"Capilar","s":"Shampoo","pr":3172,"img":"../Imagenes/Cuidado%20Personal/Shampoo/PP088022.jpg"},{"id":"PP088036","n":"TDV 400ML SHAMPOO ROMERO","b":"TERRE DE VIE","spc":"Cuidado personal","c":"Capilar","s":"Shampoo","pr":3730,"img":"../Imagenes/SHA%20Romero.jpg"},{"id":"PT067014","n":"BFA 150ML CREMA ALOE VERA HIDRATANTE","b":"BIOLAND","spc":"Cuidado personal","c":"Facial","s":"Cuidado","pr":2721,"img":"../Imagenes/Cuidado%20Personal/Crema Facial/PT067014.jpg"},{"id":"PT096001","n":"SED 100G PALITO AJONJOLI","b":"SEED","spc":"Alimentos","c":"Palitos","s":"Palito orignal","pr":724,"img":"../Imagenes/Seed/PT096001.webp"},{"id":"PT096052","n":"SED 300G GRANOLA MIEL ALMENDRAS","b":"SEED","spc":"Alimentos","c":"Granolas y Barras","s":"Granola","pr":1456,"img":"../Imagenes/Seed/PT096052.webp"}];
-
-  const toInsert = BASE_PRODUCTS.map(p => ({
-    codigo: p.id, nombre: p.n, marca: p.b, spc: p.spc,
-    categoria: p.c, subcategoria: p.s, precio: p.pr, imagen: p.img, activo: true
-  }));
-
-  const { error } = await sb.from('productos').upsert(toInsert, { onConflict: 'codigo' });
-  if (error) { alert('Error al importar: ' + error.message); return; }
-  alert(`✅ Importación completada.\n\nPara importar el catálogo completo (~150 productos), ve al README y sigue las instrucciones de "Importar catálogo completo".`);
   await loadProducts();
   await loadStats();
 }

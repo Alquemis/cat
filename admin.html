@@ -110,6 +110,12 @@
     .form-grid { grid-template-columns:1fr; }
     .topbar { padding:12px 16px; }
   }
+
+  /* ── IMAGEN UPLOAD ── */
+  #img-upload-btn:hover { background:#111827 !important; }
+  .img-status-ok  { color:#059669; font-weight:600; }
+  .img-status-err { color:#dc2626; }
+  .img-status-ing { color:#6b7280; }
 </style>
 </head>
 <body>
@@ -297,8 +303,18 @@
         <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…">
       </div>
       <div class="form-field full">
-        <label>URL Imagen</label>
-        <input type="text" id="f-imagen" placeholder="../Imagenes/…">
+        <label>Imagen</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="f-imagen" placeholder="URL se rellena al subir imagen…" style="flex:1">
+          <label id="img-upload-btn" style="white-space:nowrap;padding:10px 14px;background:#1f2937;color:#fff;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">
+            📷 Subir imagen
+          </label>
+          <input type="file" id="img-file-input" accept="image/*" style="display:none">
+        </div>
+        <div id="img-upload-status" style="font-size:12px;margin-top:6px;display:none;"></div>
+        <div id="img-preview-wrap" style="margin-top:10px;display:none;">
+          <img id="img-preview" style="max-width:120px;max-height:120px;border-radius:8px;border:1.5px solid #e5e7eb;object-fit:cover;">
+        </div>
       </div>
       <div class="form-field">
         <label>Estado</label>
@@ -482,6 +498,15 @@ function openProductModal(product) {
   document.getElementById('f-precio').value      = product?.precio      || '';
   document.getElementById('f-imagen').value      = product?.imagen      || '';
   document.getElementById('f-activo').value      = product?.activo === false ? 'false' : 'true';
+  // Resetear estado del upload de imagen
+  document.getElementById('img-upload-status').style.display = 'none';
+  document.getElementById('img-preview-wrap').style.display  = 'none';
+  // Mostrar preview si ya tiene URL
+  const imgUrl = product?.imagen || '';
+  if (imgUrl) {
+    document.getElementById('img-preview').src      = imgUrl;
+    document.getElementById('img-preview-wrap').style.display = 'block';
+  }
   document.getElementById('product-modal').classList.add('open');
 }
 
@@ -760,6 +785,107 @@ async function saveConfig() {
     // Actualizar sesión — no cerrar al cambiar credenciales
   }
 }
+
+// ── IMAGEN UPLOAD (conversión a WebP en browser) ─────────
+const IMG_MAX_PX  = 1200;
+const IMG_QUALITY = 0.85;
+const IMG_BUCKET  = 'imagenes';
+
+function imgToWebP(file) {
+  return new Promise((resolve, reject) => {
+    const img    = new Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > IMG_MAX_PX || h > IMG_MAX_PX) {
+        const r = Math.min(IMG_MAX_PX / w, IMG_MAX_PX / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Conversión fallida')), 'image/webp', IMG_QUALITY);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('No se pudo leer la imagen')); };
+    img.src = objUrl;
+  });
+}
+
+async function uploadProductImage(file) {
+  const codigo = document.getElementById('f-codigo').value.trim().toUpperCase();
+  const status = document.getElementById('img-upload-status');
+  const preview = document.getElementById('img-preview-wrap');
+
+  if (!codigo) {
+    status.style.display = 'block';
+    status.className = 'img-status-err';
+    status.textContent = '⚠ Ingresa primero el Código del producto.';
+    return;
+  }
+
+  status.style.display = 'block';
+  status.className = 'img-status-ing';
+  status.textContent = 'Convirtiendo a WebP…';
+  preview.style.display = 'none';
+
+  try {
+    const webpBlob = await imgToWebP(file);
+    const origKB   = Math.round(file.size / 1024);
+    const newKB    = Math.round(webpBlob.size / 1024);
+
+    status.textContent = `Subiendo… (${origKB}KB → ${newKB}KB)`;
+
+    const filename    = codigo.toLowerCase() + '.webp';
+    const encodedName = encodeURIComponent(filename);
+    const uploadUrl   = `${SUPABASE_URL}/storage/v1/object/${IMG_BUCKET}/${encodedName}`;
+
+    const resp = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'image/webp',
+        'x-upsert': 'true',
+      },
+      body: webpBlob
+    });
+
+    if (!resp.ok) {
+      const txt = await resp.text();
+      throw new Error(`[${resp.status}] ${txt.slice(0, 100)}`);
+    }
+
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${IMG_BUCKET}/${filename}`;
+    document.getElementById('f-imagen').value = publicUrl;
+
+    // Mostrar preview
+    const previewImg = document.getElementById('img-preview');
+    previewImg.src = URL.createObjectURL(webpBlob);
+    preview.style.display = 'block';
+
+    status.className = 'img-status-ok';
+    status.textContent = `✅ Subida correctamente como ${filename} (${newKB}KB)`;
+
+  } catch(e) {
+    status.className = 'img-status-err';
+    status.textContent = '✗ Error: ' + e.message;
+  }
+}
+
+// Conectar el input de archivo al handler
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput   = document.getElementById('img-file-input');
+  const uploadLabel = document.getElementById('img-upload-btn');
+
+  uploadLabel.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) uploadProductImage(e.target.files[0]);
+    e.target.value = ''; // permitir re-seleccionar el mismo archivo
+  });
+});
 
 // ── HELPER ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

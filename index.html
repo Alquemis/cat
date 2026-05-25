@@ -273,6 +273,18 @@
     cursor: pointer; transition: background 0.2s;
   }
   .mpd-btn-close:hover { background: #e5e7eb; }
+  .mpd-btn-del {
+    padding: 12px 14px; background: #fee2e2; color: #dc2626;
+    border: none; border-radius: 12px; font-size: 16px;
+    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .mpd-btn-del:hover { background: #fecaca; }
+  .mpc-del-btn {
+    background: none; border: none; cursor: pointer; color: #d1d5db;
+    font-size: 15px; padding: 4px 6px; border-radius: 6px;
+    transition: color 0.15s, background 0.15s; flex-shrink: 0;
+  }
+  .mpc-del-btn:hover { color: #dc2626; background: #fee2e2; }
 
   /* Cart button */
   .cart-btn {
@@ -666,7 +678,7 @@
     .cart-footer { padding: 14px 16px; }
 
     /* User */
-    .user-name { display: none; }
+    .user-name { display: inline; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .user-chip { padding: 6px 10px 6px 8px; }
   }
 
@@ -790,6 +802,20 @@
     <div class="mpd-footer">
       <button class="mpd-btn-dl" id="mpd-btn-dl" onclick="descargarPedidoDetalle()">⬇ Descargar copia</button>
       <button class="mpd-btn-close" onclick="closePedidoDet()">Cerrar</button>
+      <button class="mpd-btn-del" id="mpd-btn-del" onclick="pedidoDetDelete()" title="Eliminar de mi historial">🗑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== POPUP ELIMINAR PEDIDO ========== -->
+<div class="modal-overlay" id="del-order-modal" style="z-index:900">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
+    <div style="font-size:34px;margin-bottom:12px;" id="del-order-icon">🗑</div>
+    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:8px;">¿Eliminar este pedido?</div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:8px;" id="del-order-msg"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" onclick="closeDelOrderModal()">Cancelar</button>
+      <button style="flex:1;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" id="del-order-confirm-btn" onclick="confirmDeleteOrder()">Eliminar</button>
     </div>
   </div>
 </div>
@@ -920,6 +946,9 @@ async function onLogin(session) {
   // Ocultar overlay de login
   document.getElementById('login-overlay').classList.add('hidden');
 
+  // Iniciar vigilancia de sesión (detecta eliminación por superuser)
+  startSessionWatchdog();
+
   // Intentar cargar productos desde Supabase
   await loadProductsFromDB();
 
@@ -929,6 +958,7 @@ async function onLogin(session) {
 }
 
 function onLogout() {
+  stopSessionWatchdog();
   currentUser = null;
   cart = [];
   localStorage.removeItem('catalogo_session');
@@ -1001,6 +1031,34 @@ function doLogout() {
   onLogout();
 }
 
+// ── SESSION WATCHDOG ──────────────────────────────────────
+// Verifica cada 30 s si el usuario sigue existiendo en la BD.
+// Si fue eliminado por el superuser, cierra sesión automáticamente.
+let _watchdogTimer = null;
+
+function startSessionWatchdog() {
+  stopSessionWatchdog();
+  _watchdogTimer = setInterval(async () => {
+    if (!currentUser) { stopSessionWatchdog(); return; }
+    try {
+      const { data } = await sb
+        .from('usuarios')
+        .select('cedula')
+        .eq('cedula', currentUser.cedula)
+        .maybeSingle();
+      if (!data) {
+        // Usuario eliminado — cerrar sesión silenciosamente
+        stopSessionWatchdog();
+        onLogout();
+      }
+    } catch(_) { /* ignorar errores de red, reintentar en el próximo tick */ }
+  }, 30000);
+}
+
+function stopSessionWatchdog() {
+  if (_watchdogTimer) { clearInterval(_watchdogTimer); _watchdogTimer = null; }
+}
+
 // ── USER MENU DROPDOWN ────────────────────────────────────
 function toggleUserMenu(e) {
   e.stopPropagation();
@@ -1035,6 +1093,7 @@ async function loadMyOrders() {
       .from('pedidos')
       .select('*, lineas_pedido(*)')
       .eq('usuario_email', currentUser.cedula)
+      .neq('oculto_usuario', true)
       .order('fecha', { ascending: false });
     if (error) throw error;
     renderMyOrders(data || []);
@@ -1052,8 +1111,10 @@ function renderMyOrders(list) {
   window._myOrdersList = list;
   const statusColors = {
     pendiente: 'background:#fef3c7;color:#92400e',
-    facturado: 'background:#dcfce7;color:#166534'
+    facturado: 'background:#dcfce7;color:#166534',
+    cancelado: 'background:#fee2e2;color:#dc2626'
   };
+  const statusLabel = { pendiente: 'Pendiente', facturado: 'Por entregar', cancelado: 'Rechazado' };
   body.innerHTML = list.map((o, idx) => {
     const num = (o.id || '').slice(0, 8).toUpperCase();
     const fechaRaw = o.fecha ? new Date(o.fecha) : null;
@@ -1061,14 +1122,16 @@ function renderMyOrders(list) {
       ? fechaRaw.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
       : '—';
     const sColor = statusColors[o.estado] || 'background:#f3f4f6;color:#6b7280';
+    const sLabel = statusLabel[o.estado] || (o.estado || '');
     const total = (o.total || 0).toLocaleString('es-CR');
     return `<div class="mpc-row" id="mpc-row-${idx}" onclick="openPedidoDet(${idx})">
       <div class="mpc-left">
         <div class="mpc-num">#${num}</div>
         <div class="mpc-date">${fecha}</div>
       </div>
-      <span class="mpc-status" style="${sColor}">${escHtml(o.estado || '')}</span>
+      <span class="mpc-status" style="${sColor}">${sLabel}</span>
       <div class="mpc-total">₡${total}</div>
+      <button class="mpc-del-btn" onclick="event.stopPropagation();pedidoDeleteConfirm(${idx})" title="Eliminar de mi historial">🗑</button>
       <span class="mpc-arrow">›</span>
     </div>`;
   }).join('');
@@ -1088,8 +1151,10 @@ function openPedidoDet(idx) {
   _currentDetIdx = idx;
   const statusColors = {
     pendiente: 'background:#fef3c7;color:#92400e',
-    facturado: 'background:#dcfce7;color:#166534'
+    facturado: 'background:#dcfce7;color:#166534',
+    cancelado: 'background:#fee2e2;color:#dc2626'
   };
+  const statusLabel = { pendiente: 'Pendiente', facturado: 'Por entregar', cancelado: 'Rechazado' };
   const sColor = statusColors[o.estado] || 'background:#f3f4f6;color:#6b7280';
   const fechaRaw = o.fecha ? new Date(o.fecha) : null;
   const fecha = fechaRaw
@@ -1098,7 +1163,7 @@ function openPedidoDet(idx) {
   document.getElementById('mpd-num').textContent   = '#' + (o.id || '').slice(0, 8).toUpperCase();
   document.getElementById('mpd-fecha').textContent = fecha;
   const statusEl = document.getElementById('mpd-status');
-  statusEl.textContent = o.estado || '';
+  statusEl.textContent = statusLabel[o.estado] || o.estado || '';
   statusEl.style.cssText = sColor;
 
   const subtotalSinIva = Math.round((o.total || 0) / 1.13);
@@ -1140,6 +1205,54 @@ function openPedidoDet(idx) {
 function closePedidoDet() {
   document.getElementById('modal-pedido-det').classList.remove('open');
   _currentDetIdx = null;
+}
+
+// ── ELIMINAR PEDIDO DEL HISTORIAL ────────────────────────
+let _delOrderIdx = null;
+
+function pedidoDeleteConfirm(idx) {
+  _delOrderIdx = idx;
+  const o = window._myOrdersList && window._myOrdersList[idx];
+  if (!o) return;
+  const cancelado = o.estado === 'cancelado';
+  const msgEl = document.getElementById('del-order-msg');
+  if (cancelado) {
+    msgEl.innerHTML = 'El pedido desaparecerá de tu historial.';
+  } else {
+    msgEl.innerHTML = 'El pedido desaparecerá de tu historial, pero <strong>no queda cancelado</strong> — seguirá visible en facturación y se tomará en cuenta en el total a cobrar.';
+  }
+  document.getElementById('del-order-modal').classList.add('open');
+}
+
+function pedidoDetDelete() {
+  if (_currentDetIdx === null) return;
+  pedidoDeleteConfirm(_currentDetIdx);
+}
+
+function closeDelOrderModal() {
+  document.getElementById('del-order-modal').classList.remove('open');
+  _delOrderIdx = null;
+}
+
+async function confirmDeleteOrder() {
+  const idx = _delOrderIdx;
+  const o = window._myOrdersList && window._myOrdersList[idx];
+  if (!o) return;
+  const btn = document.getElementById('del-order-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Eliminando…';
+
+  const { error } = await sb.from('pedidos').update({ oculto_usuario: true }).eq('id', o.id);
+
+  btn.disabled = false; btn.textContent = 'Eliminar';
+  closeDelOrderModal();
+  if (error) { alert('Error: ' + error.message); return; }
+
+  // Si el detalle estaba abierto en este pedido, cerrarlo
+  if (_currentDetIdx === idx) closePedidoDet();
+
+  // Quitar de la lista local y re-renderizar
+  window._myOrdersList.splice(idx, 1);
+  renderMyOrders(window._myOrdersList);
 }
 
 async function descargarPedidoDetalle() {

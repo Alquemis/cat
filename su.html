@@ -27,11 +27,11 @@
   .login-error.show { display:block; }
 
   /* ── LAYOUT ── */
-  .topbar { background:#4c1d95;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
-  .topbar-brand { font-size:17px;font-weight:700; }
+  .topbar { background:#4c1d95;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
   .topbar-brand span { font-size:11px;font-weight:400;color:#c4b5fd;margin-left:10px; }
-  .topbar-right { display:flex;align-items:center;gap:16px; }
-  .topbar-user { font-size:13px;color:#ddd6fe; }
+  .topbar-right { display:flex;align-items:center;gap:16px;flex-shrink:0; }
+  .topbar-user { font-size:13px;color:#ddd6fe;white-space:nowrap; }
   .topbar-logout { background:#5b21b6;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer; }
   .topbar-logout:hover { background:#6d28d9; }
 
@@ -44,9 +44,9 @@
 
   /* ── CARDS ── */
   .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px; }
-  .stat-card { background:#fff;border-radius:14px;padding:20px 24px;border:1px solid #e5e7eb; }
-  .stat-value { font-size:32px;font-weight:800;color:#1f2937; }
-  .stat-label { font-size:13px;color:#6b7280;margin-top:4px; }
+  .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:22px;font-weight:800;color:#1f2937; }
+  .stat-label { font-size:12px;color:#6b7280;margin-top:3px; }
 
   /* ── TOOLBAR ── */
   .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
@@ -134,7 +134,7 @@
     .page-tab { padding:14px 16px;font-size:13px;white-space:nowrap;flex-shrink:0; }
     .container { padding:20px 16px; }
     .stat-grid { grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px; }
-    .stat-value { font-size:26px; }
+    .stat-value { font-size:20px; }
     .toolbar { gap:8px; }
     .search-field { flex-basis:100%;order:-1; }
     .table-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
@@ -148,12 +148,26 @@
     .topbar-brand { font-size:14px; }
     .topbar-logout { padding:6px 10px;font-size:12px; }
     .page-tab { padding:12px 12px;font-size:12px; }
-    .stat-card { padding:16px 14px; }
-    .stat-value { font-size:22px; }
-    .stat-label { font-size:12px; }
+    .stat-card { padding:12px 12px; }
+    .stat-value { font-size:18px; }
+    .stat-label { font-size:11px; }
     .btn { padding:9px 12px;font-size:13px; }
     .btn-sm { padding:5px 10px;font-size:11px; }
   }
+
+  /* ── TOAST ── */
+  #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
+    white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
+  #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  #app-toast.toast-error { background:#dc2626; }
+  #app-toast.toast-ok    { background:#16a34a; }
+  #app-toast.toast-warn  { background:#d97706; }
+
+  /* ── CONFIRM MODAL ── */
+  #app-confirm { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:8000;display:none;align-items:center;justify-content:center;padding:20px; }
+  #app-confirm.open { display:flex; }
 
   /* ── IMAGEN UPLOAD ── */
   #img-upload-btn:hover { background:#111827 !important; }
@@ -245,6 +259,8 @@
     <div class="stat-grid" style="margin-bottom:20px">
       <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
+      <div class="stat-card" style="border-color:#fca5a5"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
+      <div class="stat-card" style="border-color:#6ee7b7"><div class="stat-value" style="color:#059669" id="stat-orders-facturado">—</div><div class="stat-label">Total facturado (₡)</div></div>
     </div>
     <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
       <button id="otab-pend" onclick="showOrdersTab('pend')"
@@ -430,6 +446,22 @@
   </div>
 
 </div><!-- /container -->
+
+<!-- TOAST -->
+<div id="app-toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div id="app-confirm">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
+    <div style="font-size:34px;margin-bottom:12px;" id="app-confirm-icon">⚠️</div>
+    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:8px;" id="app-confirm-title"></div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:24px;" id="app-confirm-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" onclick="_confirmReject()">Cancelar</button>
+      <button style="flex:1;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" id="app-confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <!-- PRODUCT MODAL -->
 <div class="modal-overlay" id="product-modal">
@@ -741,12 +773,17 @@ async function deleteProduct(codigo, nombre) {
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','facturado').order('fecha', {ascending:false})
+    sb.from('pedidos').select('*, lineas_pedido(*)').in('estado',['facturado','cancelado']).order('fecha', {ascending:false})
   ]);
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
-  document.getElementById('stat-orders').textContent       = allAdminPend.length;
-  document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
+  const cancelados  = allAdminHist.filter(o => o.estado === 'cancelado');
+  const facturados = allAdminHist.filter(o => o.estado === 'facturado');
+  const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('stat-orders').textContent           = allAdminPend.length;
+  document.getElementById('stat-orders-total').textContent     = allAdminPend.length + allAdminHist.length;
+  document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
+  document.getElementById('stat-orders-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
   const badge = document.getElementById('obadge-pend');
   if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
   filterAdminPend(); filterAdminHist();
@@ -785,15 +822,19 @@ function renderAdminOrders(tbodyId, list) {
   const tbody = document.getElementById(tbodyId);
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return; }
   tbody.innerHTML = list.map(o => {
-    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
-    const num = o.id.slice(0,8).toUpperCase();
-    return `<tr>
+    const cancelado  = o.estado === 'cancelado';
+    const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const num        = o.id.slice(0,8).toUpperCase();
+    const rowStyle   = cancelado ? 'background:#fef2f2;' : '';
+    const badgeIgn   = cancelado ? ' <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;background:#fee2e2;color:#dc2626;margin-left:4px">CANCELADO</span>' : '';
+    const totalStyle = cancelado ? 'font-weight:700;color:#dc2626;text-decoration:line-through' : 'font-weight:700';
+    return `<tr style="${rowStyle}">
       <td>${fecha}</td>
-      <td><code style="font-size:12px">${num}</code></td>
+      <td><code style="font-size:12px">${num}</code>${badgeIgn}</td>
       <td style="font-weight:600">${esc(o.usuario_nombre||'—')}</td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
-      <td style="font-weight:700">₡${(o.total||0).toLocaleString('es-CR')}</td>
+      <td style="${totalStyle}">₡${(o.total||0).toLocaleString('es-CR')}</td>
       <td><button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button></td>
     </tr>`;
   }).join('');

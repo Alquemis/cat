@@ -67,6 +67,9 @@
   .btn-green { background:#16a34a;color:#fff; }
   .btn-green:hover { background:#15803d; }
   .btn-green:disabled { background:#9ca3af;cursor:not-allowed; }
+  .btn-danger-soft { background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5; }
+  .btn-danger-soft:hover { background:#fecaca; }
+  .btn-danger-soft:disabled { background:#f3f4f6;color:#9ca3af;cursor:not-allowed; }
 
   /* ── BADGES ── */
   .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap; }
@@ -86,8 +89,8 @@
 
   /* ── STAT ── */
   .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px; }
-  .stat-card { background:#fff;border-radius:14px;padding:18px 22px;border:1px solid #e5e7eb; }
-  .stat-value { font-size:28px;font-weight:800;color:#1f2937; }
+  .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:22px;font-weight:800;color:#1f2937; }
   .stat-label { font-size:12px;color:#6b7280;margin-top:2px; }
 
   /* ── RESPONSIVE ── */
@@ -157,6 +160,10 @@
       <div class="stat-value" id="chip-total-pedidos">—</div>
       <div class="stat-label">Total pedidos</div>
     </div>
+    <div class="stat-card" style="border-color:#fca5a5;background:#fef2f2;">
+      <div class="stat-value" style="color:#dc2626" id="chip-total-cancelados">0</div>
+      <div class="stat-label" style="color:#dc2626">Cancelados</div>
+    </div>
     <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;">
       <div class="stat-value" style="color:#15803d" id="chip-total-facturado">₡0</div>
       <div class="stat-label" style="color:#15803d">Total facturado</div>
@@ -220,9 +227,10 @@
         <th>Lugar</th>
         <th>Total</th>
         <th>Detalle</th>
+        <th>Acción</th>
       </tr></thead>
       <tbody id="hist-tbody">
-        <tr><td colspan="7" class="empty-table">Cargando…</td></tr>
+        <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
       </tbody>
     </table>
   </div>
@@ -253,6 +261,19 @@
 <!-- MODAL DETALLE -->
 <div class="modal-overlay" id="detail-modal" onclick="this.classList.remove('open')">
   <div class="modal-card" onclick="event.stopPropagation()" id="detail-card"></div>
+</div>
+
+<!-- CONFIRMAR CANCELACIÓN -->
+<div class="modal-overlay" id="cancel-confirm-modal">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:380px;padding:28px 28px 24px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:8px;">¿Cancelar este pedido?</div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:24px;" id="cancel-confirm-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" style="flex:1;padding:12px;" onclick="closeCancelConfirm()">No, volver</button>
+      <button class="btn" id="cancel-confirm-btn" style="flex:1;padding:12px;background:#dc2626;color:#fff;" onclick="confirmCancelar()">Sí, cancelar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -308,8 +329,8 @@ function checkSession() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-function init() {
-  loadPendientes();
+async function init() {
+  await Promise.all([loadPendientes(), loadHistorial()]);
 }
 
 // ── TABS ──────────────────────────────────────────────────────
@@ -339,15 +360,7 @@ async function loadPendientes() {
   filterPendientes();
 }
 
-function updatePendienteStats() {
-  const count = allPendientes.length;
-  const total = allPendientes.reduce((s, o) => s + (o.total || 0), 0);
-  document.getElementById('stat-count').textContent = count;
-  document.getElementById('stat-total').textContent = '₡' + total.toLocaleString('es-CR');
-  const badge = document.getElementById('badge-pendientes');
-  badge.textContent = count;
-  badge.classList.toggle('hidden', count === 0);
-}
+function updatePendienteStats() { recalcStats(); }
 
 function filterPendientes() {
   const q     = document.getElementById('pend-search').value.toLowerCase();
@@ -380,9 +393,62 @@ function renderPendientes(list) {
       '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
       '<td style="font-weight:700">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
       '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'pend\')">Ver detalle</button></td>' +
-      '<td><button class="btn btn-green" id="listo-' + o.id + '" onclick="marcarListo(\'' + o.id + '\')">✓ Listo</button></td>' +
+      '<td style="display:flex;gap:6px;align-items:center">' +
+        '<button class="btn btn-green" id="listo-' + o.id + '" onclick="marcarListo(\'' + o.id + '\')">✓ Listo</button>' +
+        '<button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'pend\')">Cancelar</button>' +
+      '</td>' +
     '</tr>';
   }).join('');
+}
+
+// ── CANCELAR PEDIDO ───────────────────────────────────────────
+let _cancelPendingId   = null;
+let _cancelPendingFrom = null;
+
+function cancelarPedido(id, from) {
+  _cancelPendingId   = id;
+  _cancelPendingFrom = from;
+  const msg = document.getElementById('cancel-confirm-msg');
+  if (from === 'pend') {
+    msg.innerHTML = 'Esta acción moverá el pedido al historial como <strong>Cancelado</strong> y no se tomará en cuenta en el total de facturación.';
+  } else {
+    msg.innerHTML = 'El pedido quedará marcado como <strong>Cancelado</strong> y no se tomará en cuenta en el total de facturación.';
+  }
+  document.getElementById('cancel-confirm-modal').classList.add('open');
+}
+
+function closeCancelConfirm() {
+  document.getElementById('cancel-confirm-modal').classList.remove('open');
+  _cancelPendingId   = null;
+  _cancelPendingFrom = null;
+}
+
+async function confirmCancelar() {
+  const id   = _cancelPendingId;
+  const from = _cancelPendingFrom;
+  if (!id) return;
+
+  const confirmBtn = document.getElementById('cancel-confirm-btn');
+  confirmBtn.disabled = true; confirmBtn.textContent = 'Cancelando…';
+
+  const { error } = await sb.from('pedidos').update({ estado: 'cancelado' }).eq('id', id);
+
+  confirmBtn.disabled = false; confirmBtn.textContent = 'Sí, cancelar';
+  closeCancelConfirm();
+
+  if (error) { alert('Error: ' + error.message); return; }
+
+  if (from === 'pend') {
+    const moved = allPendientes.find(o => o.id === id);
+    allPendientes = allPendientes.filter(o => o.id !== id);
+    if (moved) { moved.estado = 'cancelado'; allHistorial = [moved, ...allHistorial]; }
+    filterPendientes();
+  } else {
+    const o = allHistorial.find(x => x.id === id);
+    if (o) o.estado = 'cancelado';
+  }
+  recalcStats();
+  filterHistorial();
 }
 
 async function marcarListo(id) {
@@ -399,36 +465,46 @@ async function marcarListo(id) {
     return;
   }
 
-  // Mover del array pendientes → historial
   const moved = allPendientes.find(o => o.id === id);
   allPendientes = allPendientes.filter(o => o.id !== id);
   if (moved) {
     moved.estado = 'facturado';
     allHistorial = [moved, ...allHistorial];
-    const totalFact = allHistorial.reduce((s, o) => s + (o.total || 0), 0);
-    document.getElementById('chip-total-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
-    document.getElementById('chip-total-pedidos').textContent = allPendientes.length + allHistorial.length;
     filterHistorial();
   }
-  updatePendienteStats();
+  recalcStats();
   filterPendientes();
+}
+
+function recalcStats() {
+  const count    = allPendientes.length;
+  const totalPend = allPendientes.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('stat-count').textContent = count;
+  document.getElementById('stat-total').textContent = '₡' + totalPend.toLocaleString('es-CR');
+  const badge = document.getElementById('badge-pendientes');
+  badge.textContent = count; badge.classList.toggle('hidden', count === 0);
+
+  const facturados = allHistorial.filter(o => o.estado === 'facturado');
+  const cancelados  = allHistorial.filter(o => o.estado === 'cancelado');
+  const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('chip-total-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
+  document.getElementById('chip-total-cancelados').textContent = cancelados.length;
+  document.getElementById('chip-total-pedidos').textContent   = allPendientes.length + allHistorial.length;
 }
 
 // ── HISTORIAL ─────────────────────────────────────────────────
 async function loadHistorial() {
   document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="7" class="empty-table">Cargando…</td></tr>';
+    '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
 
   const { data, error } = await sb.from('pedidos')
     .select('*, lineas_pedido(*)')
-    .eq('estado', 'facturado')
+    .in('estado', ['facturado', 'cancelado'])
     .order('fecha', { ascending: false });
 
   if (error) { console.error(error); return; }
   allHistorial = data || [];
-  const totalFact = allHistorial.reduce((s, o) => s + (o.total || 0), 0);
-  document.getElementById('chip-total-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
-  document.getElementById('chip-total-pedidos').textContent = allPendientes.length + allHistorial.length;
+  recalcStats();
   filterHistorial();
 }
 
@@ -453,20 +529,27 @@ function filterHistorial() {
 function renderHistorial(list) {
   const tbody = document.getElementById('hist-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos facturados</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos en historial</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(o => {
+    const cancelado= o.estado === 'cancelado';
     const fecha = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
     const num   = o.id.slice(0,8).toUpperCase();
-    return '<tr>' +
+    const rowStyle = cancelado ? 'background:#fef2f2;' : '';
+    const badgeIgn = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>' : '';
+    const accionBtn = cancelado
+      ? '<td></td>'
+      : '<td><button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'hist\')">Cancelar</button></td>';
+    return '<tr style="' + rowStyle + '">' +
       '<td>' + fecha + '</td>' +
-      '<td><code style="font-size:12px">' + esc(num) + '</code></td>' +
+      '<td><code style="font-size:12px">' + esc(num) + '</code>' + badgeIgn + '</td>' +
       '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
       '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
       '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
-      '<td style="font-weight:700">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td style="font-weight:700;' + (cancelado ? 'color:#dc2626;text-decoration:line-through' : '') + '">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
       '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'hist\')">Ver detalle</button></td>' +
+      accionBtn +
     '</tr>';
   }).join('');
 }

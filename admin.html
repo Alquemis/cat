@@ -22,14 +22,14 @@
   .login-field input:focus { border-color:#1f2937; }
   .login-btn { width:100%;padding:13px;background:#1f2937;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px; }
   .login-btn:hover { background:#111827; }
-  .login-btn:disabled { background:#9ca3af;cursor:not-allowed; }
+  .login-btn:disabled { background:#d1d5db;cursor:not-allowed; }
   .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
   .login-error.show { display:block; }
 
   /* ── LAYOUT ── */
   .topbar { background:#1f2937;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100; }
   .topbar-brand { font-size:17px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-  .topbar-brand span { font-size:11px;font-weight:400;color:#9ca3af;margin-left:10px; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#d1d5db;margin-left:10px; }
   .topbar-right { display:flex;align-items:center;gap:16px;flex-shrink:0; }
   .topbar-user { font-size:13px;color:#d1d5db;white-space:nowrap; }
   .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer; }
@@ -120,7 +120,41 @@
   .order-detail thead th { font-size:11px;padding:8px 12px; }
   .order-detail tbody td { padding:8px 12px; }
 
-  .empty-table { text-align:center;padding:60px 20px;color:#9ca3af; }
+  /* ── ESTADOS DE FILA ── */
+  tr.row-mora   td { background:#fef2f2; }
+  tr.row-mora:hover td { background:#fee2e2; }
+  tr.row-cancelado   td { background:#f9fafb; color:#d1d5db; }
+  tr.row-cancelado:hover td { background:#f3f4f6; color:#d1d5db; }
+  tr.row-pagado   td { background:#f0fdf4; }
+  tr.row-pagado:hover td { background:#dcfce7; }
+
+  /* ── CHIP EN MORA ── */
+  .chip-mora {
+    display:inline-flex;align-items:center;gap:4px;
+    background:#dc2626;color:#fff;font-size:10px;font-weight:700;
+    padding:3px 8px;border-radius:999px;margin-left:6px;
+    border:none;cursor:pointer;vertical-align:middle;
+    transition:background .15s;
+  }
+  .chip-mora:hover { background:#b91c1c; }
+
+  /* ── MODAL EN MORA ── */
+  #mora-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;display:none;align-items:center;justify-content:center;padding:20px; }
+  #mora-modal.open { display:flex; }
+  #mora-modal-card {
+    background:#fff;border-radius:20px;padding:28px;width:100%;max-width:500px;
+    max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2);
+  }
+  .mora-card {
+    border:1.5px solid #fca5a5;background:#fef2f2;border-radius:12px;
+    padding:16px 18px;margin-bottom:12px;
+  }
+  .mora-card:last-child { margin-bottom:0; }
+  .mora-card-num  { font-size:12px;font-weight:700;color:#dc2626;margin-bottom:4px; }
+  .mora-card-row  { display:flex;justify-content:space-between;font-size:14px;color:#374151;margin-top:4px; }
+  .mora-card-total{ font-weight:800;color:#dc2626; }
+
+  .empty-table { text-align:center;padding:60px 20px;color:#d1d5db; }
 
   /* ===== RESPONSIVE: tablet ===== */
   @media(max-width:768px) {
@@ -241,13 +275,13 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     margin-bottom:3px;
   }
-  .pr-meta { font-size:12px;color:#9ca3af; }
+  .pr-meta { font-size:12px;color:#d1d5db; }
   .pr-meta b { color:#6b7280; }
-  .pr-code { font-family:monospace;font-size:11px;color:#9ca3af;margin-top:2px; }
+  .pr-code { font-family:monospace;font-size:11px;color:#d1d5db;margin-top:2px; }
   .pr-price { font-size:16px;font-weight:800;color:#1f2937;white-space:nowrap;flex-shrink:0; }
   .pr-actions { display:flex;gap:8px;flex-shrink:0; }
   .products-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
-  .products-empty { text-align:center;padding:60px 20px;color:#9ca3af;background:#fff;border-radius:14px;border:1px solid #e5e7eb; }
+  .products-empty { text-align:center;padding:60px 20px;color:#d1d5db;background:#fff;border-radius:14px;border:1px solid #e5e7eb; }
 </style>
 </head>
 <body>
@@ -301,7 +335,7 @@
         <span>🔍</span>
         <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
       </div>
-      <span id="prod-count" style="font-size:13px;color:#9ca3af;white-space:nowrap;"></span>
+      <span id="prod-count" style="font-size:13px;color:#d1d5db;white-space:nowrap;"></span>
       <button class="btn btn-secondary" onclick="loadProducts()">↻ Recargar</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
@@ -315,8 +349,9 @@
     <div class="stat-grid" style="margin-bottom:20px">
       <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
-      <div class="stat-card" style="border-color:#fca5a5;background:#fef2f2;"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">0</div><div class="stat-label" style="color:#dc2626">Cancelados</div></div>
+      <div class="stat-card" style="border-color:#d1d5db;background:#f9fafb;"><div class="stat-value" style="color:#6b7280" id="stat-orders-cancelados">0</div><div class="stat-label" style="color:#6b7280">Cancelados</div></div>
       <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;"><div class="stat-value" style="color:#15803d" id="stat-orders-facturado">₡0</div><div class="stat-label" style="color:#15803d">Total facturado</div></div>
+      <div class="stat-card" style="border-color:#6ee7b7;background:#ecfdf5;"><div class="stat-value" style="color:#047857" id="stat-orders-pagado">₡0</div><div class="stat-label" style="color:#047857">Pagado</div></div>
     </div>
     <!-- Sub-tabs -->
     <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
@@ -457,6 +492,20 @@
 
 <!-- TOAST -->
 <div id="app-toast"></div>
+
+<!-- MORA MODAL -->
+<div id="mora-modal" onclick="closeMoraModal()">
+  <div id="mora-modal-card" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:#dc2626;" id="mora-modal-title">Pedidos en mora</div>
+        <div style="font-size:13px;color:#6b7280;margin-top:2px;" id="mora-modal-sub"></div>
+      </div>
+      <button onclick="closeMoraModal()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div id="mora-modal-body"></div>
+  </div>
+</div>
 
 <!-- CONFIRM MODAL -->
 <div id="app-confirm">
@@ -1004,18 +1053,21 @@ async function deleteProduct(codigo, nombre) {
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*)').in('estado',['facturado','cancelado']).order('fecha', {ascending:false})
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:false})
   ]);
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
   // stats
-  const cancelados  = allAdminHist.filter(o => o.estado === 'cancelado');
+  const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
   const facturados = allAdminHist.filter(o => o.estado === 'facturado');
+  const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
   const totalFact  = facturados.reduce((s,o) => s + (o.total||0), 0);
-  document.getElementById('stat-orders').textContent           = allAdminPend.length;
-  document.getElementById('stat-orders-total').textContent     = allAdminPend.length + allAdminHist.length;
+  const totalPag   = pagados.reduce((s,o) => s + (o.total||0), 0);
+  document.getElementById('stat-orders').textContent            = allAdminPend.length;
+  document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
   document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
-  document.getElementById('stat-orders-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
+  document.getElementById('stat-orders-facturado').textContent  = '₡' + totalFact.toLocaleString('es-CR');
+  document.getElementById('stat-orders-pagado').textContent     = '₡' + totalPag.toLocaleString('es-CR');
   // badge sub-tab
   const badge = document.getElementById('obadge-pend');
   if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
@@ -1057,23 +1109,108 @@ function renderAdminOrders(tbodyId, list) {
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return;
   }
+  const now = Date.now();
+  const MS7 = 7 * 24 * 60 * 60 * 1000;
+
+  // Pre-calcular usuarios en mora (para el chip)
+  const usuariosMora = {};
+  if (tbodyId === 'hist-tbody') {
+    list.forEach(o => {
+      if (o.estado === 'facturado' && o.facturado_at && (now - new Date(o.facturado_at).getTime()) >= MS7) {
+        const key = o.usuario_email || o.usuario_nombre;
+        if (!usuariosMora[key]) usuariosMora[key] = [];
+        usuariosMora[key].push(o);
+      }
+    });
+  }
+
   tbody.innerHTML = list.map(o => {
-    const cancelado= o.estado === 'cancelado';
-    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
-    const num   = o.id.slice(0,8).toUpperCase();
-    const rowStyle = cancelado ? 'background:#fef2f2;' : '';
-    const badgeIgn = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>' : '';
-    const totalStyle = cancelado ? 'font-weight:700;color:#dc2626;text-decoration:line-through' : 'font-weight:700';
-    return `<tr style="${rowStyle}">
+    const cancelado  = o.estado === 'cancelado';
+    const pagado     = o.estado === 'pagado';
+    const facturado  = o.estado === 'facturado';
+    const mora       = facturado && (now - new Date(o.fecha).getTime()) > MS7;
+    const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const num        = o.id.slice(0,8).toUpperCase();
+
+    // Clase de fila
+    const rowClass = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+
+    // Badge en columna pedido
+    let badgeHtml = '';
+    if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>';
+    if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">PAGADO</span>';
+    if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">EN MORA</span>';
+
+    // Chip mora en columna usuario
+    const userKey = o.usuario_email || o.usuario_nombre;
+    const tieneChipMora = mora && usuariosMora[userKey] && usuariosMora[userKey][0]?.id === o.id;
+    const chipMora = tieneChipMora
+      ? `<button class="chip-mora" onclick="openMoraModal(${JSON.stringify(userKey)},${JSON.stringify(o.usuario_nombre||'—')})">⚠ En mora</button>`
+      : '';
+
+    // Estilo total
+    const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       mora      ? 'font-weight:700;color:#dc2626' :
+                       pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
+
+    // Botón pagado (solo para facturado, no mora)
+    const btnPagado = facturado
+      ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
+      : '';
+
+    return `<tr class="${rowClass}">
       <td>${fecha}</td>
-      <td><code style="font-size:12px">${num}</code>${badgeIgn}</td>
-      <td style="font-weight:600">${esc(o.usuario_nombre||'—')}</td>
+      <td><code style="font-size:12px">${num}</code>${badgeHtml}</td>
+      <td style="font-weight:600">${esc(o.usuario_nombre||'—')}${chipMora}</td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}">₡${(o.total||0).toLocaleString('es-CR')}</td>
-      <td><button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}
+      </td>
     </tr>`;
   }).join('');
+}
+
+function markAsPagado(id) {
+  showConfirm(
+    '¿Marcar como pagado?',
+    'El pedido pasará al estado "Pagado" y se sumará al total pagado.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'pagado' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      showToast('Pedido marcado como pagado.', true);
+      await loadOrders();
+    },
+    { icon: '💳', okLabel: 'Confirmar pago', okColor: '#047857' }
+  );
+}
+
+function openMoraModal(userKey, nombre) {
+  const now = Date.now();
+  const MS7 = 7 * 24 * 60 * 60 * 1000;
+  const pedidosMora = allAdminHist.filter(o =>
+    o.estado === 'facturado' &&
+    (now - new Date(o.fecha).getTime()) > MS7 &&
+    (o.usuario_email === userKey || o.usuario_nombre === userKey)
+  );
+  document.getElementById('mora-modal-title').textContent = `Pedidos en mora — ${nombre}`;
+  document.getElementById('mora-modal-sub').textContent   = `${pedidosMora.length} pedido${pedidosMora.length !== 1 ? 's' : ''} con más de 7 días sin pago`;
+  document.getElementById('mora-modal-body').innerHTML = pedidosMora.map(o => {
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const dias  = Math.floor((now - new Date(o.fecha).getTime()) / (1000*60*60*24));
+    return `<div class="mora-card">
+      <div class="mora-card-num">Pedido #${o.id.slice(0,8).toUpperCase()}</div>
+      <div class="mora-card-row"><span>Fecha de facturación</span><span>${fecha}</span></div>
+      <div class="mora-card-row"><span>Días sin pago</span><span style="color:#dc2626;font-weight:700">${dias} días</span></div>
+      <div class="mora-card-row"><span>Total</span><span class="mora-card-total">₡${(o.total||0).toLocaleString('es-CR')}</span></div>
+    </div>`;
+  }).join('');
+  document.getElementById('mora-modal').classList.add('open');
+}
+
+function closeMoraModal() {
+  document.getElementById('mora-modal').classList.remove('open');
 }
 
 function openOrderDetail(id) {
@@ -1152,7 +1289,7 @@ function renderUsers(list) {
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
-      <td style="color:#9ca3af;font-size:13px">${fecha}</td>
+      <td style="color:#d1d5db;font-size:13px">${fecha}</td>
     </tr>`;
   }).join('');
 }

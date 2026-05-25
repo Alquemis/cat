@@ -1149,10 +1149,11 @@ function renderMyOrders(list) {
   window._myOrdersList = list;
   const statusColors = {
     pendiente: 'background:#fef3c7;color:#92400e',
-    facturado: 'background:#dcfce7;color:#166534',
+    facturado: 'background:#dbeafe;color:#1e40af',
+    pagado:    'background:#dcfce7;color:#166534',
     cancelado: 'background:#fee2e2;color:#dc2626'
   };
-  const statusLabel = { pendiente: 'Pendiente', facturado: 'Facturado', cancelado: 'Rechazado' };
+  const statusLabel = { pendiente: 'Pendiente', facturado: 'Facturado', pagado: 'Pagado', cancelado: 'Rechazado' };
   body.innerHTML = list.map((o, idx) => {
     const num = (o.id || '').slice(0, 8).toUpperCase();
     const fechaRaw = o.fecha ? new Date(o.fecha) : null;
@@ -1189,10 +1190,11 @@ function openPedidoDet(idx) {
   _currentDetIdx = idx;
   const statusColors = {
     pendiente: 'background:#fef3c7;color:#92400e',
-    facturado: 'background:#dcfce7;color:#166534',
+    facturado: 'background:#dbeafe;color:#1e40af',
+    pagado:    'background:#dcfce7;color:#166534',
     cancelado: 'background:#fee2e2;color:#dc2626'
   };
-  const statusLabel = { pendiente: 'Pendiente', facturado: 'Facturado', cancelado: 'Rechazado' };
+  const statusLabel = { pendiente: 'Pendiente', facturado: 'Facturado', pagado: 'Pagado', cancelado: 'Rechazado' };
   const sColor = statusColors[o.estado] || 'background:#f3f4f6;color:#6b7280';
   const fechaRaw = o.fecha ? new Date(o.fecha) : null;
   const fecha = fechaRaw
@@ -1252,9 +1254,9 @@ function pedidoDeleteConfirm(idx) {
   _delOrderIdx = idx;
   const o = window._myOrdersList && window._myOrdersList[idx];
   if (!o) return;
-  const cancelado = o.estado === 'cancelado';
+  const sinAdvertencia = o.estado === 'cancelado' || o.estado === 'pagado';
   const msgEl = document.getElementById('del-order-msg');
-  if (cancelado) {
+  if (sinAdvertencia) {
     msgEl.innerHTML = 'El pedido desaparecerá de tu historial.';
   } else {
     msgEl.innerHTML = 'El pedido desaparecerá de tu historial, pero <strong>no queda cancelado</strong> — seguirá visible en facturación y se tomará en cuenta en el total a cobrar.';

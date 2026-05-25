@@ -479,7 +479,7 @@ async function marcarListo(id) {
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
 
   const { error } = await sb.from('pedidos')
-    .update({ estado: 'facturado' })
+    .update({ estado: 'facturado', facturado_at: new Date().toISOString() })
     .eq('id', id);
 
   if (error) {

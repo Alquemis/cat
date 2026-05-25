@@ -637,9 +637,19 @@ function copiarPedido(id) {
   if (!o) return;
 
   const lineas = o.lineas_pedido || [];
-  const texto = lineas.map(l => (l.producto_codigo||'') + '\t' + (l.cantidad||0)).join('\n');
 
-  navigator.clipboard.writeText(texto).then(() => {
+  // Texto plano: tabs entre columnas, salto de línea entre filas (igual que Excel)
+  const textoPlano = lineas.map(l =>
+    (l.producto_codigo || '') + '\t' + (l.cantidad || 0)
+  ).join('\r\n');
+
+  // HTML tabla: formato que apps empresariales leen al pegar desde Excel
+  const filas = lineas.map(l =>
+    '<tr><td>' + (l.producto_codigo || '') + '</td><td>' + (l.cantidad || 0) + '</td></tr>'
+  ).join('');
+  const tablaHtml = '<html><body><table>' + filas + '</table></body></html>';
+
+  function confirmarCopia() {
     const btn = document.getElementById('copy-btn-' + id);
     if (btn) {
       const orig = btn.innerHTML;
@@ -647,23 +657,29 @@ function copiarPedido(id) {
       btn.disabled = true;
       setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
     }
-  }).catch(() => {
-    // Fallback para navegadores sin clipboard API
+  }
+
+  // Intentar con ClipboardItem (multi-formato, como Excel)
+  if (navigator.clipboard && window.ClipboardItem) {
+    const item = new ClipboardItem({
+      'text/plain': new Blob([textoPlano], { type: 'text/plain' }),
+      'text/html':  new Blob([tablaHtml],  { type: 'text/html' }),
+    });
+    navigator.clipboard.write([item]).then(confirmarCopia).catch(() => {
+      // Fallback a writeText si falla el multi-formato
+      navigator.clipboard.writeText(textoPlano).then(confirmarCopia);
+    });
+  } else {
+    // Fallback execCommand para browsers sin clipboard API
     const ta = document.createElement('textarea');
-    ta.value = texto;
+    ta.value = textoPlano;
     ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    const btn = document.getElementById('copy-btn-' + id);
-    if (btn) {
-      const orig = btn.innerHTML;
-      btn.innerHTML = '✅ ¡Copiado!';
-      btn.disabled = true;
-      setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
-    }
-  });
+    confirmarCopia();
+  }
 }
 
 // ── CONFIGURACIÓN ─────────────────────────────────────────────

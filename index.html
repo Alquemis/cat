@@ -70,12 +70,14 @@
   .lugar-opt.selected { background: #1f2937; color: #fff; border-color: #1f2937; }
 
   /* ========== TOPBAR ========== */
+  .sticky-header {
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
   .topbar {
     background: #fff; border-bottom: 1px solid #e5e7eb;
     padding: 14px 32px;
     display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 100;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
   .topbar-left { display: flex; align-items: center; gap: 16px; }
   .topbar-logo { height: 44px; }
@@ -737,6 +739,7 @@
   </div>
 </div>
 
+<div class="sticky-header">
 <!-- ========== TOPBAR ========== -->
 <div class="topbar">
   <div class="topbar-left">
@@ -767,25 +770,25 @@
     </button>
   </div>
 </div>
-
-<!-- ========== NAV TABS ========== -->
-<div class="nav-tabs">
-  <button class="home-btn" id="home-btn" onclick="goHome()">INICIO</button>
-  <button class="nav-tab" data-tab="ALIMENTOS" onclick="selectTab('ALIMENTOS')">ALIMENTOS</button>
-  <button class="nav-tab" data-tab="CAPILAR" onclick="selectTab('CAPILAR')">CAPILAR</button>
-  <button class="nav-tab" data-tab="FACIAL" onclick="selectTab('FACIAL')">FACIAL</button>
-  <button class="nav-tab" data-tab="CORPORAL" onclick="selectTab('CORPORAL')">CORPORAL</button>
-  <button class="nav-tab" data-tab="PACKS" onclick="selectTab('PACKS')">PACKS</button>
-</div>
-
-<!-- ========== SEARCH ROW ========== -->
-<div class="search-row" id="search-row" style="display:none;">
-  <div class="search-bar">
-    <span>🔍</span>
-    <input type="text" placeholder="Buscar productos…" id="search-input">
-    <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display:none;">✕</button>
+  <!-- ========== NAV TABS ========== -->
+  <div class="nav-tabs">
+    <button class="home-btn" id="home-btn" onclick="goHome()">INICIO</button>
+    <button class="nav-tab" data-tab="ALIMENTOS" onclick="selectTab('ALIMENTOS')">ALIMENTOS</button>
+    <button class="nav-tab" data-tab="CAPILAR" onclick="selectTab('CAPILAR')">CAPILAR</button>
+    <button class="nav-tab" data-tab="FACIAL" onclick="selectTab('FACIAL')">FACIAL</button>
+    <button class="nav-tab" data-tab="CORPORAL" onclick="selectTab('CORPORAL')">CORPORAL</button>
+    <button class="nav-tab" data-tab="PACKS" onclick="selectTab('PACKS')">PACKS</button>
   </div>
-  <button class="nav-tab cta" onclick="goToFullCatalog()">VER TODOS →</button>
+
+  <!-- ========== SEARCH ROW ========== -->
+  <div class="search-row" id="search-row" style="display:none;">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Buscar productos…" id="search-input">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display:none;">✕</button>
+    </div>
+    <button class="nav-tab cta" onclick="goToFullCatalog()">VER TODOS →</button>
+  </div>
 </div>
 
 <!-- Dynamic content areas -->

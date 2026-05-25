@@ -286,6 +286,16 @@
   }
   .mpc-del-btn:hover { color: #dc2626; background: #fee2e2; }
 
+  /* ── TOAST ── */
+  #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
+    white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
+  #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  #app-toast.toast-error { background:#dc2626; }
+  #app-toast.toast-ok    { background:#16a34a; }
+  #app-toast.toast-warn  { background:#d97706; }
+
   /* Cart button */
   .cart-btn {
     position: relative; background: #1f2937; color: #fff;
@@ -807,6 +817,9 @@
   </div>
 </div>
 
+<!-- TOAST -->
+<div id="app-toast"></div>
+
 <!-- ========== POPUP ELIMINAR PEDIDO ========== -->
 <div class="modal-overlay" id="del-order-modal" style="z-index:900">
   <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
@@ -862,6 +875,16 @@
 </div>
 
 <script>
+// ── TOAST ────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('app-toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
 // ============================================================
 //  SUPABASE CONFIG — reemplaza con tus propios valores
 // ============================================================
@@ -1245,7 +1268,7 @@ async function confirmDeleteOrder() {
 
   btn.disabled = false; btn.textContent = 'Eliminar';
   closeDelOrderModal();
-  if (error) { alert('Error: ' + error.message); return; }
+  if (error) { showToast('Error: ' + error.message); return; }
 
   // Si el detalle estaba abierto en este pedido, cerrarlo
   if (_currentDetIdx === idx) closePedidoDet();
@@ -1635,7 +1658,7 @@ async function submitOrder() {
   if (pedErr) {
     confirmBtn.disabled = false;
     confirmBtn.textContent = 'Confirmar y Enviar';
-    alert('Error al enviar el pedido. Intenta de nuevo.\n' + pedErr.message);
+    showToast('Error al enviar el pedido. Intenta de nuevo.');
     return;
   }
 

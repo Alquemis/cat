@@ -93,6 +93,16 @@
   .stat-value { font-size:22px;font-weight:800;color:#1f2937; }
   .stat-label { font-size:12px;color:#6b7280;margin-top:2px; }
 
+  /* ── TOAST ── */
+  #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
+    white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
+  #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  #app-toast.toast-error { background:#dc2626; }
+  #app-toast.toast-ok    { background:#16a34a; }
+  #app-toast.toast-warn  { background:#d97706; }
+
   /* ── RESPONSIVE ── */
   @media (max-width:900px) {
     .topbar { padding:12px 16px; }
@@ -263,6 +273,9 @@
   <div class="modal-card" onclick="event.stopPropagation()" id="detail-card"></div>
 </div>
 
+<!-- TOAST -->
+<div id="app-toast"></div>
+
 <!-- CONFIRMAR CANCELACIÓN -->
 <div class="modal-overlay" id="cancel-confirm-modal">
   <div class="modal-card" onclick="event.stopPropagation()" style="max-width:380px;padding:28px 28px 24px;text-align:center;">
@@ -277,6 +290,16 @@
 </div>
 
 <script>
+// ── TOAST ────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('app-toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
 const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -436,7 +459,7 @@ async function confirmCancelar() {
   confirmBtn.disabled = false; confirmBtn.textContent = 'Sí, cancelar';
   closeCancelConfirm();
 
-  if (error) { alert('Error: ' + error.message); return; }
+  if (error) { showToast('Error: ' + error.message); return; }
 
   if (from === 'pend') {
     const moved = allPendientes.find(o => o.id === id);
@@ -460,7 +483,7 @@ async function marcarListo(id) {
     .eq('id', id);
 
   if (error) {
-    alert('Error: ' + error.message);
+    showToast('Error: ' + error.message);
     if (btn) { btn.disabled = false; btn.textContent = '✓ Listo'; }
     return;
   }

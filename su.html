@@ -538,6 +538,33 @@
 </div>
 
 <script>
+// ── TOAST ────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('app-toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ── CONFIRM ──────────────────────────────────────────────
+let _confirmOk = null;
+function showConfirm(title, msg, onOk, { icon = '⚠️', okLabel = 'Confirmar', okColor = '#dc2626' } = {}) {
+  document.getElementById('app-confirm-icon').textContent  = icon;
+  document.getElementById('app-confirm-title').textContent = title;
+  document.getElementById('app-confirm-msg').textContent   = msg;
+  const okBtn = document.getElementById('app-confirm-ok');
+  okBtn.textContent = okLabel; okBtn.style.background = okColor;
+  _confirmOk = onOk;
+  okBtn.onclick = () => { _confirmReject(); onOk(); };
+  document.getElementById('app-confirm').classList.add('open');
+}
+function _confirmReject() {
+  document.getElementById('app-confirm').classList.remove('open');
+  _confirmOk = null;
+}
+
 // ── CONFIG ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
@@ -703,7 +730,7 @@ async function toggleActivo(codigo) {
   const nuevoEstado = !esActivo;
   btn.disabled = true; btn.textContent = '…';
   const { error } = await sb.from('productos').update({ activo: nuevoEstado, updated_at: new Date().toISOString() }).eq('codigo', codigo);
-  if (error) { alert('Error: ' + error.message); btn.disabled = false; btn.textContent = esActivo ? 'Activo' : 'Inactivo'; return; }
+  if (error) { showToast('Error: ' + error.message); btn.disabled = false; btn.textContent = esActivo ? 'Activo' : 'Inactivo'; return; }
   btn.classList.toggle('badge-green', nuevoEstado);
   btn.classList.toggle('badge-gray',  !nuevoEstado);
   btn.textContent = nuevoEstado ? 'Activo' : 'Inactivo';
@@ -753,20 +780,25 @@ async function saveProduct() {
     activo: document.getElementById('f-activo').value === 'true',
     updated_at: new Date().toISOString()
   };
-  if (!payload.codigo || !payload.nombre) { alert('Código y Nombre son obligatorios.'); btn.disabled=false; btn.textContent='Guardar'; return; }
+  if (!payload.codigo || !payload.nombre) { showToast('Código y Nombre son obligatorios.', 'warn'); btn.disabled=false; btn.textContent='Guardar'; return; }
   let error;
   if (editingProduct) { ({ error } = await sb.from('productos').update(payload).eq('codigo', editingProduct)); }
   else                { ({ error } = await sb.from('productos').insert(payload)); }
   btn.disabled = false; btn.textContent = 'Guardar';
-  if (error) { alert('Error: ' + error.message); return; }
+  if (error) { showToast('Error: ' + error.message); return; }
   closeProductModal(); await loadProducts(); await loadStats();
 }
 
 async function deleteProduct(codigo, nombre) {
-  if (!confirm(`¿Eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
-  const { error } = await sb.from('productos').delete().eq('codigo', codigo);
-  if (error) { alert('Error: ' + error.message); return; }
-  await loadProducts(); await loadStats();
+  showConfirm(
+    '¿Eliminar producto?',
+    `"${nombre}" será eliminado permanentemente. Esta acción no se puede deshacer.`,
+    async () => {
+      const { error } = await sb.from('productos').delete().eq('codigo', codigo);
+      if (error) { showToast('Error: ' + error.message); return; }
+      await loadProducts(); await loadStats();
+    }
+  );
 }
 
 // ── PEDIDOS ──────────────────────────────────────────────
@@ -1025,15 +1057,19 @@ function renderSuUsers(list) {
 }
 
 async function deleteUser(cedula, nombre) {
-  if (!confirm(`¿Eliminar al colaborador "${nombre}" (${cedula})?\n\nSus pedidos históricos no se eliminarán.`)) return;
-  const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
-  if (error) { alert('Error: ' + error.message); return; }
-  allSuUsers = allSuUsers.filter(u => u.cedula !== cedula);
-  renderSuUsers(allSuUsers);
-  // Actualizar tabla de colaboradores si está cargada
-  allUsers = allUsers.filter(u => u.cedula !== cedula);
-  if (document.getElementById('stat-users')) document.getElementById('stat-users').textContent = allUsers.length;
-  renderUsers(allUsers);
+  showConfirm(
+    '¿Eliminar colaborador?',
+    `Se eliminará a "${nombre}" (${cedula}). Sus pedidos históricos no se eliminarán.`,
+    async () => {
+      const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
+      if (error) { showToast('Error: ' + error.message); return; }
+      allSuUsers = allSuUsers.filter(u => u.cedula !== cedula);
+      renderSuUsers(allSuUsers);
+      allUsers = allUsers.filter(u => u.cedula !== cedula);
+      if (document.getElementById('stat-users')) document.getElementById('stat-users').textContent = allUsers.length;
+      renderUsers(allUsers);
+    }
+  );
 }
 
 // ── IMAGEN UPLOAD ─────────────────────────────────────────────

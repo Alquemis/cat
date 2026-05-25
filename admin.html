@@ -164,6 +164,12 @@
   }
 
   /* ===== RESPONSIVE: móvil ===== */
+  @media(max-width:768px) {
+    #page-settings .stat-card > div[style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
   @media(max-width:480px) {
     /* Topbar */
     .topbar-brand { font-size:14px; }
@@ -397,25 +403,54 @@
 
   <!-- ── PAGE: SETTINGS ── -->
   <div id="page-settings" style="display:none">
-    <div style="max-width:480px;margin:0 auto;padding-top:8px;">
+    <div style="max-width:860px;margin:0 auto;padding-top:8px;">
+
+      <!-- Credenciales — 2 columnas en desktop -->
       <div class="stat-card" style="margin-bottom:24px;">
         <div style="font-size:16px;font-weight:700;color:#1f2937;margin-bottom:4px;">Credenciales de acceso</div>
         <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel administrativo.</div>
-        <div class="form-field" style="margin-bottom:14px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
-          <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
+          <div class="form-field">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
+            <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;">
+          </div>
+          <div></div><!-- spacer -->
+          <div class="form-field">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Nueva contraseña</label>
+            <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;">
+          </div>
+          <div class="form-field">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirmar nueva contraseña</label>
+            <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;">
+          </div>
         </div>
-        <div class="form-field" style="margin-bottom:14px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Nueva contraseña</label>
-          <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
-        </div>
-        <div class="form-field" style="margin-bottom:20px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirmar nueva contraseña</label>
-          <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
-        </div>
-        <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
-        <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+        <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:16px;margin-bottom:4px;"></div>
+        <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="margin-top:20px;padding:12px 32px;">Guardar cambios</button>
       </div>
+
+      <!-- Eliminar colaboradores — 1 columna -->
+      <div class="stat-card">
+        <div style="font-size:16px;font-weight:700;color:#1f2937;margin-bottom:4px;">Eliminar colaborador</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Busca y elimina un colaborador de la base de datos. Esta acción cerrará su sesión automáticamente.</div>
+        <div class="toolbar" style="margin-bottom:16px;">
+          <div class="search-field" style="flex:1;">
+            <span>🔍</span>
+            <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
+          </div>
+          <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:80px;text-align:center;">Acción</th>
+            </tr></thead>
+            <tbody id="cfg-users-tbody">
+              <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -640,7 +675,7 @@ function showPage(page) {
   });
   if (page==='orders'   && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
   if (page==='users'    && allUsers.length===0)  loadUsers();
-  if (page==='settings') loadConfig();
+  if (page==='settings') { loadConfig(); loadCfgUsers(); }
 }
 
 // ── STATS ────────────────────────────────────────────────
@@ -1120,6 +1155,60 @@ function renderUsers(list) {
       <td style="color:#9ca3af;font-size:13px">${fecha}</td>
     </tr>`;
   }).join('');
+}
+
+// ── ELIMINAR COLABORADOR (sección settings) ───────────────
+let allCfgUsers = [];
+
+async function loadCfgUsers() {
+  const { data, error } = await sb.from('usuarios')
+    .select('cedula, nombre, departamento, lugar')
+    .order('nombre');
+  if (error) { console.error(error); return; }
+  allCfgUsers = data || [];
+  renderCfgUsers(allCfgUsers);
+}
+
+function filterCfgUsers() {
+  const q = document.getElementById('cfg-user-search').value.toLowerCase();
+  renderCfgUsers(allCfgUsers.filter(u =>
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
+  ));
+}
+
+function renderCfgUsers(list) {
+  const tbody = document.getElementById('cfg-users-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
+  }
+  tbody.innerHTML = list.map(u => `<tr>
+    <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+    <td>${esc(u.cedula||'—')}</td>
+    <td>${esc(u.departamento||'—')}</td>
+    <td>${esc(u.lugar||'—')}</td>
+    <td style="text-align:center">
+      <button class="btn btn-sm btn-danger" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🗑</button>
+    </td>
+  </tr>`).join('');
+}
+
+function deleteCfgUser(cedula, nombre) {
+  showConfirm(
+    `¿Eliminar a ${nombre}?`,
+    'El colaborador perderá el acceso al catálogo inmediatamente.',
+    async () => {
+      const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
+      if (error) { showToast('Error al eliminar: ' + error.message, false); return; }
+      showToast(`${nombre} eliminado.`, true);
+      allCfgUsers = allCfgUsers.filter(u => u.cedula !== cedula);
+      allUsers    = allUsers.filter(u => u.cedula !== cedula);
+      document.getElementById('stat-users').textContent = allUsers.length;
+      renderCfgUsers(allCfgUsers);
+      renderUsers(allUsers);
+    },
+    { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
 }
 
 // ── CONFIGURACIÓN ─────────────────────────────────────────

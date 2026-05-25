@@ -1090,7 +1090,7 @@ function startSessionWatchdog() {
         onLogout();
       }
     } catch(_) { /* ignorar errores de red, reintentar en el próximo tick */ }
-  }, 30000);
+  }, 10000);
 }
 
 function stopSessionWatchdog() {

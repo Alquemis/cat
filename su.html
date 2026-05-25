@@ -111,6 +111,9 @@
   .su-section-sub {
     font-size:13px;color:#6b7280;margin-bottom:20px;
   }
+  .su-panels-grid {
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
   .su-cred-grid {
     display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;
   }
@@ -143,6 +146,7 @@
     .modal-card { border-radius:20px 20px 0 0;max-height:92vh;padding:28px 20px; }
     .form-grid { grid-template-columns:1fr; }
     .su-cred-grid { grid-template-columns:1fr; }
+    .su-panels-grid { grid-template-columns:1fr; }
   }
   @media(max-width:480px) {
     .topbar-brand { font-size:14px; }
@@ -358,72 +362,70 @@
 
   <!-- ── PAGE: SUPERUSUARIO ── -->
   <div id="page-su" style="display:none">
-    <div style="max-width:640px;margin:0 auto;padding-top:8px;">
+    <div style="max-width:900px;margin:0 auto;padding-top:8px;">
 
-      <!-- Contraseñas visibles -->
+      <!-- Contraseñas — 2 columnas en desktop -->
       <div class="su-section">
         <div class="su-section-title">🔑 Gestión de contraseñas</div>
         <div class="su-section-sub">Visualiza y cambia las credenciales de todos los paneles.</div>
 
-        <!-- Admin -->
-        <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:16px;">
-          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-            🛠 Panel Admin
-          </div>
-          <div class="su-cred-grid">
-            <div class="su-field">
-              <label>Usuario</label>
-              <input type="text" id="su-admin-user" placeholder="admin">
-            </div>
-            <div class="su-field">
-              <label>Contraseña</label>
-              <input type="text" id="su-admin-pass" placeholder="admin">
-            </div>
-          </div>
-          <div class="su-msg" id="su-msg-admin"></div>
-          <button class="btn btn-primary btn-sm" onclick="saveSuCred('admin')" id="su-btn-admin" style="width:100%;padding:10px;">Guardar</button>
-        </div>
+        <div class="su-panels-grid">
 
-        <!-- Facturación -->
-        <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:16px;">
-          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">
-            🧾 Panel Facturación
-          </div>
-          <div class="su-cred-grid">
-            <div class="su-field">
-              <label>Usuario</label>
-              <input type="text" id="su-fact-user" placeholder="admin">
+          <!-- Admin -->
+          <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">🛠 Panel Admin</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-admin-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-admin-pass" placeholder="admin">
+              </div>
             </div>
-            <div class="su-field">
-              <label>Contraseña</label>
-              <input type="text" id="su-fact-pass" placeholder="admin">
-            </div>
+            <div class="su-msg" id="su-msg-admin"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('admin')" id="su-btn-admin" style="width:100%;padding:10px;">Guardar</button>
           </div>
-          <div class="su-msg" id="su-msg-fact"></div>
-          <button class="btn btn-primary btn-sm" onclick="saveSuCred('fact')" id="su-btn-fact" style="width:100%;padding:10px;">Guardar</button>
-        </div>
 
-        <!-- Superusuario -->
-        <div style="border:1.5px solid #ddd6fe;border-radius:12px;padding:18px;background:#faf5ff;">
-          <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;">
-            🔐 Panel Superusuario
-          </div>
-          <div class="su-cred-grid">
-            <div class="su-field">
-              <label>Usuario</label>
-              <input type="text" id="su-su-user" placeholder="admin">
+          <!-- Facturación -->
+          <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">🧾 Panel Facturación</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-fact-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-fact-pass" placeholder="admin">
+              </div>
             </div>
-            <div class="su-field">
-              <label>Contraseña</label>
-              <input type="text" id="su-su-pass" placeholder="admin">
-            </div>
+            <div class="su-msg" id="su-msg-fact"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('fact')" id="su-btn-fact" style="width:100%;padding:10px;">Guardar</button>
           </div>
-          <div class="su-msg" id="su-msg-su"></div>
-          <button class="btn btn-sm" onclick="saveSuCred('su')" id="su-btn-su" style="width:100%;padding:10px;background:#7c3aed;color:#fff;">Guardar</button>
-        </div>
+
+          <!-- Superusuario -->
+          <div style="border:1.5px solid #ddd6fe;border-radius:12px;padding:18px;background:#faf5ff;">
+            <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;">🔐 Panel Superusuario</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-su-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-su-pass" placeholder="admin">
+              </div>
+            </div>
+            <div class="su-msg" id="su-msg-su"></div>
+            <button class="btn btn-sm" onclick="saveSuCred('su')" id="su-btn-su" style="width:100%;padding:10px;background:#7c3aed;color:#fff;">Guardar</button>
+          </div>
+
+        </div><!-- /su-panels-grid -->
       </div>
 
-      <!-- Eliminar colaboradores -->
+      <!-- Eliminar colaboradores — 1 columna completa -->
       <div class="su-section">
         <div class="su-section-title">🗑 Eliminar colaboradores</div>
         <div class="su-section-sub">Eliminar un colaborador borra su registro de la base de datos. Sus pedidos históricos no se eliminan.</div>

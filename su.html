@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superusuario – Catálogo Colaboradores</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; }
+
+  /* ── LOGIN ── */
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
+  .login-logo { height:52px;margin-bottom:10px; }
+  .login-title { font-size:20px;font-weight:700;color:#1f2937;margin-bottom:4px; }
+  .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
+  .login-field { margin-bottom:16px;text-align:left; }
+  .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
+  .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
+  .login-field input:focus { border-color:#7c3aed; }
+  .login-btn { width:100%;padding:13px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px; }
+  .login-btn:hover { background:#6d28d9; }
+  .login-btn:disabled { background:#9ca3af;cursor:not-allowed; }
+  .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
+  .login-error.show { display:block; }
+
+  /* ── LAYOUT ── */
+  .topbar { background:#4c1d95;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#c4b5fd;margin-left:10px; }
+  .topbar-right { display:flex;align-items:center;gap:16px; }
+  .topbar-user { font-size:13px;color:#ddd6fe; }
+  .topbar-logout { background:#5b21b6;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer; }
+  .topbar-logout:hover { background:#6d28d9; }
+
+  .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;gap:0; }
+  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s; }
+  .page-tab:hover { color:#1f2937; }
+  .page-tab.active { color:#7c3aed;border-bottom:3px solid #7c3aed; }
+
+  .container { max-width:1200px;margin:0 auto;padding:32px; }
+
+  /* ── CARDS ── */
+  .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px; }
+  .stat-card { background:#fff;border-radius:14px;padding:20px 24px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:32px;font-weight:800;color:#1f2937; }
+  .stat-label { font-size:13px;color:#6b7280;margin-top:4px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
+  .search-field { flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#1f2937; }
+  .btn { padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s; }
+  .btn-primary { background:#1f2937;color:#fff; }
+  .btn-primary:hover { background:#111827; }
+  .btn-secondary { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
+  .btn-secondary:hover { background:#e5e7eb; }
+  .btn-danger { background:#fee2e2;color:#dc2626; }
+  .btn-danger:hover { background:#fecaca; }
+  .btn-sm { padding:6px 12px;font-size:12px;border-radius:7px; }
+  .btn-success { background:#d1fae5;color:#065f46; }
+  .btn-success:hover { background:#a7f3d0; }
+  .btn-purple { background:#ede9fe;color:#5b21b6; }
+  .btn-purple:hover { background:#ddd6fe; }
+
+  /* ── TABLE ── */
+  .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  table { width:100%;border-collapse:collapse; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb; }
+  tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:#fafafa; }
+  .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+  .badge-green { background:#d1fae5;color:#065f46; }
+  .badge-gray  { background:#f3f4f6;color:#6b7280; }
+  .badge-yellow { background:#fef3c7;color:#92400e; }
+  .badge-red   { background:#fee2e2;color:#dc2626; }
+  .badge-blue  { background:#dbeafe;color:#1e40af; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal-card { background:#fff;border-radius:20px;padding:36px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .modal-title { font-size:19px;font-weight:700;color:#1f2937;margin-bottom:20px; }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  .form-field { display:flex;flex-direction:column;gap:5px; }
+  .form-field.full { grid-column:1/-1; }
+  .form-field label { font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px; }
+  .form-field input,.form-field select,.form-field textarea {
+    padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;
+    font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;
+  }
+  .form-field input:focus,.form-field select:focus { border-color:#7c3aed; }
+  .modal-btns { display:flex;gap:12px;margin-top:24px; }
+  .modal-btns .btn { flex:1;padding:13px; }
+
+  .order-detail { background:#f9fafb;border-radius:10px;padding:14px;margin-top:8px;font-size:13px;display:none; }
+  .order-detail.open { display:block; }
+  .empty-table { text-align:center;padding:60px 20px;color:#9ca3af; }
+
+  /* ── SU PANEL ── */
+  .su-section {
+    background:#fff;border-radius:16px;border:1px solid #e5e7eb;
+    padding:24px;margin-bottom:24px;
+  }
+  .su-section-title {
+    font-size:15px;font-weight:700;color:#1f2937;margin-bottom:4px;
+  }
+  .su-section-sub {
+    font-size:13px;color:#6b7280;margin-bottom:20px;
+  }
+  .su-cred-grid {
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;
+  }
+  .su-field label {
+    display:block;font-size:12px;font-weight:700;color:#6b7280;
+    text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;
+  }
+  .su-field input {
+    width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;
+    border-radius:9px;font-size:14px;outline:none;transition:border-color .2s;
+  }
+  .su-field input:focus { border-color:#7c3aed; }
+  .su-msg { border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none; }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:768px) {
+    .topbar { padding:12px 16px; }
+    .topbar-brand span { display:none; }
+    .page-tabs { padding:0 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap; }
+    .page-tabs::-webkit-scrollbar { display:none; }
+    .page-tab { padding:14px 16px;font-size:13px;white-space:nowrap;flex-shrink:0; }
+    .container { padding:20px 16px; }
+    .stat-grid { grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px; }
+    .stat-value { font-size:26px; }
+    .toolbar { gap:8px; }
+    .search-field { flex-basis:100%;order:-1; }
+    .table-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
+    table { min-width:520px; }
+    .modal-overlay { align-items:flex-end;padding:0; }
+    .modal-card { border-radius:20px 20px 0 0;max-height:92vh;padding:28px 20px; }
+    .form-grid { grid-template-columns:1fr; }
+    .su-cred-grid { grid-template-columns:1fr; }
+  }
+  @media(max-width:480px) {
+    .topbar-brand { font-size:14px; }
+    .topbar-logout { padding:6px 10px;font-size:12px; }
+    .page-tab { padding:12px 12px;font-size:12px; }
+    .stat-card { padding:16px 14px; }
+    .stat-value { font-size:22px; }
+    .stat-label { font-size:12px; }
+    .btn { padding:9px 12px;font-size:13px; }
+    .btn-sm { padding:5px 10px;font-size:11px; }
+  }
+
+  /* ── IMAGEN UPLOAD ── */
+  #img-upload-btn:hover { background:#111827 !important; }
+  .img-status-ok  { color:#059669;font-weight:600; }
+  .img-status-err { color:#dc2626; }
+  .img-status-ing { color:#6b7280; }
+
+  /* ── PRODUCT ROWS ── */
+  .products-list { display:flex;flex-direction:column;gap:0; }
+  .product-row { display:flex;align-items:center;gap:16px;background:#fff;border-bottom:1px solid #f0f2f5;padding:14px 20px;transition:background .15s; }
+  .product-row:first-child { border-radius:14px 14px 0 0; }
+  .product-row:last-child  { border-radius:0 0 14px 14px;border-bottom:none; }
+  .product-row:only-child  { border-radius:14px;border-bottom:none; }
+  .product-row:hover { background:#fafbfc; }
+  .pr-thumb { width:60px;height:60px;flex-shrink:0;border-radius:10px;object-fit:contain;background:#f3f4f6;border:1px solid #e5e7eb; }
+  .pr-thumb-empty { width:60px;height:60px;flex-shrink:0;border-radius:10px;background:#f3f4f6;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:22px;color:#d1d5db; }
+  .pr-info { flex:1;min-width:0; }
+  .pr-name { font-size:14px;font-weight:700;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px; }
+  .pr-meta { font-size:12px;color:#9ca3af; }
+  .pr-code { font-family:monospace;font-size:11px;color:#9ca3af;margin-top:2px; }
+  .pr-price { font-size:16px;font-weight:800;color:#1f2937;white-space:nowrap;flex-shrink:0; }
+  .pr-actions { display:flex;gap:8px;flex-shrink:0; }
+  .products-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  .products-empty { text-align:center;padding:60px 20px;color:#9ca3af;background:#fff;border-radius:14px;border:1px solid #e5e7eb; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-card">
+    <img src="../Imagenes/Martimac_Logo.png" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
+    <div class="login-title">🔐 Panel Superusuario</div>
+    <div class="login-sub">Acceso restringido — solo superusuarios</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">🔐 Superusuario – Catálogo Colaboradores <span>Martimac Distribuidora</span></div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbar-user"></span>
+    <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" onclick="showPage('products')">📦 Productos</button>
+  <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
+  <button class="page-tab" onclick="showPage('users')">👤 Colaboradores</button>
+  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
+  <button class="page-tab" onclick="showPage('su')">🔐 Superusuario</button>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+  <!-- ── PAGE: PRODUCTS ── -->
+  <div id="page-products">
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-value" id="stat-products">—</div><div class="stat-label">Productos activos</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-field">
+        <span>🔍</span>
+        <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
+      </div>
+      <span id="prod-count" style="font-size:13px;color:#9ca3af;white-space:nowrap;"></span>
+      <button class="btn btn-secondary" onclick="loadProducts()">↻ Recargar</button>
+      <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
+    </div>
+    <div id="products-list-wrap">
+      <div class="products-empty">Cargando productos…</div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: ORDERS ── -->
+  <div id="page-orders" style="display:none">
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
+      <button id="otab-pend" onclick="showOrdersTab('pend')"
+        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #7c3aed;color:#7c3aed;">
+        Pendientes <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+      </button>
+      <button id="otab-hist" onclick="showOrdersTab('hist')"
+        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Historial
+      </button>
+    </div>
+    <div id="opage-pend">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="pend-search" placeholder="Buscar por nombre…" oninput="filterAdminPend()">
+        </div>
+        <select id="pend-lugar" onchange="filterAdminPend()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th><th>Total</th><th>Acciones</th></tr></thead>
+          <tbody id="pend-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="opage-hist" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="hist-search" placeholder="Buscar por nombre…" oninput="filterAdminHist()">
+        </div>
+        <select id="hist-lugar" onchange="filterAdminHist()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="hist-desde" onchange="filterAdminHist()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th><th>Total</th><th>Acciones</th></tr></thead>
+          <tbody id="hist-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: USERS ── -->
+  <div id="page-users" style="display:none">
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-field">
+        <span>🔍</span>
+        <input type="text" id="user-search" placeholder="Buscar colaborador…" oninput="filterUsers()">
+      </div>
+      <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th>Registro</th></tr></thead>
+        <tbody id="users-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SETTINGS ── -->
+  <div id="page-settings" style="display:none">
+    <div style="max-width:480px;margin:0 auto;padding-top:8px;">
+      <div class="stat-card" style="margin-bottom:24px;">
+        <div style="font-size:16px;font-weight:700;color:#1f2937;margin-bottom:4px;">Credenciales de acceso — Admin</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel administrativo.</div>
+        <div class="form-field" style="margin-bottom:14px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
+          <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        </div>
+        <div class="form-field" style="margin-bottom:14px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Nueva contraseña</label>
+          <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        </div>
+        <div class="form-field" style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirmar nueva contraseña</label>
+          <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+        </div>
+        <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
+        <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SUPERUSUARIO ── -->
+  <div id="page-su" style="display:none">
+    <div style="max-width:640px;margin:0 auto;padding-top:8px;">
+
+      <!-- Contraseñas visibles -->
+      <div class="su-section">
+        <div class="su-section-title">🔑 Gestión de contraseñas</div>
+        <div class="su-section-sub">Visualiza y cambia las credenciales de todos los paneles.</div>
+
+        <!-- Admin -->
+        <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            🛠 Panel Admin
+          </div>
+          <div class="su-cred-grid">
+            <div class="su-field">
+              <label>Usuario</label>
+              <input type="text" id="su-admin-user" placeholder="admin">
+            </div>
+            <div class="su-field">
+              <label>Contraseña</label>
+              <input type="text" id="su-admin-pass" placeholder="admin">
+            </div>
+          </div>
+          <div class="su-msg" id="su-msg-admin"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveSuCred('admin')" id="su-btn-admin" style="width:100%;padding:10px;">Guardar</button>
+        </div>
+
+        <!-- Facturación -->
+        <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">
+            🧾 Panel Facturación
+          </div>
+          <div class="su-cred-grid">
+            <div class="su-field">
+              <label>Usuario</label>
+              <input type="text" id="su-fact-user" placeholder="admin">
+            </div>
+            <div class="su-field">
+              <label>Contraseña</label>
+              <input type="text" id="su-fact-pass" placeholder="admin">
+            </div>
+          </div>
+          <div class="su-msg" id="su-msg-fact"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveSuCred('fact')" id="su-btn-fact" style="width:100%;padding:10px;">Guardar</button>
+        </div>
+
+        <!-- Superusuario -->
+        <div style="border:1.5px solid #ddd6fe;border-radius:12px;padding:18px;background:#faf5ff;">
+          <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;">
+            🔐 Panel Superusuario
+          </div>
+          <div class="su-cred-grid">
+            <div class="su-field">
+              <label>Usuario</label>
+              <input type="text" id="su-su-user" placeholder="admin">
+            </div>
+            <div class="su-field">
+              <label>Contraseña</label>
+              <input type="text" id="su-su-pass" placeholder="admin">
+            </div>
+          </div>
+          <div class="su-msg" id="su-msg-su"></div>
+          <button class="btn btn-sm" onclick="saveSuCred('su')" id="su-btn-su" style="width:100%;padding:10px;background:#7c3aed;color:#fff;">Guardar</button>
+        </div>
+      </div>
+
+      <!-- Eliminar colaboradores -->
+      <div class="su-section">
+        <div class="su-section-title">🗑 Eliminar colaboradores</div>
+        <div class="su-section-sub">Eliminar un colaborador borra su registro de la base de datos. Sus pedidos históricos no se eliminan.</div>
+        <div class="toolbar" style="margin-bottom:16px;">
+          <div class="search-field">
+            <span>🔍</span>
+            <input type="text" id="su-user-search" placeholder="Buscar colaborador…" oninput="filterSuUsers()">
+          </div>
+          <button class="btn btn-secondary" onclick="loadSuUsers()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th>Registro</th><th></th></tr></thead>
+            <tbody id="su-users-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal-card">
+    <div class="modal-title" id="product-modal-title">Nuevo Producto</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Código *</label>
+        <input type="text" id="f-codigo" placeholder="PP088001">
+      </div>
+      <div class="form-field">
+        <label>Precio (₡) *</label>
+        <input type="number" id="f-precio" placeholder="0" min="0">
+      </div>
+      <div class="form-field">
+        <label>IVA (%)</label>
+        <input type="number" id="f-iva" placeholder="13" min="0" max="100" step="0.01">
+      </div>
+      <div class="form-field full">
+        <label>Nombre completo *</label>
+        <input type="text" id="f-nombre" placeholder="Nombre del producto">
+      </div>
+      <div class="form-field">
+        <label>Marca</label>
+        <input type="text" id="f-marca" placeholder="BIOLAND">
+      </div>
+      <div class="form-field">
+        <label>Línea</label>
+        <select id="f-spc">
+          <option value="Cuidado personal">Cuidado personal</option>
+          <option value="Alimentos">Alimentos</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Categoría</label>
+        <input type="text" id="f-categoria" placeholder="Capilar, Facial, Galletas…">
+      </div>
+      <div class="form-field">
+        <label>Subcategoría</label>
+        <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…">
+      </div>
+      <div class="form-field full">
+        <label>Imagen</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="f-imagen" placeholder="URL se rellena al subir imagen…" style="flex:1">
+          <label id="img-upload-btn" style="white-space:nowrap;padding:10px 14px;background:#1f2937;color:#fff;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">
+            📷 Subir imagen
+          </label>
+          <input type="file" id="img-file-input" accept="image/*" style="display:none">
+        </div>
+        <div id="img-upload-status" style="font-size:12px;margin-top:6px;display:none;"></div>
+        <div id="img-preview-wrap" style="margin-top:10px;display:none;">
+          <img id="img-preview" style="max-width:120px;max-height:120px;border-radius:8px;border:1.5px solid #e5e7eb;object-fit:cover;">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Estado</label>
+        <select id="f-activo">
+          <option value="true">Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
+      <button class="btn btn-primary" id="save-product-btn" onclick="saveProduct()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="order-detail-modal">
+  <div class="modal-card" id="order-detail-card"></div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── ESTADO ───────────────────────────────────────────────
+let currentUser    = null;
+let allProducts    = [];
+let allAdminPend   = [];
+let allAdminHist   = [];
+let allUsers       = [];
+let allSuUsers     = [];
+let editingProduct = null;
+
+// ── AUTH ─────────────────────────────────────────────────
+async function initAuth() {
+  const saved = localStorage.getItem('su_session');
+  if (saved === 'ok') { await onLogin(); return; }
+  document.getElementById('login-overlay').classList.remove('hidden');
+}
+
+async function onLogin() {
+  currentUser = 'su';
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('topbar-user').textContent = 'Superusuario';
+  await loadStats();
+  await loadProducts();
+}
+
+function onLogout() {
+  currentUser = null;
+  localStorage.removeItem('su_session');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const btn  = document.getElementById('login-btn');
+  const err  = document.getElementById('login-error');
+  if (!user || !pass) { err.textContent = 'Completa todos los campos.'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Verificando…'; err.classList.remove('show');
+  try {
+    const { data, error } = await sb.from('app_config').select('key, value').in('key', ['su_user', 'su_pass']);
+    if (error) throw error;
+    const cfg = {};
+    (data || []).forEach(r => { cfg[r.key] = r.value; });
+    const okUser = (cfg.su_user || 'admin') === user;
+    const okPass = (cfg.su_pass || 'admin') === pass;
+    if (okUser && okPass) {
+      localStorage.setItem('su_session', 'ok');
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      await onLogin();
+    } else {
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      err.textContent = 'Usuario o contraseña incorrectos.';
+      err.classList.add('show');
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Ingresar';
+    err.textContent = 'Error de conexión. Verifica tu red e intenta de nuevo.';
+    err.classList.add('show');
+  }
+}
+
+function doLogout() { onLogout(); }
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+
+// ── PAGES ────────────────────────────────────────────────
+const ALL_PAGES = ['products','orders','users','settings','su'];
+
+function showPage(page) {
+  ALL_PAGES.forEach(p => {
+    document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
+  });
+  document.querySelectorAll('.page-tab').forEach((t,i) => {
+    t.classList.toggle('active', ALL_PAGES[i] === page);
+  });
+  if (page==='orders'   && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
+  if (page==='users'    && allUsers.length===0)  loadUsers();
+  if (page==='settings') loadConfig();
+  if (page==='su')       loadSuPage();
+}
+
+// ── STATS ────────────────────────────────────────────────
+async function loadStats() {
+  const { count: cp } = await sb.from('productos').select('*', {count:'exact',head:true}).eq('activo',true);
+  document.getElementById('stat-products').textContent = cp ?? '—';
+}
+
+// ── PRODUCTOS ────────────────────────────────────────────
+async function loadProducts() {
+  const wrap = document.getElementById('products-list-wrap');
+  const counter = document.getElementById('prod-count');
+  if (wrap) wrap.innerHTML = '<div class="products-empty">Cargando productos…</div>';
+  if (counter) counter.textContent = '';
+  const { data, error } = await sb.from('productos').select('*').order('nombre');
+  if (error) { if (wrap) wrap.innerHTML = '<div class="products-empty">Error al cargar.</div>'; return; }
+  allProducts = data || [];
+  if (counter) counter.textContent = allProducts.length + ' producto' + (allProducts.length !== 1 ? 's' : '');
+  renderProducts(allProducts);
+}
+
+function filterProducts() {
+  const q = document.getElementById('prod-search').value.toLowerCase();
+  const filtered = allProducts.filter(p =>
+    (p.nombre||'').toLowerCase().includes(q) ||
+    (p.codigo||'').toLowerCase().includes(q)  ||
+    (p.marca ||'').toLowerCase().includes(q)
+  );
+  const counter = document.getElementById('prod-count');
+  if (counter) counter.textContent = filtered.length + ' de ' + allProducts.length + ' productos';
+  renderProducts(filtered);
+}
+
+function renderProducts(list) {
+  const wrap = document.getElementById('products-list-wrap');
+  if (!wrap) return;
+  if (list.length === 0) { wrap.innerHTML = '<div class="products-empty">Sin productos.</div>'; return; }
+  let html = '<div class="products-wrap"><div class="products-list">';
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    const nombre     = esc(p.nombre      || '');
+    const codigo     = esc(p.codigo      || '');
+    const marca      = esc(p.marca       || '');
+    const spc        = esc(p.spc         || '');
+    const categoria  = esc(p.categoria   || '');
+    const subcateg   = esc(p.subcategoria|| '');
+    const ivaRate    = p.iva != null ? p.iva : 13;
+    const precioIva  = Math.round((p.precio || 0) * (1 + ivaRate / 100));
+    const precio     = precioIva.toLocaleString('es-CR');
+    const activo     = p.activo !== false;
+    const badgeClass = activo ? 'badge-green' : 'badge-gray';
+    const badgeLabel = activo ? 'Activo' : 'Inactivo';
+    const meta       = [marca, spc, categoria, subcateg].filter(Boolean).join(' · ');
+    let imgHtml = p.imagen
+      ? '<img src="' + esc(p.imagen) + '" class="pr-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="pr-thumb-empty" style="display:none">📦</div>'
+      : '<div class="pr-thumb-empty">📦</div>';
+    html += '<div class="product-row">';
+    html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
+    html +=   '<div class="pr-info"><div class="pr-name">' + nombre + '</div>';
+    if (meta) html += '<div class="pr-meta">' + meta + '</div>';
+    html +=   '<div class="pr-code">' + codigo + '</div></div>';
+    html +=   '<button class="badge ' + badgeClass + '" style="flex-shrink:0;cursor:pointer;border:none;font-family:inherit;font-size:inherit" onclick="toggleActivo(\'' + codigo + '\')" id="badge-activo-' + codigo + '">' + badgeLabel + '</button>';
+    html +=   '<div class="pr-price">&#x20A1;' + precio + '</div>';
+    html +=   '<div class="pr-actions">';
+    html +=     '<button class="btn btn-sm btn-secondary" onclick="editProduct(\'' + codigo + '\')">&#9999; Editar</button>';
+    html +=     '<button class="btn btn-sm btn-danger"    onclick="deleteProduct(\'' + codigo + '\',\'' + nombre + '\')">&#128465;</button>';
+    html +=   '</div></div>';
+  }
+  html += '</div></div>';
+  wrap.innerHTML = html;
+}
+
+async function toggleActivo(codigo) {
+  const btn = document.getElementById('badge-activo-' + codigo);
+  if (!btn) return;
+  const esActivo = btn.classList.contains('badge-green');
+  const nuevoEstado = !esActivo;
+  btn.disabled = true; btn.textContent = '…';
+  const { error } = await sb.from('productos').update({ activo: nuevoEstado, updated_at: new Date().toISOString() }).eq('codigo', codigo);
+  if (error) { alert('Error: ' + error.message); btn.disabled = false; btn.textContent = esActivo ? 'Activo' : 'Inactivo'; return; }
+  btn.classList.toggle('badge-green', nuevoEstado);
+  btn.classList.toggle('badge-gray',  !nuevoEstado);
+  btn.textContent = nuevoEstado ? 'Activo' : 'Inactivo';
+  btn.disabled = false;
+  const prod = allProducts.find(p => p.codigo === codigo);
+  if (prod) prod.activo = nuevoEstado;
+  document.getElementById('stat-products').textContent = allProducts.filter(p => p.activo !== false).length;
+}
+
+function openProductModal(product) {
+  editingProduct = product ? product.codigo : null;
+  document.getElementById('product-modal-title').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
+  document.getElementById('f-codigo').value      = product?.codigo      || '';
+  document.getElementById('f-codigo').readOnly   = !!product;
+  document.getElementById('f-nombre').value      = product?.nombre      || '';
+  document.getElementById('f-marca').value       = product?.marca       || '';
+  document.getElementById('f-spc').value         = product?.spc         || 'Cuidado personal';
+  document.getElementById('f-categoria').value   = product?.categoria   || '';
+  document.getElementById('f-subcategoria').value= product?.subcategoria|| '';
+  document.getElementById('f-precio').value      = product?.precio      || '';
+  document.getElementById('f-iva').value         = product?.iva != null ? product.iva : 13;
+  document.getElementById('f-imagen').value      = product?.imagen      || '';
+  document.getElementById('f-activo').value      = product?.activo === false ? 'false' : 'true';
+  document.getElementById('img-upload-status').style.display = 'none';
+  document.getElementById('img-preview-wrap').style.display  = 'none';
+  const imgUrl = product?.imagen || '';
+  if (imgUrl) { document.getElementById('img-preview').src = imgUrl; document.getElementById('img-preview-wrap').style.display = 'block'; }
+  document.getElementById('product-modal').classList.add('open');
+}
+
+function closeProductModal() { document.getElementById('product-modal').classList.remove('open'); editingProduct = null; }
+function editProduct(codigo) { const p = allProducts.find(x => x.codigo === codigo); if (p) openProductModal(p); }
+
+async function saveProduct() {
+  const btn = document.getElementById('save-product-btn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const payload = {
+    codigo: document.getElementById('f-codigo').value.trim().toUpperCase(),
+    nombre: document.getElementById('f-nombre').value.trim(),
+    marca: document.getElementById('f-marca').value.trim(),
+    spc: document.getElementById('f-spc').value,
+    categoria: document.getElementById('f-categoria').value.trim(),
+    subcategoria: document.getElementById('f-subcategoria').value.trim(),
+    precio: parseInt(document.getElementById('f-precio').value) || 0,
+    iva: parseFloat(document.getElementById('f-iva').value) || 13,
+    imagen: document.getElementById('f-imagen').value.trim(),
+    activo: document.getElementById('f-activo').value === 'true',
+    updated_at: new Date().toISOString()
+  };
+  if (!payload.codigo || !payload.nombre) { alert('Código y Nombre son obligatorios.'); btn.disabled=false; btn.textContent='Guardar'; return; }
+  let error;
+  if (editingProduct) { ({ error } = await sb.from('productos').update(payload).eq('codigo', editingProduct)); }
+  else                { ({ error } = await sb.from('productos').insert(payload)); }
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { alert('Error: ' + error.message); return; }
+  closeProductModal(); await loadProducts(); await loadStats();
+}
+
+async function deleteProduct(codigo, nombre) {
+  if (!confirm(`¿Eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
+  const { error } = await sb.from('productos').delete().eq('codigo', codigo);
+  if (error) { alert('Error: ' + error.message); return; }
+  await loadProducts(); await loadStats();
+}
+
+// ── PEDIDOS ──────────────────────────────────────────────
+async function loadOrders() {
+  const [resPend, resHist] = await Promise.all([
+    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
+    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','facturado').order('fecha', {ascending:false})
+  ]);
+  allAdminPend = resPend.data || [];
+  allAdminHist = resHist.data || [];
+  document.getElementById('stat-orders').textContent       = allAdminPend.length;
+  document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
+  const badge = document.getElementById('obadge-pend');
+  if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
+  filterAdminPend(); filterAdminHist();
+}
+
+function showOrdersTab(tab) {
+  ['pend','hist'].forEach(t => {
+    document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('otab-' + t);
+    btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
+    btn.style.color = t === tab ? '#7c3aed' : '#6b7280';
+  });
+}
+
+function filterAdminPend() {
+  const q = (document.getElementById('pend-search').value || '').toLowerCase();
+  const lugar = document.getElementById('pend-lugar').value;
+  renderAdminOrders('pend-tbody', allAdminPend.filter(o =>
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar)
+  ));
+}
+
+function filterAdminHist() {
+  const q = (document.getElementById('hist-search').value || '').toLowerCase();
+  const lugar = document.getElementById('hist-lugar').value;
+  const desde = document.getElementById('hist-desde').value;
+  renderAdminOrders('hist-tbody', allAdminHist.filter(o =>
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  ));
+}
+
+function renderAdminOrders(tbodyId, list) {
+  const tbody = document.getElementById(tbodyId);
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return; }
+  tbody.innerHTML = list.map(o => {
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const num = o.id.slice(0,8).toUpperCase();
+    return `<tr>
+      <td>${fecha}</td>
+      <td><code style="font-size:12px">${num}</code></td>
+      <td style="font-weight:600">${esc(o.usuario_nombre||'—')}</td>
+      <td>${esc(o.usuario_departamento||'—')}</td>
+      <td>${esc(o.usuario_lugar||'—')}</td>
+      <td style="font-weight:700">₡${(o.total||0).toLocaleString('es-CR')}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openOrderDetail(id) {
+  const o = [...allAdminPend, ...allAdminHist].find(x => x.id === id);
+  if (!o) return;
+  const fecha = new Date(o.fecha).toLocaleString('es-CR');
+  const lineas = (o.lineas_pedido || []);
+  const total = o.total || 0;
+  const subtotalSinIva = Math.round(total / 1.13);
+  const iva = total - subtotalSinIva;
+  document.getElementById('order-detail-card').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px">
+      <div class="modal-title">Pedido ${o.id.slice(0,8).toUpperCase()}</div>
+      <div style="font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px">${fecha}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px">
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong>${esc(o.usuario_nombre||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cédula</strong>${esc(o.usuario_email||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Departamento</strong>${esc(o.usuario_departamento||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Lugar</strong>${esc(o.usuario_lugar||'—')}</div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:16px">
+      <table>
+        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          ${lineas.map(l => `<tr>
+            <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
+            <td style="text-align:center;font-weight:600">${l.cantidad}</td>
+            <td>${esc(l.producto_nombre)}</td>
+            <td>₡${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
+            <td style="font-weight:700">₡${(l.subtotal||0).toLocaleString('es-CR')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span>₡${iva.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span>₡${total.toLocaleString('es-CR')}</span></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:13px" onclick="document.getElementById('order-detail-modal').classList.remove('open')">Cerrar</button>`;
+  document.getElementById('order-detail-modal').classList.add('open');
+}
+
+// ── COLABORADORES ─────────────────────────────────────────────
+async function loadUsers() {
+  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
+  if (error) { console.error(error); return; }
+  allUsers = data || [];
+  document.getElementById('stat-users').textContent = allUsers.length;
+  renderUsers(allUsers);
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u =>
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
+  ));
+}
+
+function renderUsers(list) {
+  const tbody = document.getElementById('users-tbody');
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
+  tbody.innerHTML = list.map(u => {
+    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
+    return `<tr>
+      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+      <td>${esc(u.cedula||'—')}</td>
+      <td>${esc(u.departamento||'—')}</td>
+      <td>${esc(u.lugar||'—')}</td>
+      <td style="color:#9ca3af;font-size:13px">${fecha}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CONFIGURACIÓN (Admin) ─────────────────────────────────────
+async function loadConfig() {
+  const { data } = await sb.from('app_config').select('key, value').in('key',['admin_user','admin_pass']);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('cfg-user').value = cfg.admin_user || 'admin';
+  document.getElementById('cfg-pass').value  = '';
+  document.getElementById('cfg-pass2').value = '';
+  document.getElementById('cfg-msg').style.display = 'none';
+}
+
+async function saveConfig() {
+  const user  = document.getElementById('cfg-user').value.trim();
+  const pass  = document.getElementById('cfg-pass').value.trim();
+  const pass2 = document.getElementById('cfg-pass2').value.trim();
+  const btn   = document.getElementById('cfg-btn');
+  const msg   = document.getElementById('cfg-msg');
+  const showMsg = (text, ok) => {
+    msg.textContent = text; msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = `1px solid ${ok ? '#86efac' : '#fca5a5'}`;
+    msg.style.color  = ok ? '#166534' : '#dc2626';
+  };
+  if (!user) { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
+  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const updates = [{ key: 'admin_user', value: user }];
+  if (pass) updates.push({ key: 'admin_pass', value: pass });
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+  if (error) { showMsg('Error al guardar: ' + error.message, false); }
+  else { showMsg('✅ Credenciales actualizadas.', true); document.getElementById('cfg-pass').value = ''; document.getElementById('cfg-pass2').value = ''; }
+}
+
+// ── SUPERUSUARIO — PANEL ──────────────────────────────────────
+async function loadSuPage() {
+  const { data } = await sb.from('app_config').select('key, value')
+    .in('key', ['admin_user','admin_pass','fact_user','fact_pass','su_user','su_pass']);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('su-admin-user').value = cfg.admin_user || 'admin';
+  document.getElementById('su-admin-pass').value = cfg.admin_pass || 'admin';
+  document.getElementById('su-fact-user').value  = cfg.fact_user  || 'admin';
+  document.getElementById('su-fact-pass').value  = cfg.fact_pass  || 'admin';
+  document.getElementById('su-su-user').value    = cfg.su_user    || 'admin';
+  document.getElementById('su-su-pass').value    = cfg.su_pass    || 'admin';
+  // Ocultar mensajes
+  ['admin','fact','su'].forEach(t => {
+    document.getElementById('su-msg-' + t).style.display = 'none';
+  });
+  await loadSuUsers();
+}
+
+async function saveSuCred(type) {
+  const userEl = document.getElementById('su-' + type + '-user');
+  const passEl = document.getElementById('su-' + type + '-pass');
+  const btn    = document.getElementById('su-btn-' + type);
+  const msg    = document.getElementById('su-msg-' + type);
+  const user   = userEl.value.trim();
+  const pass   = passEl.value.trim();
+  const showMsg = (text, ok) => {
+    msg.textContent = text; msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = `1px solid ${ok ? '#86efac' : '#fca5a5'}`;
+    msg.style.color  = ok ? '#166534' : '#dc2626';
+  };
+  if (!user || !pass) { showMsg('Usuario y contraseña no pueden estar vacíos.', false); return; }
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const updates = [
+    { key: type + '_user', value: user },
+    { key: type + '_pass', value: pass }
+  ];
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { showMsg('Error: ' + error.message, false); }
+  else       { showMsg('✅ Guardado correctamente.', true); }
+}
+
+// ── SUPERUSUARIO — ELIMINAR COLABORADORES ────────────────────
+async function loadSuUsers() {
+  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
+  if (error) { console.error(error); return; }
+  allSuUsers = data || [];
+  renderSuUsers(allSuUsers);
+}
+
+function filterSuUsers() {
+  const q = document.getElementById('su-user-search').value.toLowerCase();
+  renderSuUsers(allSuUsers.filter(u =>
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
+  ));
+}
+
+function renderSuUsers(list) {
+  const tbody = document.getElementById('su-users-tbody');
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
+  tbody.innerHTML = list.map(u => {
+    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
+    return `<tr>
+      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+      <td>${esc(u.cedula||'—')}</td>
+      <td>${esc(u.departamento||'—')}</td>
+      <td>${esc(u.lugar||'—')}</td>
+      <td style="color:#9ca3af;font-size:13px">${fecha}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}')">🗑 Eliminar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteUser(cedula, nombre) {
+  if (!confirm(`¿Eliminar al colaborador "${nombre}" (${cedula})?\n\nSus pedidos históricos no se eliminarán.`)) return;
+  const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
+  if (error) { alert('Error: ' + error.message); return; }
+  allSuUsers = allSuUsers.filter(u => u.cedula !== cedula);
+  renderSuUsers(allSuUsers);
+  // Actualizar tabla de colaboradores si está cargada
+  allUsers = allUsers.filter(u => u.cedula !== cedula);
+  if (document.getElementById('stat-users')) document.getElementById('stat-users').textContent = allUsers.length;
+  renderUsers(allUsers);
+}
+
+// ── IMAGEN UPLOAD ─────────────────────────────────────────────
+const IMG_MAX_PX  = 1200;
+const IMG_QUALITY = 0.85;
+const IMG_BUCKET  = 'imagenes';
+
+function imgToWebP(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > IMG_MAX_PX || h > IMG_MAX_PX) { const r = Math.min(IMG_MAX_PX/w, IMG_MAX_PX/h); w=Math.round(w*r); h=Math.round(h*r); }
+      const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+      const ctx = canvas.getContext('2d'); ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Conversión fallida')), 'image/webp', IMG_QUALITY);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('No se pudo leer la imagen')); };
+    img.src = objUrl;
+  });
+}
+
+async function uploadProductImage(file) {
+  const codigo  = document.getElementById('f-codigo').value.trim().toUpperCase();
+  const status  = document.getElementById('img-upload-status');
+  const preview = document.getElementById('img-preview-wrap');
+  if (!codigo) { status.style.display='block'; status.className='img-status-err'; status.textContent='⚠ Ingresa primero el Código.'; return; }
+  status.style.display='block'; status.className='img-status-ing'; status.textContent='Convirtiendo a WebP…'; preview.style.display='none';
+  try {
+    const webpBlob = await imgToWebP(file);
+    const origKB = Math.round(file.size/1024); const newKB = Math.round(webpBlob.size/1024);
+    status.textContent = `Subiendo… (${origKB}KB → ${newKB}KB)`;
+    const filename = codigo.toLowerCase() + '.webp';
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${IMG_BUCKET}/${encodeURIComponent(filename)}`;
+    const resp = await fetch(uploadUrl, { method:'POST', headers:{ 'Authorization':`Bearer ${SUPABASE_KEY}`, 'Content-Type':'image/webp', 'x-upsert':'true' }, body:webpBlob });
+    if (!resp.ok) { const txt = await resp.text(); throw new Error(`[${resp.status}] ${txt.slice(0,100)}`); }
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${IMG_BUCKET}/${filename}`;
+    document.getElementById('f-imagen').value = publicUrl;
+    document.getElementById('img-preview').src = URL.createObjectURL(webpBlob);
+    preview.style.display = 'block';
+    status.className = 'img-status-ok'; status.textContent = `✅ Subida como ${filename} (${newKB}KB)`;
+  } catch(e) { status.className='img-status-err'; status.textContent='✗ Error: '+e.message; }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput   = document.getElementById('img-file-input');
+  const uploadLabel = document.getElementById('img-upload-btn');
+  uploadLabel.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => { if (e.target.files[0]) uploadProductImage(e.target.files[0]); e.target.value=''; });
+});
+
+// ── HELPER ───────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ── TOUCH GESTURES ────────────────────────────────────────────
+(function() {
+  var sx = 0, sy = 0, tgt = null;
+  var PAGES = ['products','orders','users','settings','su'];
+  function currentPage() {
+    for (var i = 0; i < PAGES.length; i++) {
+      var el = document.getElementById('page-' + PAGES[i]);
+      if (el && el.style.display !== 'none') return PAGES[i];
+    }
+    return 'products';
+  }
+  function isScrollableX(el) {
+    while (el && el !== document.body) {
+      var s = window.getComputedStyle(el);
+      if (s.overflowX === 'auto' || s.overflowX === 'scroll') return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+  document.addEventListener('touchstart', function(e) {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+    if (ady > 70 && dy > 0 && ady > adx) {
+      document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+        var card = m.querySelector('.modal-card');
+        if (!card || !card.contains(tgt)) m.classList.remove('open');
+      });
+      return;
+    }
+    if (adx < 60 || ady > adx * 0.65 || isScrollableX(tgt)) return;
+    var idx = PAGES.indexOf(currentPage());
+    if (dx < 0 && idx < PAGES.length - 1) showPage(PAGES[idx + 1]);
+    else if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);
+  }, { passive: true });
+})();
+
+// ── INIT ─────────────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>

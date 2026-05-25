@@ -96,6 +96,23 @@
   .modal-btns { display:flex;gap:12px;margin-top:24px; }
   .modal-btns .btn { flex:1;padding:13px; }
 
+  /* ── COMBOBOX ── */
+  .cb-wrap { position:relative; }
+  .cb-list {
+    display:none; position:fixed; z-index:9999;
+    background:#fff; border:1.5px solid #1f2937; border-radius:9px;
+    max-height:200px; overflow-y:auto; box-shadow:0 6px 20px rgba(0,0,0,.15);
+  }
+  .cb-list.open { display:block; }
+  .cb-opt {
+    padding:10px 14px; font-size:14px; color:#374151; cursor:pointer;
+    border-bottom:1px solid #f3f4f6;
+  }
+  .cb-opt:last-child { border-bottom:none; }
+  .cb-opt:hover { background:#f3f4f6; color:#1f2937; }
+  .cb-select { display:block; }
+  .cb-arrow { position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#6b7280;pointer-events:none;font-size:13px; }
+
   /* ── ORDERS ── */
   .order-detail { background:#f9fafb;border-radius:10px;padding:14px;margin-top:8px;font-size:13px;display:none; }
   .order-detail.open { display:block; }
@@ -436,31 +453,43 @@
         <label>IVA (%)</label>
         <input type="number" id="f-iva" placeholder="13" min="0" max="100" step="0.01">
       </div>
+      <div class="form-field">
+        <label>Estado</label>
+        <div class="cb-wrap cb-select">
+          <input type="text" id="f-activo" readonly style="cursor:pointer;">
+          <div class="cb-list" id="dd-activo"></div>
+        </div>
+      </div>
       <div class="form-field full">
         <label>Nombre completo *</label>
         <input type="text" id="f-nombre" placeholder="Nombre del producto" autocomplete="off">
       </div>
       <div class="form-field">
         <label>Marca</label>
-        <input type="text" id="f-marca" placeholder="BIOLAND" list="dl-marca" autocomplete="off">
+        <div class="cb-wrap">
+          <input type="text" id="f-marca" placeholder="BIOLAND" autocomplete="off">
+          <div class="cb-list" id="dd-marca"></div>
+        </div>
       </div>
       <div class="form-field">
         <label>Línea</label>
-        <input type="text" id="f-spc" placeholder="Cuidado personal" list="dl-spc" autocomplete="off">
+        <div class="cb-wrap">
+          <input type="text" id="f-spc" readonly style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;">
+        </div>
       </div>
       <div class="form-field">
         <label>Categoría</label>
-        <select id="f-categoria">
-          <option value="Alimentos">Alimentos</option>
-          <option value="Capilar">Capilar</option>
-          <option value="Facial">Facial</option>
-          <option value="Corporal">Corporal</option>
-          <option value="Packs">Packs</option>
-        </select>
+        <div class="cb-wrap cb-select">
+          <input type="text" id="f-categoria" readonly style="cursor:pointer;">
+          <div class="cb-list" id="dd-categoria"></div>
+        </div>
       </div>
       <div class="form-field">
         <label>Subcategoría</label>
-        <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…" list="dl-subcategoria" autocomplete="off">
+        <div class="cb-wrap">
+          <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…" autocomplete="off">
+          <div class="cb-list" id="dd-subcategoria"></div>
+        </div>
       </div>
       <div class="form-field full">
         <label>Imagen</label>
@@ -475,13 +504,6 @@
         <div id="img-preview-wrap" style="margin-top:10px;display:none;">
           <img id="img-preview" style="max-width:120px;max-height:120px;border-radius:8px;border:1.5px solid #e5e7eb;object-fit:cover;">
         </div>
-      </div>
-      <div class="form-field">
-        <label>Estado</label>
-        <select id="f-activo">
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
-        </select>
       </div>
     </div>
     <div class="modal-btns">
@@ -735,22 +757,112 @@ async function toggleActivo(codigo) {
   document.getElementById('stat-products').textContent = activos;
 }
 
-function buildDatalistsFromProducts() {
-  const fields = [
-    { id: 'dl-marca',       key: 'marca' },
-    { id: 'dl-spc',         key: 'spc' },
-    { id: 'dl-subcategoria',key: 'subcategoria' },
-  ];
-  fields.forEach(function({ id, key }) {
-    var dl = document.getElementById(id);
-    if (!dl) return;
-    var values = [...new Set(allProducts.map(p => p[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
-    dl.innerHTML = values.map(v => '<option value="' + esc(v) + '">').join('');
+// ── COMBOBOX ─────────────────────────────────────────────
+const _cbFields = [
+  { inputId: 'f-marca',        ddId: 'dd-marca',        key: 'marca' },
+  { inputId: 'f-subcategoria', ddId: 'dd-subcategoria', key: 'subcategoria' },
+  { inputId: 'f-categoria',    ddId: 'dd-categoria',    static: ['Alimentos','Capilar','Facial','Corporal','Packs'] },
+  { inputId: 'f-activo',       ddId: 'dd-activo',       static: ['Activo','Inactivo'] },
+];
+const _cbOpts = {};
+
+function positionCbList(inp, dd) {
+  var r = inp.getBoundingClientRect();
+  dd.style.left  = r.left + 'px';
+  dd.style.top   = (r.bottom + 4) + 'px';
+  dd.style.width = r.width + 'px';
+}
+
+function getSubcatOpts() {
+  var spc = (document.getElementById('f-spc').value || '').trim();
+  var source = spc
+    ? allProducts.filter(function(p) { return p.spc === spc; })
+    : allProducts;
+  return [...new Set(source.map(function(p) { return p.subcategoria; }).filter(Boolean))].sort(function(a,b) { return a.localeCompare(b,'es'); });
+}
+
+function buildComboboxes() {
+  _cbFields.forEach(function(f) {
+    var values = f.static
+      ? f.static
+      : [...new Set(allProducts.map(function(p) { return p[f.key]; }).filter(Boolean))].sort(function(a,b) { return a.localeCompare(b,'es'); });
+    _cbOpts[f.inputId] = values;
+    var inp = document.getElementById(f.inputId);
+    var dd  = document.getElementById(f.ddId);
+    if (!inp || !dd) return;
+
+    if (f.static) {
+      // Campo estático: click abre/cierra
+      renderCbList(f.ddId, values);
+      inp.onclick = function() {
+        var isOpen = dd.classList.contains('open');
+        document.querySelectorAll('.cb-list.open').forEach(function(d) { d.classList.remove('open'); });
+        if (!isOpen) { positionCbList(inp, dd); dd.classList.add('open'); }
+      };
+      inp.onblur = function() { setTimeout(function() { dd.classList.remove('open'); }, 160); };
+    } else if (f.inputId === 'f-subcategoria') {
+      inp.onfocus = function() {
+        var opts = getSubcatOpts();
+        renderCbList(f.ddId, opts);
+        positionCbList(inp, dd);
+        if (opts.length) dd.classList.add('open');
+      };
+      inp.oninput = function() {
+        var q = inp.value.toLowerCase();
+        renderCbList(f.ddId, getSubcatOpts().filter(function(v) { return v.toLowerCase().includes(q); }));
+        positionCbList(inp, dd);
+        dd.classList.add('open');
+      };
+      inp.onblur = function() { setTimeout(function() { dd.classList.remove('open'); }, 160); };
+    } else {
+      inp.onfocus = function() {
+        renderCbList(f.ddId, _cbOpts[f.inputId]);
+        positionCbList(inp, dd);
+        if (_cbOpts[f.inputId].length) dd.classList.add('open');
+      };
+      inp.oninput = function() {
+        var q = inp.value.toLowerCase();
+        renderCbList(f.ddId, _cbOpts[f.inputId].filter(function(v) { return v.toLowerCase().includes(q); }));
+        positionCbList(inp, dd);
+        dd.classList.add('open');
+      };
+      inp.onblur = function() { setTimeout(function() { dd.classList.remove('open'); }, 160); };
+    }
   });
 }
 
+function onCategoriaChange() {
+  var cat = document.getElementById('f-categoria').value;
+  document.getElementById('f-spc').value = (cat === 'Alimentos') ? 'Alimentos' : 'Cuidado personal';
+}
+
+function renderCbList(ddId, values) {
+  var dd = document.getElementById(ddId);
+  if (!dd) return;
+  dd.innerHTML = values.map(function(v) {
+    return '<div class="cb-opt" onmousedown="selectCbOpt(event,\'' + ddId + '\',\'' + v.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">' + esc(v) + '</div>';
+  }).join('');
+}
+
+function selectCbOpt(e, ddId, value) {
+  e.preventDefault();
+  var map = { 'dd-marca': 'f-marca', 'dd-subcategoria': 'f-subcategoria', 'dd-categoria': 'f-categoria', 'dd-activo': 'f-activo' };
+  var inp = document.getElementById(map[ddId]);
+  if (inp) inp.value = value;
+  var dd = document.getElementById(ddId);
+  if (dd) dd.classList.remove('open');
+  if (ddId === 'dd-categoria') onCategoriaChange();
+}
+
+// Cerrar todos al hacer click fuera
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.cb-wrap')) {
+    document.querySelectorAll('.cb-list.open').forEach(function(d) { d.classList.remove('open'); });
+  }
+});
+
 function openProductModal(product) {
-  buildDatalistsFromProducts();
+  buildComboboxes();
   editingProduct = product ? product.codigo : null;
   document.getElementById('product-modal-title').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
   document.getElementById('f-codigo').value      = product?.codigo      || '';
@@ -758,12 +870,12 @@ function openProductModal(product) {
   document.getElementById('f-nombre').value      = product?.nombre      || '';
   document.getElementById('f-marca').value       = product?.marca       || '';
   document.getElementById('f-spc').value         = product?.spc         || 'Cuidado personal';
-  document.getElementById('f-categoria').value   = product?.categoria   || '';
+  document.getElementById('f-categoria').value   = product?.categoria   || 'Capilar';
   document.getElementById('f-subcategoria').value= product?.subcategoria|| '';
   document.getElementById('f-precio').value      = product?.precio      || '';
   document.getElementById('f-iva').value         = product?.iva != null ? product.iva : 13;
   document.getElementById('f-imagen').value      = product?.imagen      || '';
-  document.getElementById('f-activo').value      = product?.activo === false ? 'false' : 'true';
+  document.getElementById('f-activo').value      = product?.activo === false ? 'Inactivo' : 'Activo';
   // Resetear estado del upload de imagen
   document.getElementById('img-upload-status').style.display = 'none';
   document.getElementById('img-preview-wrap').style.display  = 'none';
@@ -788,25 +900,42 @@ function editProduct(codigo) {
 
 async function saveProduct() {
   const btn = document.getElementById('save-product-btn');
-  btn.disabled = true; btn.textContent = 'Guardando…';
 
   const payload = {
     codigo:       document.getElementById('f-codigo').value.trim().toUpperCase(),
     nombre:       document.getElementById('f-nombre').value.trim(),
     marca:        document.getElementById('f-marca').value.trim(),
-    spc:          document.getElementById('f-spc').value,
+    spc:          document.getElementById('f-spc').value.trim(),
     categoria:    document.getElementById('f-categoria').value.trim(),
     subcategoria: document.getElementById('f-subcategoria').value.trim(),
     precio:       parseInt(document.getElementById('f-precio').value) || 0,
-    iva:          parseFloat(document.getElementById('f-iva').value) || 13,
+    iva:          parseFloat(document.getElementById('f-iva').value) ?? 13,
     imagen:       document.getElementById('f-imagen').value.trim(),
-    activo:       document.getElementById('f-activo').value === 'true',
+    activo:       document.getElementById('f-activo').value === 'Activo',
     updated_at:   new Date().toISOString()
   };
 
-  if (!payload.codigo || !payload.nombre) {
-    showToast('Código y Nombre son obligatorios.', 'warn'); btn.disabled=false; btn.textContent='Guardar'; return;
+  // Validar todos los campos obligatorios
+  const required = [
+    { val: payload.codigo,       id: 'f-codigo',       label: 'Código' },
+    { val: payload.nombre,       id: 'f-nombre',       label: 'Nombre' },
+    { val: payload.marca,        id: 'f-marca',        label: 'Marca' },
+    { val: payload.categoria,    id: 'f-categoria',    label: 'Categoría' },
+    { val: payload.subcategoria, id: 'f-subcategoria', label: 'Subcategoría' },
+    { val: payload.imagen,       id: 'f-imagen',       label: 'Imagen' },
+    { val: payload.precio > 0 ? 'ok' : '', id: 'f-precio', label: 'Precio' },
+  ];
+  const missing = required.filter(function(r) { return !r.val; });
+  if (missing.length) {
+    missing.forEach(function(r) {
+      var el = document.getElementById(r.id);
+      if (el) { el.style.borderColor = '#dc2626'; el.addEventListener('input', function() { el.style.borderColor = ''; }, { once: true }); }
+    });
+    showToast('Faltan campos obligatorios: ' + missing.map(function(r) { return r.label; }).join(', '), 'warn');
+    return;
   }
+
+  btn.disabled = true; btn.textContent = 'Guardando…';
 
   let error;
   if (editingProduct) {
@@ -1194,9 +1323,5 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 initAuth();
 </script>
 
-<!-- Datalists para comboboxes del modal de producto -->
-<datalist id="dl-marca"></datalist>
-<datalist id="dl-spc"></datalist>
-<datalist id="dl-subcategoria"></datalist>
 </body>
 </html>

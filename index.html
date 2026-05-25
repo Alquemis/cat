@@ -614,18 +614,27 @@
   }
   .modal-overlay.open { display: flex; }
   .modal-card {
-    background: #fff; border-radius: 20px; padding: 36px;
+    background: #fff; border-radius: 20px; padding: 0;
     width: 100%; max-width: 480px;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+    max-height: 92vh; overflow: hidden;
+    display: flex; flex-direction: column;
   }
+  .modal-hd { padding: 28px 28px 16px; flex-shrink: 0; }
+  .modal-items {
+    flex: 1 1 auto; overflow-y: auto; min-height: 60px;
+    background: #f9fafb; border-radius: 12px;
+    padding: 12px 16px; margin: 0 28px 14px;
+  }
+  .modal-ft { padding: 0 28px 24px; flex-shrink: 0; }
   .modal-title { font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 6px; }
-  .modal-sub { font-size: 14px; color: #6b7280; margin-bottom: 24px; }
+  .modal-sub { font-size: 14px; color: #6b7280; margin-bottom: 0; }
   .modal-summary {
     background: #f9fafb; border-radius: 12px; padding: 16px;
     margin-bottom: 20px; max-height: 200px; overflow-y: auto;
   }
   .modal-summary-item { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #374151; }
-  .modal-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1f2937; padding-top: 12px; border-top: 1px solid #e5e7eb; margin-top: 8px; }
+  .modal-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1f2937; padding-top: 10px; border-top: 1.5px solid #e5e7eb; margin-top: 6px; margin-bottom: 14px; }
   .modal-notes { margin-bottom: 20px; }
   .modal-notes label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
   .modal-notes textarea {
@@ -645,7 +654,7 @@
   .modal-confirm:disabled { background: #9ca3af; cursor: not-allowed; }
 
   /* Success state */
-  .order-success { text-align: center; padding: 20px 0; }
+  .order-success { text-align: center; padding: 40px 28px; flex: 1; }
   .order-success-icon { font-size: 64px; margin-bottom: 16px; }
   .order-success-title { font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 8px; }
   .order-success-sub { font-size: 14px; color: #6b7280; line-height: 1.6; }
@@ -1604,35 +1613,38 @@ function showOrderForm() {
   const total = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
   const subtotalSinIva = Math.round(total / 1.13);
   const ivaAmt = total - subtotalSinIva;
-  let summaryHtml = activeCart.map(item => `
+
+  const itemsHtml = activeCart.map(item => `
     <div class="modal-summary-item">
       <span>${escHtml(item.product.n)} × ${item.qty}</span>
       <span>₡${(priceIva(item.product) * item.qty).toLocaleString('es-CR')}</span>
     </div>`).join('');
-  summaryHtml += `
-    <div class="modal-summary-item" style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:8px;color:#6b7280;">
-      <span>Subtotal (sin IVA)</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span>
-    </div>
-    <div class="modal-summary-item" style="color:#6b7280;">
-      <span>IVA 13%</span><span>₡${ivaAmt.toLocaleString('es-CR')}</span>
-    </div>
-    <div class="modal-total"><span>TOTAL</span><span>₡${total.toLocaleString('es-CR')}</span></div>`;
 
   document.getElementById('modal-card').innerHTML = `
-    <div class="modal-title">📋 Confirmar Pedido</div>
-    <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación.</div>
-    <div class="modal-summary">${summaryHtml}</div>
-    <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:10px;text-align:center">
-      <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Método de pago</div>
-      <div style="font-size:13px;font-weight:600;color:#1e3a8a">Transferencia Bancaria Martimac</div>
-      <div style="font-size:13px;font-weight:700;color:#1e3a8a;letter-spacing:.5px;margin-top:2px">CR35010200009548363672</div>
+    <div class="modal-hd">
+      <div class="modal-title">📋 Confirmar Pedido</div>
+      <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación.</div>
     </div>
-    <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:11px 16px;margin-bottom:20px;text-align:center">
-      <div style="font-size:12px;font-weight:700;color:#c2410c">⚠ Por favor no realice la transferencia de pago hasta recibir su pedido.</div>
-    </div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeOrderModal()">Cancelar</button>
-      <button class="modal-confirm" id="modal-confirm-btn" onclick="submitOrder()">Confirmar y Enviar</button>
+    <div class="modal-items">${itemsHtml}</div>
+    <div class="modal-ft">
+      <div class="modal-summary-item" style="color:#6b7280;">
+        <span>Subtotal (sin IVA)</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span>
+      </div>
+      <div class="modal-summary-item" style="color:#6b7280;">
+        <span>IVA 13%</span><span>₡${ivaAmt.toLocaleString('es-CR')}</span>
+      </div>
+      <div class="modal-total"><span>TOTAL</span><span>₡${total.toLocaleString('es-CR')}</span></div>
+      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px 16px;margin-bottom:10px;text-align:center">
+        <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Método de pago</div>
+        <div style="font-size:13px;font-weight:600;color:#1e3a8a">Transferencia Bancaria Martimac</div>
+      </div>
+      <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:10px 14px;margin-bottom:16px;text-align:center">
+        <div style="font-size:12px;font-weight:700;color:#c2410c">⚠ Por favor no realice la transferencia de pago hasta recibir su pedido.</div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="closeOrderModal()">Cancelar</button>
+        <button class="modal-confirm" id="modal-confirm-btn" onclick="submitOrder()">Confirmar y Enviar</button>
+      </div>
     </div>`;
 }
 

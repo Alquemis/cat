@@ -215,7 +215,6 @@
   <button class="page-tab active" onclick="showPage('products')">📦 Productos</button>
   <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
   <button class="page-tab" onclick="showPage('users')">👤 Colaboradores</button>
-  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
   <button class="page-tab" onclick="showPage('su')">🔐 Superusuario</button>
 </div>
 
@@ -581,7 +580,7 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
 
 // ── PAGES ────────────────────────────────────────────────
-const ALL_PAGES = ['products','orders','users','settings','su'];
+const ALL_PAGES = ['products','orders','users','su'];
 
 function showPage(page) {
   ALL_PAGES.forEach(p => {
@@ -590,10 +589,9 @@ function showPage(page) {
   document.querySelectorAll('.page-tab').forEach((t,i) => {
     t.classList.toggle('active', ALL_PAGES[i] === page);
   });
-  if (page==='orders'   && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
-  if (page==='users'    && allUsers.length===0)  loadUsers();
-  if (page==='settings') loadConfig();
-  if (page==='su')       loadSuPage();
+  if (page==='orders' && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
+  if (page==='users'  && allUsers.length===0) loadUsers();
+  if (page==='su')    loadSuPage();
 }
 
 // ── STATS ────────────────────────────────────────────────
@@ -1053,7 +1051,7 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 // ── TOUCH GESTURES ────────────────────────────────────────────
 (function() {
   var sx = 0, sy = 0, tgt = null;
-  var PAGES = ['products','orders','users','settings','su'];
+  var PAGES = ['products','orders','users','su'];
   function currentPage() {
     for (var i = 0; i < PAGES.length; i++) {
       var el = document.getElementById('page-' + PAGES[i]);

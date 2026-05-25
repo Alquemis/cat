@@ -635,7 +635,7 @@ function renderProducts(list) {
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
     html +=     '<div class="pr-code">' + codigo + '</div>';
     html +=   '</div>';
-    html +=   '<span class="badge ' + badgeClass + '" style="flex-shrink:0">' + badgeLabel + '</span>';
+    html +=   '<button class="badge ' + badgeClass + '" style="flex-shrink:0;cursor:pointer;border:none;font-family:inherit;font-size:inherit" onclick="toggleActivo(\'' + codigo + '\')" id="badge-activo-' + codigo + '">' + badgeLabel + '</button>';
     html +=   '<div class="pr-price">&#x20A1;' + precio + '</div>';
     html +=   '<div class="pr-actions">';
     html +=     '<button class="btn btn-sm btn-secondary" onclick="editProduct(\'' + codigo + '\')">&#9999; Editar</button>';
@@ -645,6 +645,32 @@ function renderProducts(list) {
   }
   html += '</div></div>';
   wrap.innerHTML = html;
+}
+
+async function toggleActivo(codigo) {
+  const btn = document.getElementById('badge-activo-' + codigo);
+  if (!btn) return;
+  const esActivo = btn.classList.contains('badge-green');
+  const nuevoEstado = !esActivo;
+  btn.disabled = true; btn.textContent = '…';
+  const { error } = await sb.from('productos')
+    .update({ activo: nuevoEstado, updated_at: new Date().toISOString() })
+    .eq('codigo', codigo);
+  if (error) {
+    alert('Error: ' + error.message);
+    btn.disabled = false;
+    btn.textContent = esActivo ? 'Activo' : 'Inactivo';
+    return;
+  }
+  btn.classList.toggle('badge-green', nuevoEstado);
+  btn.classList.toggle('badge-gray',  !nuevoEstado);
+  btn.textContent = nuevoEstado ? 'Activo' : 'Inactivo';
+  btn.disabled = false;
+  // Actualizar el array local y el stat
+  const prod = allProducts.find(p => p.codigo === codigo);
+  if (prod) prod.activo = nuevoEstado;
+  const activos = allProducts.filter(p => p.activo !== false).length;
+  document.getElementById('stat-products').textContent = activos;
 }
 
 function openProductModal(product) {

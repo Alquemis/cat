@@ -1480,10 +1480,13 @@ function showOrderForm() {
     <div class="modal-title">📋 Confirmar Pedido</div>
     <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación.</div>
     <div class="modal-summary">${summaryHtml}</div>
-    <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:20px;text-align:center">
+    <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:14px 16px;margin-bottom:10px;text-align:center">
       <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Método de pago</div>
       <div style="font-size:13px;font-weight:600;color:#1e3a8a">Transferencia Bancaria Martimac</div>
       <div style="font-size:13px;font-weight:700;color:#1e3a8a;letter-spacing:.5px;margin-top:2px">CR35010200009548363672</div>
+    </div>
+    <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:11px 16px;margin-bottom:20px;text-align:center">
+      <div style="font-size:12px;font-weight:700;color:#c2410c">⚠ Por favor no realice la transferencia de pago hasta recibir su pedido.</div>
     </div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeOrderModal()">Cancelar</button>
@@ -1575,7 +1578,7 @@ async function descargarCopiaRecibo(orderData) {
   const W = 600, PAD = 36, IMG_S = 48, ROW_H = 68;
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
-  const H = 300 + items.length * ROW_H + 140;
+  const H = 300 + items.length * ROW_H + 190;
 
   // Cargar imágenes de productos
   const imgEls = await Promise.all(items.map(item => new Promise(res => {
@@ -1731,7 +1734,7 @@ async function descargarCopiaRecibo(orderData) {
   ctx.fillText('₡' + total.toLocaleString('es-CR'), W - PAD - 16, y + 23);
   ctx.textAlign = 'left'; y += 60;
 
-  // Bloque método de pago
+  // Bloque método de pago (azul)
   rr(PAD, y, W - PAD * 2, 56, 10);
   ctx.fillStyle = '#eff6ff'; ctx.fill();
   ctx.strokeStyle = '#bfdbfe'; ctx.lineWidth = 1.5;
@@ -1745,7 +1748,18 @@ async function descargarCopiaRecibo(orderData) {
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.fillText('CR35010200009548363672', W / 2, y + 47);
   ctx.textAlign = 'left';
-  y += 68;
+  y += 66;
+
+  // Aviso naranja
+  rr(PAD, y, W - PAD * 2, 36, 10);
+  ctx.fillStyle = '#fff7ed'; ctx.fill();
+  ctx.strokeStyle = '#fed7aa'; ctx.lineWidth = 1.5;
+  rr(PAD, y, W - PAD * 2, 36, 10); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#c2410c'; ctx.font = 'bold 10px system-ui, sans-serif';
+  ctx.fillText('⚠ Por favor no realice la transferencia de pago hasta recibir su pedido.', W / 2, y + 18);
+  ctx.textAlign = 'left';
+  y += 46;
 
   // Footer
   ctx.fillStyle = '#d1d5db'; ctx.font = '10px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';

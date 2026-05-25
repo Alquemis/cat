@@ -438,26 +438,29 @@
       </div>
       <div class="form-field full">
         <label>Nombre completo *</label>
-        <input type="text" id="f-nombre" placeholder="Nombre del producto">
+        <input type="text" id="f-nombre" placeholder="Nombre del producto" autocomplete="off">
       </div>
       <div class="form-field">
         <label>Marca</label>
-        <input type="text" id="f-marca" placeholder="BIOLAND">
+        <input type="text" id="f-marca" placeholder="BIOLAND" list="dl-marca" autocomplete="off">
       </div>
       <div class="form-field">
         <label>Línea</label>
-        <select id="f-spc">
-          <option value="Cuidado personal">Cuidado personal</option>
-          <option value="Alimentos">Alimentos</option>
-        </select>
+        <input type="text" id="f-spc" placeholder="Cuidado personal" list="dl-spc" autocomplete="off">
       </div>
       <div class="form-field">
         <label>Categoría</label>
-        <input type="text" id="f-categoria" placeholder="Capilar, Facial, Galletas…">
+        <select id="f-categoria">
+          <option value="Alimentos">Alimentos</option>
+          <option value="Capilar">Capilar</option>
+          <option value="Facial">Facial</option>
+          <option value="Corporal">Corporal</option>
+          <option value="Packs">Packs</option>
+        </select>
       </div>
       <div class="form-field">
         <label>Subcategoría</label>
-        <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…">
+        <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…" list="dl-subcategoria" autocomplete="off">
       </div>
       <div class="form-field full">
         <label>Imagen</label>
@@ -732,7 +735,22 @@ async function toggleActivo(codigo) {
   document.getElementById('stat-products').textContent = activos;
 }
 
+function buildDatalistsFromProducts() {
+  const fields = [
+    { id: 'dl-marca',       key: 'marca' },
+    { id: 'dl-spc',         key: 'spc' },
+    { id: 'dl-subcategoria',key: 'subcategoria' },
+  ];
+  fields.forEach(function({ id, key }) {
+    var dl = document.getElementById(id);
+    if (!dl) return;
+    var values = [...new Set(allProducts.map(p => p[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
+    dl.innerHTML = values.map(v => '<option value="' + esc(v) + '">').join('');
+  });
+}
+
 function openProductModal(product) {
+  buildDatalistsFromProducts();
   editingProduct = product ? product.codigo : null;
   document.getElementById('product-modal-title').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
   document.getElementById('f-codigo').value      = product?.codigo      || '';
@@ -1175,5 +1193,10 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 // ── INIT ─────────────────────────────────────────────────
 initAuth();
 </script>
+
+<!-- Datalists para comboboxes del modal de producto -->
+<datalist id="dl-marca"></datalist>
+<datalist id="dl-spc"></datalist>
+<datalist id="dl-subcategoria"></datalist>
 </body>
 </html>

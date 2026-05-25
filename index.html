@@ -830,6 +830,21 @@
 <div id="app-toast"></div>
 
 <!-- ========== POPUP ELIMINAR PEDIDO ========== -->
+<!-- MODAL ADVERTENCIA EN MORA -->
+<div class="modal-overlay" id="mora-warn-modal" style="z-index:1100">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:400px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.25);">
+    <div style="font-size:48px;margin-bottom:16px;">🔴</div>
+    <div style="font-size:18px;font-weight:800;color:#dc2626;margin-bottom:10px;">Pedido en mora</div>
+    <div style="font-size:14px;color:#374151;line-height:1.6;margin-bottom:8px;">
+      Tienes uno o más pedidos facturados con <strong>más de 7 días pendientes de pago</strong>.
+    </div>
+    <div style="font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:24px;">
+      Para realizar un nuevo pedido debes ponerte al día con pagos pendientes. Comunícate con tu departamento de facturación.
+    </div>
+    <button onclick="closeMoraWarn()" style="width:100%;padding:13px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Entendido</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="del-order-modal" style="z-index:900">
   <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
     <div style="font-size:34px;margin-bottom:12px;" id="del-order-icon">🗑</div>
@@ -1654,8 +1669,31 @@ function closeOrderModal() {
   document.getElementById('order-modal').classList.remove('open');
 }
 
+function closeMoraWarn() {
+  document.getElementById('mora-warn-modal').classList.remove('open');
+  // Cerrar también el modal de confirmación de pedido
+  document.getElementById('order-modal').classList.remove('open');
+}
+
 async function submitOrder() {
   if (!currentUser) return;
+
+  // Verificar mora: pedidos facturados con más de 7 días sin pago
+  const MS7 = 7 * 24 * 60 * 60 * 1000;
+  const now  = Date.now();
+  const { data: pedidosMora } = await sb
+    .from('pedidos')
+    .select('id, facturado_at')
+    .eq('estado', 'facturado')
+    .eq('usuario_email', currentUser.cedula);
+  const enMora = (pedidosMora || []).some(o =>
+    o.facturado_at && (now - new Date(o.facturado_at).getTime()) >= MS7
+  );
+  if (enMora) {
+    document.getElementById('mora-warn-modal').classList.add('open');
+    return;
+  }
+
   const confirmBtn = document.getElementById('modal-confirm-btn');
   confirmBtn.disabled = true;
   confirmBtn.textContent = 'Enviando…';

@@ -723,7 +723,10 @@ function showPage(page) {
     t.classList.toggle('active', ['products','orders','users','settings'][i] === page);
   });
   if (page==='orders'   && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
-  if (page==='users'    && allUsers.length===0)  loadUsers();
+  if (page==='users') {
+    if (allUsers.length===0) loadUsers();
+    if (allAdminHist.length===0) loadOrders();
+  }
   if (page==='settings') { loadConfig(); loadCfgUsers(); }
 }
 
@@ -1282,10 +1285,21 @@ function renderUsers(list) {
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
   }
+  const now = Date.now();
+  const MS7 = 7 * 24 * 60 * 60 * 1000;
   tbody.innerHTML = list.map(u => {
     const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
+    const pedidosMora = allAdminHist.filter(o =>
+      o.estado === 'facturado' &&
+      o.facturado_at &&
+      (now - new Date(o.facturado_at).getTime()) >= MS7 &&
+      (o.usuario_email === u.cedula || o.usuario_nombre === u.nombre)
+    );
+    const chipMora = pedidosMora.length
+      ? `<button class="chip-mora" onclick="openMoraModal('${esc(u.cedula||u.nombre)}','${esc(u.nombre||'—')}')">⚠ En mora (${pedidosMora.length})</button>`
+      : '';
     return `<tr>
-      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-weight:600">${esc(u.nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>

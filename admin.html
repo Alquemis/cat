@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin – Catálogo Colaboradores</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; }
@@ -337,6 +338,7 @@
       </div>
       <span id="prod-count" style="font-size:13px;color:#d1d5db;white-space:nowrap;"></span>
       <button class="btn btn-secondary" onclick="loadProducts()">↻ Recargar</button>
+      <button class="btn btn-secondary" onclick="exportProductsExcel()">⬇ Exportar a Excel</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
     <div id="products-list-wrap">
@@ -1558,6 +1560,44 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 
 // ── INIT ─────────────────────────────────────────────────
 initAuth();
+
+// ── EXPORTAR PRODUCTOS A EXCEL ────────────────────────────
+function exportProductsExcel() {
+  if (!allProducts.length) { showToast('No hay productos para exportar.', false); return; }
+
+  const rows = allProducts.map(p => ({
+    'Código':       p.codigo       || '',
+    'Nombre':       p.nombre       || '',
+    'Marca':        p.marca        || '',
+    'Categoría':    p.categoria    || '',
+    'Subcategoría': p.subcategoria || '',
+    'Línea':        p.spc          || '',
+    'Precio (₡)':   p.precio       || 0,
+    'IVA (%)':      p.iva          ?? '',
+    'Activo':       p.activo ? 'Sí' : 'No',
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Ancho de columnas
+  ws['!cols'] = [
+    { wch: 14 }, // Código
+    { wch: 40 }, // Nombre
+    { wch: 20 }, // Marca
+    { wch: 14 }, // Categoría
+    { wch: 20 }, // Subcategoría
+    { wch: 18 }, // Línea
+    { wch: 12 }, // Precio
+    { wch: 8  }, // IVA
+    { wch: 8  }, // Activo
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+
+  const fecha = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `Productos_Martimac_${fecha}.xlsx`);
+}
 </script>
 
 </body>

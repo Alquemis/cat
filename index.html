@@ -1065,7 +1065,7 @@ function doLogin() {
   const partes = nombre.trim().split(/\s+/);
   if (partes.length < 3) { showLoginError('Debes ingresar nombre y dos apellidos.'); return; }
   const apellidos = partes.slice(-2);
-  if (apellidos.some(a => a.length < 3)) { showLoginError('Los apellidos deben ser completos.'); return; }
+  if (apellidos.some(a => a.length < 4)) { showLoginError('Los apellidos deben ser completos.'); return; }
   if (!cedula)  { showLoginError('Por favor ingresa tu número de cédula.'); return; }
   if (cedula.includes('-')) { showLoginError('La cédula debe ser solo números, sin guiones.'); return; }
   if (!depto)   { showLoginError('Por favor ingresa tu departamento.'); return; }

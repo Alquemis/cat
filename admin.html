@@ -636,6 +636,8 @@ function _confirmReject() {
 // ── CONFIG ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
+// Service role — solo para subir/borrar imágenes en Storage (bypasea RLS)
+const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODc4NzA5MywiZXhwIjoyMDk0MzYzMDkzfQ.LU6bjBaSb_2zVxOZ7zrdgdVoD_0_2kF3mQ1YES_lOVo';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── ESTADO ───────────────────────────────────────────────
@@ -1466,13 +1468,17 @@ async function uploadProductImage(file) {
     const filename    = codigo.toLowerCase() + '.webp';
     const encodedName = encodeURIComponent(filename);
     const baseUrl     = `${SUPABASE_URL}/storage/v1/object/${IMG_BUCKET}/${encodedName}`;
-    const headers     = { 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'image/webp' };
+    const authHeader  = { 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` };
 
-    // Intentar borrar el archivo existente (si no existe, ignorar el error)
-    await fetch(baseUrl, { method: 'DELETE', headers }).catch(() => {});
+    // Intentar borrar el archivo existente (si no existe o falla, ignorar)
+    await fetch(baseUrl, { method: 'DELETE', headers: authHeader }).catch(() => {});
 
-    // Subir el nuevo archivo
-    const resp = await fetch(baseUrl, { method: 'POST', headers, body: webpBlob });
+    // Subir el nuevo archivo con upsert como respaldo
+    const resp = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { ...authHeader, 'Content-Type': 'image/webp', 'x-upsert': 'true' },
+      body: webpBlob
+    });
 
     if (!resp.ok) {
       const txt = await resp.text();

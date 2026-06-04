@@ -115,6 +115,13 @@
   .cb-arrow { position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#6b7280;pointer-events:none;font-size:13px; }
 
   /* ── ORDERS ── */
+  .th-sort { cursor:pointer;user-select:none;white-space:nowrap; }
+  .th-sort:hover { background:#f3f4f6;color:#1f2937; }
+  .sort-icon { font-size:10px;color:#d1d5db;margin-left:3px; }
+  .sort-asc .sort-icon::after  { content:'↑'; color:#1f2937; }
+  .sort-desc .sort-icon::after { content:'↓'; color:#1f2937; }
+  .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
+
   .order-detail { background:#f9fafb;border-radius:10px;padding:14px;margin-top:8px;font-size:13px;display:none; }
   .order-detail.open { display:block; }
   .order-detail table { font-size:13px; }
@@ -420,16 +427,27 @@
       <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
     </div>
     <div class="toolbar">
-      <div class="search-field">
+      <div class="search-field" style="flex:1;min-width:180px;">
         <span>🔍</span>
-        <input type="text" id="user-search" placeholder="Buscar colaborador…" oninput="filterUsers()">
+        <input type="text" id="user-search" placeholder="Buscar nombre o cédula…" oninput="filterUsers()">
       </div>
+      <select id="user-depto" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <option value="">Todos los departamentos</option>
+      </select>
+      <select id="user-lugar" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <option value="">Todos los lugares</option>
+        <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+      </select>
       <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th>Registro</th>
+          <th class="th-sort" onclick="sortUsers('nombre')"    id="uth-nombre">Nombre <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('cedula')"    id="uth-cedula">Cédula <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('departamento')" id="uth-departamento">Departamento <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('lugar')"     id="uth-lugar">Lugar <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('created_at')" id="uth-created_at">Registro <span class="sort-icon">↕</span></th>
         </tr></thead>
         <tbody id="users-tbody">
           <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
@@ -1266,6 +1284,8 @@ function openOrderDetail(id) {
 
 
 // ── COLABORADORES ─────────────────────────────────────────────
+let _userSort = { col: 'nombre', dir: 'asc' };
+
 async function loadUsers() {
   const { data, error } = await sb.from('usuarios')
     .select('cedula, nombre, departamento, lugar, created_at')
@@ -1273,15 +1293,59 @@ async function loadUsers() {
   if (error) { console.error(error); return; }
   allUsers = data || [];
   document.getElementById('stat-users').textContent = allUsers.length;
-  renderUsers(allUsers);
+
+  // Poblar departamentos dinámicamente
+  const deptos = [...new Set(allUsers.map(u => u.departamento).filter(Boolean))].sort();
+  const sel = document.getElementById('user-depto');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los departamentos</option>' +
+    deptos.map(d => `<option${d === cur ? ' selected' : ''}>${esc(d)}</option>`).join('');
+
+  filterUsers();
 }
 
 function filterUsers() {
-  const q = document.getElementById('user-search').value.toLowerCase();
-  renderUsers(allUsers.filter(u =>
-    (u.nombre || '').toLowerCase().includes(q) ||
-    (u.cedula || '').toLowerCase().includes(q)
-  ));
+  const q     = (document.getElementById('user-search').value || '').toLowerCase();
+  const depto = document.getElementById('user-depto').value;
+  const lugar = document.getElementById('user-lugar').value;
+
+  let list = allUsers.filter(u =>
+    (!q     || (u.nombre||'').toLowerCase().includes(q) || (u.cedula||'').toLowerCase().includes(q)) &&
+    (!depto || (u.departamento||'') === depto) &&
+    (!lugar || (u.lugar||'') === lugar)
+  );
+
+  // Aplicar orden actual
+  list = sortUsersList(list, _userSort.col, _userSort.dir);
+  renderUsers(list);
+}
+
+function sortUsers(col) {
+  if (_userSort.col === col) {
+    _userSort.dir = _userSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _userSort.col = col;
+    _userSort.dir = 'asc';
+  }
+  // Actualizar iconos en headers
+  ['nombre','cedula','departamento','lugar','created_at'].forEach(c => {
+    const th = document.getElementById('uth-' + c);
+    if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _userSort.col) th.classList.add(_userSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterUsers();
+}
+
+function sortUsersList(list, col, dir) {
+  return [...list].sort((a, b) => {
+    let va = (a[col] || ''), vb = (b[col] || '');
+    if (col === 'created_at') { va = new Date(va||0); vb = new Date(vb||0); }
+    else { va = va.toString().toLowerCase(); vb = vb.toString().toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
 }
 
 function renderUsers(list) {

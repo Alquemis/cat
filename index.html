@@ -1082,9 +1082,11 @@ async function onLogin(session, isRestore = false) {
   startSessionWatchdog();
 
   // Notificaciones
-  document.getElementById('notif-wrap').classList.add('visible');
-  renderNotifBadge();
-  startNotifPolling();
+  try {
+    document.getElementById('notif-wrap').classList.add('visible');
+    renderNotifBadge();
+    startNotifPolling();
+  } catch(e) { console.warn('Notificaciones no disponibles:', e.message); }
 
   // Intentar cargar productos desde Supabase
   await loadProductsFromDB();

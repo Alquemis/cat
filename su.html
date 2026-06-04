@@ -264,6 +264,7 @@
       <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
       <div class="stat-card" style="border-color:#fca5a5"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
+      <div class="stat-card" style="border-color:#fde68a;background:#fffbeb;"><div class="stat-value" style="color:#b45309" id="stat-orders-porfacturar">₡0</div><div class="stat-label" style="color:#b45309">Por facturar</div></div>
       <div class="stat-card" style="border-color:#6ee7b7"><div class="stat-value" style="color:#059669" id="stat-orders-facturado">—</div><div class="stat-label">Total facturado (₡)</div></div>
     </div>
     <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
@@ -812,13 +813,15 @@ async function loadOrders() {
   ]);
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
-  const cancelados  = allAdminHist.filter(o => o.estado === 'cancelado');
-  const facturados = allAdminHist.filter(o => o.estado === 'facturado');
-  const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
-  document.getElementById('stat-orders').textContent           = allAdminPend.length;
-  document.getElementById('stat-orders-total').textContent     = allAdminPend.length + allAdminHist.length;
+  const cancelados   = allAdminHist.filter(o => o.estado === 'cancelado');
+  const facturados   = allAdminHist.filter(o => o.estado === 'facturado');
+  const totalFact    = facturados.reduce((s, o) => s + (o.total || 0), 0);
+  const totalPorFact = allAdminPend.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('stat-orders').textContent            = allAdminPend.length;
+  document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
   document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
-  document.getElementById('stat-orders-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
+  document.getElementById('stat-orders-porfacturar').textContent = '₡' + totalPorFact.toLocaleString('es-CR');
+  document.getElementById('stat-orders-facturado').textContent  = '₡' + totalFact.toLocaleString('es-CR');
   const badge = document.getElementById('obadge-pend');
   if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
   filterAdminPend(); filterAdminHist();

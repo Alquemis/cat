@@ -298,6 +298,64 @@
   #app-toast.toast-ok    { background:#16a34a; }
   #app-toast.toast-warn  { background:#d97706; }
 
+  /* ── NOTIFICACIONES ── */
+  @keyframes bell-shake {
+    0%,100%{ transform:rotate(0); }
+    15%{ transform:rotate(18deg); }
+    30%{ transform:rotate(-16deg); }
+    45%{ transform:rotate(12deg); }
+    60%{ transform:rotate(-10deg); }
+    75%{ transform:rotate(6deg); }
+    90%{ transform:rotate(-4deg); }
+  }
+  .notif-wrap { position:relative; display:none; }
+  .notif-wrap.visible { display:flex; align-items:center; }
+  .notif-btn {
+    position:relative; background:none; border:none; cursor:pointer;
+    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:20px; transition:background .2s; flex-shrink:0;
+  }
+  .notif-btn:hover { background:#f3f4f6; }
+  .notif-btn.shaking { animation:bell-shake 0.8s ease infinite; }
+  .notif-badge {
+    position:absolute; top:1px; right:1px;
+    background:#ef4444; color:#fff; border-radius:999px;
+    font-size:10px; font-weight:700; min-width:17px; height:17px;
+    display:none; align-items:center; justify-content:center; padding:0 4px;
+  }
+  .notif-badge.show { display:flex; }
+  .notif-panel {
+    position:absolute; top:calc(100% + 10px); right:0;
+    width:320px; background:#fff; border-radius:16px;
+    border:1px solid #e5e7eb; box-shadow:0 12px 40px rgba(0,0,0,.15);
+    z-index:500; display:none; flex-direction:column; overflow:hidden;
+    max-height:420px;
+  }
+  .notif-panel.open { display:flex; }
+  .notif-panel-hd {
+    padding:14px 16px 10px; font-size:14px; font-weight:700;
+    color:#1f2937; border-bottom:1px solid #f3f4f6; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .notif-list { overflow-y:auto; flex:1; }
+  .notif-item {
+    padding:11px 14px; border-bottom:1px solid #e5e7eb;
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .notif-item:last-child { border-bottom:none; }
+  .notif-item.read { opacity:.38; }
+  .notif-top-row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .notif-meta   { display:flex; align-items:center; gap:6px; }
+  .notif-date   { font-size:10px; color:#9ca3af; }
+  .notif-chip   { display:inline-block; padding:2px 9px; border-radius:999px; font-size:10px; font-weight:600; }
+  .chip-facturado { background:#dbeafe; color:#1e40af; }
+  .chip-pagado    { background:#dcfce7; color:#166534; }
+  .chip-cancelado { background:#fee2e2; color:#dc2626; }
+  .notif-msg    { font-size:12px; color:#374151; line-height:1.4; }
+  .notif-close  { background:none; border:none; color:#d1d5db; font-size:14px; cursor:pointer; padding:0 2px; line-height:1; flex-shrink:0; transition:color .15s; }
+  .notif-close:hover { color:#dc2626; }
+  .notif-empty  { padding:32px 20px; text-align:center; color:#9ca3af; font-size:13px; }
+
   /* Cart button */
   .cart-btn {
     position: relative; background: #1f2937; color: #fff;
@@ -750,6 +808,7 @@
     </div>
   </div>
   <div class="topbar-right">
+    <!-- campanita notificaciones -->
     <!-- user menu -->
     <div class="user-menu-wrap" id="user-chip" style="display:none;">
       <button class="user-chip" onclick="toggleUserMenu(event)">
@@ -768,6 +827,23 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Mi pedido
       <span class="cart-badge" id="cart-badge">0</span>
     </button>
+    <!-- campanita notificaciones -->
+    <div class="notif-wrap" id="notif-wrap">
+      <button class="notif-btn" id="notif-btn" onclick="toggleNotifPanel(event)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="notif-badge" id="notif-badge">0</span>
+      </button>
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-panel-hd">
+          <span>Notificaciones</span>
+          <button onclick="clearAllNotif()" style="font-size:11px;font-weight:600;color:#6b7280;background:none;border:none;cursor:pointer;">Borrar todo</button>
+        </div>
+        <div class="notif-list" id="notif-list"></div>
+      </div>
+    </div>
   </div>
 </div>
   <!-- ========== NAV TABS ========== -->
@@ -1005,6 +1081,11 @@ async function onLogin(session, isRestore = false) {
   // Iniciar vigilancia de sesión (detecta eliminación por superuser)
   startSessionWatchdog();
 
+  // Notificaciones
+  document.getElementById('notif-wrap').classList.add('visible');
+  renderNotifBadge();
+  startNotifPolling();
+
   // Intentar cargar productos desde Supabase
   await loadProductsFromDB();
 
@@ -1015,6 +1096,8 @@ async function onLogin(session, isRestore = false) {
 
 function onLogout() {
   stopSessionWatchdog();
+  stopNotifPolling();
+  document.getElementById('notif-wrap').classList.remove('visible');
   currentUser = null;
   cart = [];
   localStorage.removeItem('catalogo_session');
@@ -2274,6 +2357,158 @@ function clearSearch() {
   window.addEventListener('resize', applyZoom);
   applyZoom();
 })();
+
+// ============================================================
+//  NOTIFICACIONES — Supabase
+// ============================================================
+let _notifTimer = null;
+let _notifCache = [];   // caché local para evitar re-fetches innecesarios
+
+const _notifMeta = {
+  facturado: { icon: '🔵', title: (num) => `Tu pedido #${num} ha sido facturado`, sub: '' },
+  pagado:    { icon: '🟢', title: (num) => `Tu pedido #${num} ha sido pagado, Gracias!!`, sub: '' },
+  cancelado: { icon: '🔴', title: (num) => `Tu pedido #${num} fue rechazado`, sub: 'Contáctanos si tienes dudas.' },
+};
+
+async function checkNotifications() {
+  if (!currentUser) return;
+
+  // 1. Traer pedidos relevantes del usuario
+  const { data: pedidos } = await sb.from('pedidos')
+    .select('id, estado')
+    .eq('usuario_email', currentUser.cedula)
+    .in('estado', ['facturado', 'pagado', 'cancelado']);
+  if (!pedidos) return;
+
+  // 2. Traer notificaciones ya existentes para este usuario
+  const { data: existentes } = await sb.from('notificaciones')
+    .select('order_id, estado')
+    .eq('usuario_cedula', currentUser.cedula);
+  const yaNotificados = new Set((existentes || []).map(n => n.order_id + '_' + n.estado));
+
+  // 3. Insertar las nuevas que no existan aún
+  const nuevas = pedidos
+    .filter(o => !yaNotificados.has(o.id + '_' + o.estado))
+    .map(o => ({
+      usuario_cedula: currentUser.cedula,
+      order_id:       o.id,
+      order_num:      o.id.slice(0,8).toUpperCase(),
+      estado:         o.estado,
+      read:           false,
+    }));
+
+  if (nuevas.length) await sb.from('notificaciones').insert(nuevas);
+
+  // 4. Actualizar badge
+  await refreshNotifBadge();
+}
+
+async function refreshNotifBadge() {
+  if (!currentUser) return;
+  const { data } = await sb.from('notificaciones')
+    .select('id, read')
+    .eq('usuario_cedula', currentUser.cedula);
+  _notifCache = data || [];
+  const unread = _notifCache.filter(n => !n.read).length;
+  const badge = document.getElementById('notif-badge');
+  const btn   = document.getElementById('notif-btn');
+  if (!badge || !btn) return;
+  badge.textContent = unread;
+  badge.classList.toggle('show', unread > 0);
+  btn.classList.toggle('shaking', unread > 0);
+}
+
+async function toggleNotifPanel(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('notif-panel');
+  if (panel.classList.contains('open')) {
+    closeNotifPanel();
+  } else {
+    await renderNotifList();
+    panel.classList.add('open');
+  }
+}
+
+async function renderNotifList() {
+  if (!currentUser) return;
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  list.innerHTML = '<div class="notif-empty" style="color:#9ca3af;font-size:13px;padding:24px;text-align:center;">Cargando…</div>';
+
+  const { data } = await sb.from('notificaciones')
+    .select('*')
+    .eq('usuario_cedula', currentUser.cedula)
+    .order('created_at', { ascending: false });
+
+  const items = data || [];
+  if (!items.length) {
+    list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>'; return;
+  }
+  list.innerHTML = items.map(n => {
+    const meta = _notifMeta[n.estado] || { icon: '📋', title: n.estado, sub: '' };
+    const time = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    const fecha = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
+    const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : 'Rechazado';
+    const chipClass = `chip-${n.estado}`;
+    const msg = typeof meta.title === 'function' ? meta.title(escHtml(n.order_num)) : meta.title;
+    return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}">
+      <div class="notif-top-row">
+        <div class="notif-meta">
+          <span class="notif-date">${fecha}</span>
+          <span class="notif-chip ${chipClass}">${chipLabel}</span>
+        </div>
+        <button class="notif-close" onclick="dismissNotif('${n.id}')">✕</button>
+      </div>
+      <div class="notif-msg">${msg}</div>
+    </div>`;
+  }).join('');
+}
+
+async function closeNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel.classList.contains('open')) return;
+  panel.classList.remove('open');
+  if (!currentUser) return;
+  // Marcar todas como leídas en Supabase
+  await sb.from('notificaciones')
+    .update({ read: true })
+    .eq('usuario_cedula', currentUser.cedula)
+    .eq('read', false);
+  await refreshNotifBadge();
+}
+
+async function dismissNotif(id) {
+  await sb.from('notificaciones').delete().eq('id', id);
+  const el = document.getElementById('nitem-' + id);
+  if (el) el.remove();
+  const list = document.getElementById('notif-list');
+  if (list && !list.querySelector('.notif-item'))
+    list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>';
+  await refreshNotifBadge();
+}
+
+async function clearAllNotif() {
+  if (!currentUser) return;
+  await sb.from('notificaciones').delete().eq('usuario_cedula', currentUser.cedula);
+  const list = document.getElementById('notif-list');
+  if (list) list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>';
+  await refreshNotifBadge();
+}
+
+function startNotifPolling() {
+  checkNotifications();
+  _notifTimer = setInterval(checkNotifications, 30000);
+}
+
+function stopNotifPolling() {
+  if (_notifTimer) { clearInterval(_notifTimer); _notifTimer = null; }
+}
+
+// Cerrar panel al hacer clic fuera
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('notif-wrap');
+  if (wrap && !wrap.contains(e.target)) closeNotifPanel();
+});
 
 // ============================================================
 //  INICIO

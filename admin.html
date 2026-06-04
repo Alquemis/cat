@@ -530,6 +530,15 @@
       </div>
     </div>
 
+    <!-- Días favoritos de pedido en el mes -->
+    <div class="dash-card" style="margin-bottom:20px;">
+      <div class="dash-card-title">
+        Días favoritos de pedido en el mes
+        <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">todos los pedidos, sin importar estado</span>
+      </div>
+      <canvas id="chart-dias-mes" height="80"></canvas>
+    </div>
+
   </div>
 
   <!-- ── PAGE: SETTINGS ── -->
@@ -1707,22 +1716,28 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 
 // ── INIT ─────────────────────────────────────────────────
 // ── DASHBOARD ────────────────────────────────────────────
-let _dashData = null;
-let _dashPeriod = 'day';
+let _dashData    = null;
+let _dashAllDays = null;   // todos los pedidos para análisis de días
+let _dashPeriod  = 'day';
 let _chartTiempo = null;
 let _chartDias   = null;
+let _chartDiasMes = null;
 
 async function loadDashboard() {
   if (_dashData) { renderDashboard(); return; }
 
-  // Traer todos los pedidos facturados/pagados con sus líneas
-  const { data: pedidos } = await sb
-    .from('pedidos')
-    .select('id, fecha, total, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal)')
-    .in('estado', ['facturado','pagado'])
-    .order('fecha', { ascending: true });
+  const [resFact, resAll] = await Promise.all([
+    sb.from('pedidos')
+      .select('id, fecha, total, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal)')
+      .in('estado', ['facturado','pagado'])
+      .order('fecha', { ascending: true }),
+    sb.from('pedidos')
+      .select('fecha')
+      .order('fecha', { ascending: true })
+  ]);
 
-  _dashData = pedidos || [];
+  _dashData    = resFact.data || [];
+  _dashAllDays = resAll.data  || [];
   renderDashboard();
 }
 
@@ -1814,6 +1829,35 @@ function renderDashboard() {
       </td>
       <td style="text-align:right;font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap">₡${Math.round(v/1000)}k</td>
     </tr>`).join('');
+
+  // ── Días favoritos del mes (todos los pedidos) ──
+  const porDiaMes = Array(31).fill(0);
+  (_dashAllDays || []).forEach(o => {
+    const dia = new Date(o.fecha).getUTCDate() - 1; // 0-30
+    porDiaMes[dia]++;
+  });
+  const labelsDias = Array.from({length:31}, (_,i) => i+1);
+  const maxDiaMes  = Math.max(...porDiaMes) || 1;
+  const ctxDM = document.getElementById('chart-dias-mes').getContext('2d');
+  if (_chartDiasMes) _chartDiasMes.destroy();
+  _chartDiasMes = new Chart(ctxDM, {
+    type: 'bar',
+    data: {
+      labels: labelsDias,
+      datasets: [{
+        data: porDiaMes,
+        backgroundColor: porDiaMes.map(v => v === maxDiaMes ? '#1f2937' : v >= maxDiaMes * 0.7 ? '#4b5563' : '#e5e7eb'),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      plugins: { legend:{display:false}, tooltip:{ callbacks:{ title: ctx => `Día ${ctx[0].label} del mes`, label: ctx => `${ctx.raw} pedido${ctx.raw!==1?'s':''}` } } },
+      scales: {
+        y: { ticks:{ stepSize:1, font:{size:11} }, grid:{color:'#f3f4f6'} },
+        x: { ticks:{ font:{size:10} }, grid:{display:false} }
+      }
+    }
+  });
 }
 
 function setDashPeriod(p) {

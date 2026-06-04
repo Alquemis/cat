@@ -421,6 +421,16 @@
         <table class="rank-table" id="su-rank-monto"></table>
       </div>
     </div>
+
+    <!-- Días favoritos de pedido en el mes -->
+    <div class="dash-card" style="margin-bottom:20px;">
+      <div class="dash-card-title">
+        Días favoritos de pedido en el mes
+        <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">todos los pedidos, sin importar estado</span>
+      </div>
+      <canvas id="su-chart-dias-mes" height="80"></canvas>
+    </div>
+
   </div>
 
   <!-- ── PAGE: SUPERUSUARIO ── -->
@@ -1236,19 +1246,26 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 
 // ── INIT ─────────────────────────────────────────────────
 // ── DASHBOARD ────────────────────────────────────────────
-let _suDashData = null;
-let _suDashPeriod = 'day';
-let _suChartTiempo = null;
-let _suChartDias   = null;
+let _suDashData    = null;
+let _suDashAllDays = null;
+let _suDashPeriod  = 'day';
+let _suChartTiempo  = null;
+let _suChartDias    = null;
+let _suChartDiasMes = null;
 
 async function loadSuDashboard() {
   if (_suDashData) { renderSuDashboard(); return; }
-  const { data } = await sb
-    .from('pedidos')
-    .select('id, fecha, total, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad)')
-    .in('estado', ['facturado','pagado'])
-    .order('fecha', { ascending: true });
-  _suDashData = data || [];
+  const [resFact, resAll] = await Promise.all([
+    sb.from('pedidos')
+      .select('id, fecha, total, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad)')
+      .in('estado', ['facturado','pagado'])
+      .order('fecha', { ascending: true }),
+    sb.from('pedidos')
+      .select('fecha')
+      .order('fecha', { ascending: true })
+  ]);
+  _suDashData    = resFact.data || [];
+  _suDashAllDays = resAll.data  || [];
   renderSuDashboard();
 }
 
@@ -1310,6 +1327,18 @@ function renderSuDashboard() {
       <div style="font-size:12px;font-weight:600;color:#1f2937">${n}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/maxM*100)}%"></div></div>
     </td><td style="text-align:right;font-size:12px;font-weight:700;white-space:nowrap">₡${Math.round(v/1000)}k</td></tr>`).join('');
+
+  // ── Días favoritos del mes (todos los pedidos) ──
+  const porDiaMes = Array(31).fill(0);
+  (_suDashAllDays||[]).forEach(o => { porDiaMes[new Date(o.fecha).getUTCDate()-1]++; });
+  const maxDiaMes = Math.max(...porDiaMes)||1;
+  const ctxDM = document.getElementById('su-chart-dias-mes').getContext('2d');
+  if (_suChartDiasMes) _suChartDiasMes.destroy();
+  _suChartDiasMes = new Chart(ctxDM, {
+    type:'bar',
+    data:{ labels:Array.from({length:31},(_,i)=>i+1), datasets:[{ data:porDiaMes, backgroundColor:porDiaMes.map(v=>v===maxDiaMes?'#7c3aed':v>=maxDiaMes*0.7?'#a78bfa':'#e5e7eb'), borderRadius:4 }] },
+    options:{ plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`Día ${c[0].label} del mes`,label:c=>`${c.raw} pedido${c.raw!==1?'s':''}`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10}},grid:{display:false}}} }
+  });
 }
 
 function setSuDashPeriod(p) {

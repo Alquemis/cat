@@ -1256,28 +1256,24 @@ let _suChartDiasMes = null;
 
 async function loadSuDashboard() {
   if (_suDashData) { renderSuDashboard(); return; }
-  const [resFact, resAll] = await Promise.all([
-    sb.from('pedidos')
-      .select('id, fecha, total, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad)')
-      .in('estado', ['facturado','pagado'])
-      .order('fecha', { ascending: true }),
-    sb.from('pedidos')
-      .select('fecha')
-      .order('fecha', { ascending: true })
-  ]);
-  _suDashData    = resFact.data || [];
-  _suDashAllDays = resAll.data  || [];
+  const { data } = await sb.from('pedidos')
+    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad)')
+    .order('fecha', { ascending: true });
+  _suDashData    = data || [];
+  _suDashAllDays = _suDashData;
   renderSuDashboard();
 }
 
 function renderSuDashboard() {
-  const data = _suDashData;
-  const totalFact = data.reduce((s,o) => s + (o.total||0), 0);
-  const totalUnid = data.reduce((s,o) => s + (o.lineas_pedido||[]).reduce((a,l) => a+(l.cantidad||0), 0), 0);
-  const colab = new Set(data.map(o => o.usuario_email)).size;
+  const data     = _suDashData;
+  const activos  = data.filter(o => o.estado !== 'cancelado');
+  const facturados = data.filter(o => o.estado === 'facturado' || o.estado === 'pagado');
+  const totalFact = facturados.reduce((s,o) => s + (o.total||0), 0);
+  const totalUnid = activos.reduce((s,o) => s + (o.lineas_pedido||[]).reduce((a,l) => a+(l.cantidad||0), 0), 0);
+  const colab = new Set(activos.map(o => o.usuario_email)).size;
   document.getElementById('sdk-total-fact').textContent    = '₡' + totalFact.toLocaleString('es-CR');
-  document.getElementById('sdk-pedidos').textContent       = data.length;
-  document.getElementById('sdk-promedio').textContent      = data.length ? '₡' + Math.round(totalFact/data.length).toLocaleString('es-CR') : '₡0';
+  document.getElementById('sdk-pedidos').textContent       = activos.length;
+  document.getElementById('sdk-promedio').textContent      = activos.length ? '₡' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0)/activos.length).toLocaleString('es-CR') : '₡0';
   document.getElementById('sdk-unidades').textContent      = totalUnid.toLocaleString('es-CR');
   document.getElementById('sdk-colaboradores').textContent = colab;
 
@@ -1286,7 +1282,7 @@ function renderSuDashboard() {
   // Días más activos
   const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const porDia  = Array(7).fill(0);
-  data.forEach(o => { porDia[new Date(o.fecha).getDay()] += o.total||0; });
+  activos.forEach(o => { porDia[new Date(o.fecha).getDay()] += o.total||0; });
   const maxDia = Math.max(...porDia) || 1;
   const ctxD = document.getElementById('su-chart-dias').getContext('2d');
   if (_suChartDias) _suChartDias.destroy();
@@ -1298,7 +1294,7 @@ function renderSuDashboard() {
 
   // Rank productos
   const prodMap = {};
-  data.forEach(o => (o.lineas_pedido||[]).forEach(l => { const k=l.producto_nombre||l.producto_codigo; prodMap[k]=(prodMap[k]||0)+(l.cantidad||0); }));
+  activos.forEach(o => (o.lineas_pedido||[]).forEach(l => { const k=l.producto_nombre||l.producto_codigo; prodMap[k]=(prodMap[k]||0)+(l.cantidad||0); }));
   const topProd = Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const maxP = topProd[0]?.[1]||1;
   document.getElementById('su-rank-productos').innerHTML = topProd.map(([n,v],i)=>`
@@ -1309,7 +1305,7 @@ function renderSuDashboard() {
 
   // Rank unidades
   const unidMap = {};
-  data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; unidMap[k]=(unidMap[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
+  activos.forEach(o => { const k=o.usuario_nombre||o.usuario_email; unidMap[k]=(unidMap[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
   const topU = Object.entries(unidMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxU = topU[0]?.[1]||1;
   document.getElementById('su-rank-unidades').innerHTML = topU.map(([n,v],i)=>`
@@ -1320,7 +1316,7 @@ function renderSuDashboard() {
 
   // Rank monto
   const montoMap = {};
-  data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; montoMap[k]=(montoMap[k]||0)+(o.total||0); });
+  activos.forEach(o => { const k=o.usuario_nombre||o.usuario_email; montoMap[k]=(montoMap[k]||0)+(o.total||0); });
   const topM = Object.entries(montoMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const maxM = topM[0]?.[1]||1;
   document.getElementById('su-rank-monto').innerHTML = topM.map(([n,v],i)=>`
@@ -1349,7 +1345,7 @@ function setSuDashPeriod(p) {
 }
 
 function renderSuChartTiempo() {
-  const data = _suDashData; if (!data) return;
+  const data = (_suDashData||[]).filter(o => o.estado !== 'cancelado'); if (!data.length) return;
   const map = {};
   data.forEach(o => {
     const d = new Date(o.fecha);

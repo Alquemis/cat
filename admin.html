@@ -1727,18 +1727,12 @@ let _chartDiasMes = null;
 async function loadDashboard() {
   if (_dashData) { renderDashboard(); return; }
 
-  const [resFact, resAll] = await Promise.all([
-    sb.from('pedidos')
-      .select('id, fecha, total, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal)')
-      .in('estado', ['facturado','pagado'])
-      .order('fecha', { ascending: true }),
-    sb.from('pedidos')
-      .select('fecha')
-      .order('fecha', { ascending: true })
-  ]);
+  const { data } = await sb.from('pedidos')
+    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal)')
+    .order('fecha', { ascending: true });
 
-  _dashData    = resFact.data || [];
-  _dashAllDays = resAll.data  || [];
+  _dashData    = data || [];
+  _dashAllDays = _dashData; // misma fuente para gráfico de días del mes
   renderDashboard();
 }
 
@@ -1746,13 +1740,15 @@ function renderDashboard() {
   const data = _dashData;
 
   // ── KPIs ──
-  const totalFact = data.reduce((s, o) => s + (o.total || 0), 0);
-  const totalUnid = data.reduce((s, o) => s + (o.lineas_pedido || []).reduce((a, l) => a + (l.cantidad || 0), 0), 0);
-  const colab = new Set(data.map(o => o.usuario_email)).size;
-  document.getElementById('dk-total-fact').textContent   = '₡' + totalFact.toLocaleString('es-CR');
-  document.getElementById('dk-pedidos').textContent      = data.length;
-  document.getElementById('dk-promedio').textContent     = data.length ? '₡' + Math.round(totalFact / data.length).toLocaleString('es-CR') : '₡0';
-  document.getElementById('dk-productos').textContent    = totalUnid.toLocaleString('es-CR');
+  const activos    = data.filter(o => o.estado !== 'cancelado');
+  const facturados = data.filter(o => o.estado === 'facturado' || o.estado === 'pagado');
+  const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
+  const totalUnid  = activos.reduce((s, o) => s + (o.lineas_pedido || []).reduce((a, l) => a + (l.cantidad || 0), 0), 0);
+  const colab      = new Set(activos.map(o => o.usuario_email)).size;
+  document.getElementById('dk-total-fact').textContent    = '₡' + totalFact.toLocaleString('es-CR');
+  document.getElementById('dk-pedidos').textContent       = activos.length;
+  document.getElementById('dk-promedio').textContent      = activos.length ? '₡' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0) / activos.length).toLocaleString('es-CR') : '₡0';
+  document.getElementById('dk-productos').textContent     = totalUnid.toLocaleString('es-CR');
   document.getElementById('dk-colaboradores').textContent = colab;
 
   // ── Gráfico tiempo ──
@@ -1761,7 +1757,7 @@ function renderDashboard() {
   // ── Días de semana ──
   const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const porDia  = Array(7).fill(0);
-  data.forEach(o => { const d = new Date(o.fecha).getDay(); porDia[d] += o.total || 0; });
+  activos.forEach(o => { const d = new Date(o.fecha).getDay(); porDia[d] += o.total || 0; });
   const maxDia  = Math.max(...porDia) || 1;
   const ctxDias = document.getElementById('chart-dias').getContext('2d');
   if (_chartDias) _chartDias.destroy();
@@ -1779,7 +1775,7 @@ function renderDashboard() {
 
   // ── Ranking productos ──
   const prodMap = {};
-  data.forEach(o => (o.lineas_pedido || []).forEach(l => {
+  activos.forEach(o => (o.lineas_pedido || []).forEach(l => {
     const k = l.producto_nombre || l.producto_codigo;
     prodMap[k] = (prodMap[k] || 0) + (l.cantidad || 0);
   }));
@@ -1797,7 +1793,7 @@ function renderDashboard() {
 
   // ── Ranking unidades por colaborador ──
   const unidMap = {};
-  data.forEach(o => {
+  activos.forEach(o => {
     const k = o.usuario_nombre || o.usuario_email;
     unidMap[k] = (unidMap[k] || 0) + (o.lineas_pedido || []).reduce((s,l) => s + (l.cantidad||0), 0);
   });
@@ -1815,7 +1811,7 @@ function renderDashboard() {
 
   // ── Ranking monto por colaborador ──
   const montoMap = {};
-  data.forEach(o => {
+  activos.forEach(o => {
     const k = o.usuario_nombre || o.usuario_email;
     montoMap[k] = (montoMap[k] || 0) + (o.total || 0);
   });
@@ -1868,8 +1864,8 @@ function setDashPeriod(p) {
 }
 
 function renderChartTiempo() {
-  const data = _dashData;
-  if (!data) return;
+  const data = (_dashData || []).filter(o => o.estado !== 'cancelado');
+  if (!data.length) return;
 
   // Agrupar según período
   const map = {};

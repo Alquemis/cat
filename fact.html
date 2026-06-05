@@ -78,9 +78,9 @@
   .badge-green  { background:#d1fae5;color:#065f46; }
 
   /* ── MODAL DETALLE ── */
-  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:20px; }
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:50px; }
   .modal-overlay.open { display:flex; }
-  .modal-card { background:#fff;border-radius:20px;padding:32px;width:100%;max-width:800px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .modal-card { background:#fff;border-radius:20px;padding:32px;width:100%;max-width:860px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
   .modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px; }
   .modal-title { font-size:18px;font-weight:700;color:#1f2937; }
   .modal-fecha { font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px; }
@@ -109,7 +109,8 @@
     .topbar { padding:12px 16px; }
     .topbar-brand span { display:none; }
     .container { padding:20px; }
-    .modal-card { padding:24px 20px; }
+    .modal-overlay { padding:16px; }
+    .modal-card { padding:24px 20px; max-width:100% !important; }
     .detail-grid { grid-template-columns:1fr 1fr; }
     .table-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
     table { min-width:520px; }

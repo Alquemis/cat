@@ -771,30 +771,63 @@
   <div class="login-card">
     <img src="https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Martimac_Logo.webp" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
     <div class="login-title">Catálogo Colaboradores</div>
-    <div class="login-sub">Martimac Distribuidora — Acceso exclusivo colaboradores</div>
-    <div class="login-field">
-      <label for="login-nombre">Nombre y dos apellidos</label>
-      <input type="text" id="login-nombre" placeholder="" autocomplete="name" autocapitalize="words">
+    <div class="login-sub">Martimac Distribuidora</div>
+
+    <!-- PANTALLA A: Ingresar con cédula -->
+    <div id="login-screen-a">
+      <div style="font-size:15px;font-weight:700;color:#1d4ed8;margin-bottom:6px;text-align:center;">Si ya estás registrado</div>
+      <div style="font-size:15px;font-weight:700;color:#9ca3af;margin-bottom:20px;text-align:center;">Ingresa tu número de cédula para entrar</div>
+      <div class="login-field">
+        <input type="text" id="login-cedula-quick" placeholder="" autocomplete="off" inputmode="numeric" oninput="checkCedulaDash(this)">
+        <span id="cedula-quick-dash-warn" style="display:none;font-size:12px;color:#dc2626;margin-top:4px;">Ingresa solo números, sin guiones.</span>
+      </div>
+      <button class="login-btn" id="login-btn-quick" onclick="doQuickLogin()">Ingresar al catálogo</button>
+      <div class="login-error" id="login-error-quick"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin:22px 0 18px;">
+        <div style="flex:1;height:1px;background:#f3f4f6;"></div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#1f2937;margin-bottom:12px;text-align:center;">Si no estás registrado</div>
+      <button class="login-btn" style="background:#f3f4f6;color:#1f2937;" onclick="showRegisterScreen()">¡Regístrate!</button>
     </div>
-    <div class="login-field">
-      <label for="login-cedula">Número de cédula</label>
-      <input type="text" id="login-cedula" placeholder="" autocomplete="off" inputmode="numeric" oninput="checkCedulaDash(this)">
-      <span id="cedula-dash-warn" style="display:none;font-size:12px;color:#dc2626;margin-top:4px;">Ingresa solo números, sin guiones.</span>
-    </div>
-    <div class="login-field">
-      <label for="login-depto">Departamento</label>
-      <input type="text" id="login-depto" placeholder="" autocomplete="organization-title" autocapitalize="words">
-    </div>
-    <div class="login-field">
-      <label>Lugar de trabajo</label>
-      <div class="lugar-options">
-        <div class="lugar-opt" data-lugar="Tres Ríos" onclick="selectLugar(this)">Tres Ríos</div>
-        <div class="lugar-opt" data-lugar="Heredia"   onclick="selectLugar(this)">Heredia</div>
-        <div class="lugar-opt" data-lugar="Grecia"    onclick="selectLugar(this)">Grecia</div>
+
+    <!-- PANTALLA B: Registro completo -->
+    <div id="login-screen-b" style="display:none;">
+      <div class="login-field">
+        <label for="login-nombre">Nombre y dos apellidos</label>
+        <input type="text" id="login-nombre" placeholder="" autocomplete="name" autocapitalize="words">
+      </div>
+      <div class="login-field">
+        <label for="login-cedula">Número de cédula</label>
+        <input type="text" id="login-cedula" placeholder="" autocomplete="off" inputmode="numeric" oninput="checkCedulaDash(this)">
+        <span id="cedula-dash-warn" style="display:none;font-size:12px;color:#dc2626;margin-top:4px;">Ingresa solo números, sin guiones.</span>
+      </div>
+      <div class="login-field">
+        <label for="login-depto">Departamento</label>
+        <input type="text" id="login-depto" placeholder="" autocomplete="organization-title" autocapitalize="words">
+      </div>
+      <div class="login-field">
+        <label>Lugar de trabajo</label>
+        <div class="lugar-options">
+          <div class="lugar-opt" data-lugar="Tres Ríos" onclick="selectLugar(this)">Tres Ríos</div>
+          <div class="lugar-opt" data-lugar="Heredia"   onclick="selectLugar(this)">Heredia</div>
+          <div class="lugar-opt" data-lugar="Grecia"    onclick="selectLugar(this)">Grecia</div>
+        </div>
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Crear cuenta e ingresar</button>
+      <div class="login-error" id="login-error"></div>
+      <div style="text-align:center;margin-top:14px;">
+        <span onclick="showLoginScreen()" style="font-size:13px;color:#6b7280;cursor:pointer;text-decoration:underline;">← Ya tengo cuenta</span>
       </div>
     </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar al catálogo</button>
-    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- POPUP DE BIENVENIDA -->
+<div id="welcome-popup" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:24px;padding:44px 40px;text-align:center;max-width:340px;width:90%;box-shadow:0 32px 80px rgba(0,0,0,0.3);">
+    <div style="font-size:52px;margin-bottom:16px;">👋</div>
+    <div style="font-size:26px;font-weight:800;color:#1f2937;margin-bottom:16px;">¡Hola!</div>
+    <div id="welcome-name" style="font-size:26px;font-weight:800;color:#1d4ed8;margin-bottom:8px;"></div>
   </div>
 </div>
 
@@ -1109,23 +1142,74 @@ function onLogout() {
   document.getElementById('search-row').style.display = 'none';
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('login-error').classList.remove('show');
+  document.getElementById('login-error-quick').classList.remove('show');
+  document.getElementById('login-cedula-quick').value = '';
   document.getElementById('login-nombre').value = '';
   document.getElementById('login-cedula').value = '';
   document.getElementById('login-depto').value  = '';
   document.querySelectorAll('.lugar-opt').forEach(o => o.classList.remove('selected'));
   document.getElementById('cedula-dash-warn').style.display = 'none';
+  document.getElementById('cedula-quick-dash-warn').style.display = 'none';
+  showLoginScreen();
   closeMyOrders();
   updateCartBadge();
   refreshAddButtons();
 }
 
 function checkCedulaDash(input) {
-  const warn = document.getElementById('cedula-dash-warn');
-  if (input.value.includes('-')) {
-    warn.style.display = 'block';
-  } else {
-    warn.style.display = 'none';
+  const warnId = input.id === 'login-cedula-quick' ? 'cedula-quick-dash-warn' : 'cedula-dash-warn';
+  const warn = document.getElementById(warnId);
+  if (warn) warn.style.display = input.value.includes('-') ? 'block' : 'none';
+}
+
+function showLoginScreen() {
+  document.getElementById('login-screen-a').style.display = 'block';
+  document.getElementById('login-screen-b').style.display = 'none';
+  document.getElementById('login-error').classList.remove('show');
+  document.getElementById('login-error-quick').classList.remove('show');
+}
+
+function showRegisterScreen() {
+  document.getElementById('login-screen-a').style.display = 'none';
+  document.getElementById('login-screen-b').style.display = 'block';
+  document.getElementById('login-error-quick').classList.remove('show');
+}
+
+async function doQuickLogin() {
+  const cedula = document.getElementById('login-cedula-quick').value.trim();
+  const btn    = document.getElementById('login-btn-quick');
+  const errEl  = document.getElementById('login-error-quick');
+  errEl.classList.remove('show');
+
+  if (!cedula) { errEl.textContent = 'Ingresa tu número de cédula.'; errEl.classList.add('show'); return; }
+  if (cedula.includes('-')) { errEl.textContent = 'Ingresa solo números, sin guiones.'; errEl.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = 'Buscando…';
+
+  const { data: perfil } = await sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle();
+
+  btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
+
+  if (!perfil) {
+    errEl.textContent = 'No encontramos esa cédula. ¿Ya te registraste?';
+    errEl.classList.add('show');
+    return;
   }
+
+  const session = { nombre: perfil.nombre, cedula: perfil.cedula, departamento: perfil.departamento, lugar: perfil.lugar };
+  localStorage.setItem('catalogo_session', JSON.stringify(session));
+  showWelcomePopup(perfil.nombre, session);
+}
+
+function showWelcomePopup(nombre, session) {
+  const popup = document.getElementById('welcome-popup');
+  document.getElementById('welcome-name').textContent = nombre.split(' ')[0];
+  document.getElementById('login-overlay').classList.add('hidden');
+  popup.style.display = 'flex';
+  setTimeout(() => {
+    popup.style.display = 'none';
+    onLogin(session, true);
+  }, 2200);
 }
 
 function selectLugar(el) {
@@ -1162,8 +1246,8 @@ function doLogin() {
   const session = { nombre, cedula, departamento: depto, lugar };
   localStorage.setItem('catalogo_session', JSON.stringify(session));
 
-  btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
-  onLogin(session);
+  btn.disabled = false; btn.textContent = 'Crear cuenta e ingresar';
+  showWelcomePopup(nombre, session);
 }
 
 function showLoginError(msg) {
@@ -1421,6 +1505,9 @@ async function descargarPedidoDetalle() {
 
 // Enter key en login
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-cedula-quick').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doQuickLogin();
+  });
   document.getElementById('login-nombre').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('login-cedula').focus();
   });

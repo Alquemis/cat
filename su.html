@@ -242,6 +242,14 @@
   .sort-asc .sort-icon::after  { content:'↑'; color:#1f2937; }
   .sort-desc .sort-icon::after { content:'↓'; color:#1f2937; }
   .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
+  #users-tbody td { padding:2px 16px;font-size:12px;line-height:1.3; }
+  .pagination { display:flex;align-items:center;gap:6px;margin-top:14px;flex-wrap:wrap; }
+  .pagination-info { font-size:12px;color:#9ca3af;margin-right:4px; }
+  .pg-btn { padding:5px 10px;border:1.5px solid #e5e7eb;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;color:#374151;font-weight:600;transition:all .15s; }
+  .pg-btn:hover:not(:disabled) { background:#f3f4f6; }
+  .pg-btn.active { background:#7c3aed;color:#fff;border-color:#7c3aed; }
+  .pg-btn:disabled { opacity:.35;cursor:not-allowed; }
+  .pg-size { padding:5px 8px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;outline:none;color:#374151;cursor:pointer; }
 </style>
 </head>
 <body>
@@ -398,6 +406,7 @@
         <tbody id="users-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
       </table>
     </div>
+    <div class="pagination" id="su-users-pagination"></div>
   </div>
 
   <!-- ── PAGE: SETTINGS ── -->
@@ -1121,10 +1130,30 @@ function filterUsers() {
   ));
 }
 
+let _suUsersPage     = 1;
+let _suUsersPageSize = 25;
+let _suUsersFiltered = [];
+
 function renderUsers(list) {
+  _suUsersFiltered = list;
+  _suUsersPage = 1;
+  _renderSuUsersPage();
+}
+
+function _renderSuUsersPage() {
   const tbody = document.getElementById('users-tbody');
-  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
-  tbody.innerHTML = list.map(u => {
+  const list  = _suUsersFiltered;
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>';
+    document.getElementById('su-users-pagination').innerHTML = '';
+    return;
+  }
+  const size  = _suUsersPageSize === 0 ? list.length : _suUsersPageSize;
+  const pages = Math.ceil(list.length / size);
+  _suUsersPage = Math.min(_suUsersPage, pages);
+  const slice = list.slice((_suUsersPage-1)*size, _suUsersPage*size);
+
+  tbody.innerHTML = slice.map(u => {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
     return `<tr>
@@ -1132,10 +1161,29 @@ function renderUsers(list) {
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
-      <td style="font-size:13px;color:#6b7280">${fechaReg}<br><span style="font-size:11px;color:#d1d5db">${horaReg}</span></td>
+      <td style="font-size:11px;color:#6b7280">${fechaReg}<br><span style="font-size:10px;color:#d1d5db">${horaReg}</span></td>
     </tr>`;
   }).join('');
+
+  const pg = document.getElementById('su-users-pagination');
+  const inicio = (_suUsersPage-1)*size + 1;
+  const fin    = Math.min(_suUsersPage*size, list.length);
+  let html = `<span class="pagination-info">${inicio}–${fin} de ${list.length}</span>`;
+  html += `<select class="pg-size" onchange="_suUsersSetSize(this.value)">
+    ${[25,40,60,100,0].map(n=>`<option value="${n}"${n===_suUsersPageSize?' selected':''}>${n===0?'Todos':n}</option>`).join('')}
+  </select>`;
+  html += `<button class="pg-btn" onclick="_suUsersGoPage(1)" ${_suUsersPage===1?'disabled':''}>«</button>`;
+  html += `<button class="pg-btn" onclick="_suUsersGoPage(${_suUsersPage-1})" ${_suUsersPage===1?'disabled':''}>‹</button>`;
+  const range = [];
+  for (let i=Math.max(1,_suUsersPage-2); i<=Math.min(pages,_suUsersPage+2); i++) range.push(i);
+  range.forEach(i => { html += `<button class="pg-btn${i===_suUsersPage?' active':''}" onclick="_suUsersGoPage(${i})">${i}</button>`; });
+  html += `<button class="pg-btn" onclick="_suUsersGoPage(${_suUsersPage+1})" ${_suUsersPage===pages?'disabled':''}>›</button>`;
+  html += `<button class="pg-btn" onclick="_suUsersGoPage(${pages})" ${_suUsersPage===pages?'disabled':''}>»</button>`;
+  pg.innerHTML = html;
 }
+
+function _suUsersGoPage(p) { _suUsersPage = p; _renderSuUsersPage(); }
+function _suUsersSetSize(v) { _suUsersPageSize = parseInt(v); _suUsersPage = 1; _renderSuUsersPage(); }
 
 // ── CONFIGURACIÓN (Admin) ─────────────────────────────────────
 async function loadConfig() {
@@ -1242,7 +1290,7 @@ function renderSuUsers(list) {
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
-      <td style="font-size:13px;color:#6b7280">${fechaReg}<br><span style="font-size:11px;color:#d1d5db">${horaReg}</span></td>
+      <td style="font-size:11px;color:#6b7280">${fechaReg}<br><span style="font-size:10px;color:#d1d5db">${horaReg}</span></td>
       <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}')">🗑 Eliminar</button></td>
     </tr>`;
   }).join('');

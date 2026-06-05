@@ -1326,7 +1326,7 @@ function _suPopulateMonthSelect(selId) {
   const sel = document.getElementById(selId); if (!sel) return;
   const cur = sel.value;
   const meses=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  sel.innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}"${i==cur?' selected':''}>${m}</option>`).join('');
+  sel.innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}"${cur!==''&&parseInt(cur)===i?' selected':''}>${m}</option>`).join('');
 }
 function _suFilterByYearMonth(data, yearSelId, monthSelId) {
   const y = document.getElementById(yearSelId)?.value;

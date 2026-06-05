@@ -1802,7 +1802,7 @@ function _populateMonthSelect(selId) {
   const sel = document.getElementById(selId); if (!sel) return;
   const cur = sel.value;
   sel.innerHTML = '<option value="">Todos los meses</option>' +
-    _MESES.slice(1).map((m,i) => `<option value="${i}"${i==cur?' selected':''}>${m}</option>`).join('');
+    _MESES.slice(1).map((m,i) => `<option value="${i}"${cur!==''&&parseInt(cur)===i?' selected':''}>${m}</option>`).join('');
 }
 
 function _filterByYearMonth(data, yearSelId, monthSelId) {

@@ -1015,13 +1015,14 @@ function renderUsers(list) {
   const tbody = document.getElementById('users-tbody');
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
   tbody.innerHTML = list.map(u => {
-    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
+    const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
     return `<tr>
       <td style="font-weight:600">${esc(u.nombre||'—')}</td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
-      <td style="color:#9ca3af;font-size:13px">${fecha}</td>
+      <td style="font-size:13px;color:#6b7280">${fechaReg}<br><span style="font-size:11px;color:#d1d5db">${horaReg}</span></td>
     </tr>`;
   }).join('');
 }
@@ -1124,13 +1125,14 @@ function renderSuUsers(list) {
   const tbody = document.getElementById('su-users-tbody');
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
   tbody.innerHTML = list.map(u => {
-    const fecha = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR') : '—';
+    const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
     return `<tr>
       <td style="font-weight:600">${esc(u.nombre||'—')}</td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
-      <td style="color:#9ca3af;font-size:13px">${fecha}</td>
+      <td style="font-size:13px;color:#6b7280">${fechaReg}<br><span style="font-size:11px;color:#d1d5db">${horaReg}</span></td>
       <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}')">🗑 Eliminar</button></td>
     </tr>`;
   }).join('');

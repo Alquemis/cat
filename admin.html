@@ -435,7 +435,13 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th><th>Total</th><th>Acciones</th>
+            <th class="th-sort" onclick="sortPend('fecha')"               id="pth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortPend('usuario_nombre')"      id="pth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPend('usuario_departamento')" id="pth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPend('usuario_lugar')"       id="pth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPend('total')"               id="pth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
           </tr></thead>
           <tbody id="pend-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
         </table>
@@ -459,7 +465,13 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Fecha</th><th>Pedido #</th><th>Colaborador</th><th>Departamento</th><th>Lugar</th><th>Total</th><th>Acciones</th>
+            <th class="th-sort" onclick="sortHist('fecha')"          id="hth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortHist('usuario_nombre')" id="hth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortHist('usuario_departamento')" id="hth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortHist('usuario_lugar')"  id="hth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortHist('total')"          id="hth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
           </tr></thead>
           <tbody id="hist-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
         </table>
@@ -1246,24 +1258,71 @@ function showOrdersTab(tab) {
   });
 }
 
+let _pendSort = { col: 'fecha', dir: 'asc' };
+
+function sortPend(col) {
+  if (_pendSort.col === col) { _pendSort.dir = _pendSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _pendSort.col = col; _pendSort.dir = col === 'total' ? 'desc' : 'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c => {
+    const th = document.getElementById('pth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _pendSort.col) th.classList.add(_pendSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterAdminPend();
+}
+
 function filterAdminPend() {
   const q     = (document.getElementById('pend-search').value || '').toLowerCase();
   const lugar = document.getElementById('pend-lugar').value;
-  renderAdminOrders('pend-tbody', allAdminPend.filter(o =>
+  let list = allAdminPend.filter(o =>
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar)
-  ));
+  );
+  const { col, dir } = _pendSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderAdminOrders('pend-tbody', list);
+}
+
+let _histSort = { col: 'fecha', dir: 'desc' };
+
+function sortHist(col) {
+  if (_histSort.col === col) { _histSort.dir = _histSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _histSort.col = col; _histSort.dir = col === 'total' ? 'desc' : 'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c => {
+    const th = document.getElementById('hth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _histSort.col) th.classList.add(_histSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterAdminHist();
 }
 
 function filterAdminHist() {
   const q     = (document.getElementById('hist-search').value || '').toLowerCase();
   const lugar = document.getElementById('hist-lugar').value;
   const desde = document.getElementById('hist-desde').value;
-  renderAdminOrders('hist-tbody', allAdminHist.filter(o =>
+  let list = allAdminHist.filter(o =>
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
-  ));
+  );
+  // Ordenar
+  const { col, dir } = _histSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderAdminOrders('hist-tbody', list);
 }
 
 function renderAdminOrders(tbodyId, list) {

@@ -55,6 +55,12 @@
   .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
   table { width:100%;border-collapse:collapse; }
   thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;white-space:nowrap; }
+  .th-sort { cursor:pointer;user-select:none; }
+  .th-sort:hover { background:#f3f4f6;color:#1f2937; }
+  .sort-icon { font-size:10px;color:#d1d5db;margin-left:3px; }
+  .sort-asc .sort-icon::after  { content:'↑';color:#1f2937; }
+  .sort-desc .sort-icon::after { content:'↓';color:#1f2937; }
+  .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
   tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
   tbody tr:last-child td { border-bottom:none; }
   .empty-table { text-align:center;color:#9ca3af;padding:48px 20px; }
@@ -197,12 +203,12 @@
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>Fecha</th>
+        <th class="th-sort" onclick="sortFact('pend','fecha')"                id="fpth-fecha">Fecha <span class="sort-icon">↕</span></th>
         <th>Pedido #</th>
-        <th>Colaborador</th>
-        <th>Departamento</th>
-        <th>Lugar</th>
-        <th>Total</th>
+        <th class="th-sort" onclick="sortFact('pend','usuario_nombre')"       id="fpth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('pend','usuario_departamento')" id="fpth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('pend','usuario_lugar')"        id="fpth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('pend','total')"                id="fpth-total">Total <span class="sort-icon">↕</span></th>
         <th>Detalle</th>
         <th>Acción</th>
       </tr></thead>
@@ -232,12 +238,12 @@
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>Fecha pedido</th>
+        <th class="th-sort" onclick="sortFact('hist','fecha')"                id="fhth-fecha">Fecha pedido <span class="sort-icon">↕</span></th>
         <th>Pedido #</th>
-        <th>Colaborador</th>
-        <th>Departamento</th>
-        <th>Lugar</th>
-        <th>Total</th>
+        <th class="th-sort" onclick="sortFact('hist','usuario_nombre')"       id="fhth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('hist','usuario_departamento')" id="fhth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('hist','usuario_lugar')"        id="fhth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('hist','total')"                id="fhth-total">Total <span class="sort-icon">↕</span></th>
         <th>Detalle</th>
         <th>Acción</th>
       </tr></thead>
@@ -387,6 +393,32 @@ async function loadPendientes() {
 
 function updatePendienteStats() { recalcStats(); }
 
+const _factSort = { pend: { col:'fecha', dir:'asc' }, hist: { col:'fecha', dir:'desc' } };
+
+function sortFact(tab, col) {
+  const s = _factSort[tab];
+  if (s.col===col) { s.dir = s.dir==='asc'?'desc':'asc'; }
+  else { s.col=col; s.dir=col==='total'?'desc':'asc'; }
+  const prefix = tab==='pend'?'fpth-':'fhth-';
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c=>{
+    const th=document.getElementById(prefix+c); if(!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if(c===s.col) th.classList.add(s.dir==='asc'?'sort-asc':'sort-desc');
+  });
+  if (tab==='pend') filterPendientes(); else filterHistorial();
+}
+
+function _sortList(list, col, dir) {
+  return [...list].sort((a,b)=>{
+    let va=a[col]??'', vb=b[col]??'';
+    if(col==='total'){va=Number(va);vb=Number(vb);}
+    else{va=String(va).toLowerCase();vb=String(vb).toLowerCase();}
+    if(va<vb) return dir==='asc'?-1:1;
+    if(va>vb) return dir==='asc'?1:-1;
+    return 0;
+  });
+}
+
 function filterPendientes() {
   const q     = document.getElementById('pend-search').value.toLowerCase();
   const lugar = document.getElementById('pend-lugar').value;
@@ -398,7 +430,7 @@ function filterPendientes() {
     const matchL = !lugar || (o.usuario_lugar||'') === lugar;
     return matchQ && matchL;
   });
-  renderPendientes(list);
+  renderPendientes(_sortList(list, _factSort.pend.col, _factSort.pend.dir));
 }
 
 function renderPendientes(list) {
@@ -548,7 +580,7 @@ function filterHistorial() {
     const matchD = !desde || fecha >= desde;
     return matchQ && matchL && matchD;
   });
-  renderHistorial(list);
+  renderHistorial(_sortList(list, _factSort.hist.col, _factSort.hist.dir));
 }
 
 function renderHistorial(list) {

@@ -131,24 +131,30 @@
   .order-detail tbody td { padding:8px 12px; }
 
   /* ── DASHBOARD ── */
+  .dash-filter { font-size:11px;padding:3px 4px 3px 7px;border:1.5px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;outline:none;cursor:pointer;font-weight:600;appearance:auto; }
+  .dash-filter:focus { border-color:#1f2937; }
+  .dash-filters { display:flex;gap:4px;align-items:center;flex-wrap:wrap;flex-shrink:0; }
   .dash-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:28px; }
   .dash-kpi { background:#fff;border-radius:14px;padding:16px 18px;border:1px solid #e5e7eb; }
   .dash-kpi-val { font-size:24px;font-weight:800;color:#1f2937; }
   .dash-kpi-lbl { font-size:12px;color:#6b7280;margin-top:3px; }
   .dash-row { display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px; }
   .dash-row-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px; }
-  .dash-card { background:#fff;border-radius:14px;padding:20px;border:1px solid #e5e7eb; }
-  .dash-card-title { font-size:13px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between; }
+  .dash-card { background:#fff;border-radius:14px;padding:20px;border:1px solid #e5e7eb;overflow:hidden; }
+  .dash-card-title { font-size:13px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap; }
   .dash-card canvas { width:100%!important; }
   .dash-period-btns { display:flex;gap:4px; }
   .dash-period-btn { font-size:11px;padding:3px 9px;border-radius:6px;border:1.5px solid #e5e7eb;background:none;cursor:pointer;color:#6b7280;font-weight:600; }
   .dash-period-btn.active { background:#1f2937;color:#fff;border-color:#1f2937; }
-  .rank-table { width:100%;border-collapse:collapse;font-size:13px; }
-  .rank-table td { padding:8px 4px;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
-  .rank-table tr:last-child td { border-bottom:none; }
-  .rank-num { font-weight:800;color:#d1d5db;width:24px;font-size:15px; }
+  .rank-list { width:100%; }
+  .rank-row { display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6; }
+  .rank-row:last-child { border-bottom:none; }
+  .rank-num  { flex-shrink:0;width:22px;font-weight:800;color:#d1d5db;font-size:15px; }
+  .rank-mid  { flex:1;min-width:0;overflow:hidden; }
+  .rank-name { font-size:12px;font-weight:600;color:#1f2937;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .rank-val  { flex-shrink:0;width:48px;text-align:right;font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap; }
   .rank-bar-wrap { width:100%;background:#f3f4f6;border-radius:999px;height:6px;margin-top:4px; }
-  .rank-bar { height:6px;border-radius:999px;background:#1f2937; }
+  .rank-bar  { height:6px;border-radius:999px;background:#1f2937; }
   @media(max-width:768px) {
     .dash-row,.dash-row-3 { grid-template-columns:1fr; }
   }
@@ -201,7 +207,14 @@
     .page-tab { padding:14px 16px; font-size:13px; white-space:nowrap; flex-shrink:0; }
 
     /* Container */
-    .container { padding:20px 16px; }
+    .container { padding:20px 16px; overflow-x:hidden; }
+
+    /* Dashboard: cards full width con margen pequeño en columna única */
+    #page-dashboard { margin:0 -8px; }
+    #page-dashboard .dash-card { border-radius:10px; }
+    #page-dashboard .dash-row,
+    #page-dashboard .dash-card[style*="margin-bottom"] { margin-left:8px; margin-right:8px; }
+    #page-dashboard .dash-grid { margin-left:8px; margin-right:8px; }
 
     /* Stats */
     .stat-grid { grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px; }
@@ -234,6 +247,13 @@
   @media(max-width:768px) {
     #page-settings .stat-card > div[style*="grid-template-columns"] {
       grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media(max-width:600px) {
+    #page-dashboard {
+      zoom: calc(100vw / 900);
+      transform-origin: top left;
     }
   }
 
@@ -498,46 +518,76 @@
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
         <span>Ventas en el tiempo</span>
-        <div class="dash-period-btns">
-          <button class="dash-period-btn active" id="pbtn-day"  onclick="setDashPeriod('day')">Día</button>
-          <button class="dash-period-btn"        id="pbtn-week" onclick="setDashPeriod('week')">Semana</button>
-          <button class="dash-period-btn"        id="pbtn-month"onclick="setDashPeriod('month')">Mes</button>
+        <div class="dash-filters">
+          <select class="dash-filter" id="f-tiempo-year" onchange="renderChartTiempo()"><option value="">Todos los años</option></select>
+          <div class="dash-period-btns">
+            <button class="dash-period-btn active" id="pbtn-day"  onclick="setDashPeriod('day')">Día</button>
+            <button class="dash-period-btn"        id="pbtn-week" onclick="setDashPeriod('week')">Semana</button>
+            <button class="dash-period-btn"        id="pbtn-month"onclick="setDashPeriod('month')">Mes</button>
+          </div>
         </div>
       </div>
-      <canvas id="chart-tiempo" height="90"></canvas>
+      <div id="chart-tiempo-wrap" style="position:relative;width:100%;height:130px;overflow:hidden;"><canvas id="chart-tiempo" style="max-width:100%"></canvas></div>
     </div>
 
     <!-- Calor por día de semana + ranking productos -->
     <div class="dash-row">
-      <div class="dash-card">
-        <div class="dash-card-title">Días más activos</div>
-        <canvas id="chart-dias" height="160"></canvas>
+      <div class="dash-card" style="display:flex;flex-direction:column;">
+        <div class="dash-card-title">
+          <span>Días más activos</span>
+          <div class="dash-filters">
+            <select class="dash-filter" id="f-dias-year"  onchange="renderChartDias()"><option value="">Todos los años</option></select>
+            <select class="dash-filter" id="f-dias-month" onchange="renderChartDias()"><option value="">Todos los meses</option></select>
+          </div>
+        </div>
+        <div style="position:relative;flex:1;min-height:180px;width:100%;overflow:hidden;"><canvas id="chart-dias" style="max-width:100%"></canvas></div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-title">Productos más vendidos <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">(unidades)</span></div>
-        <table class="rank-table" id="rank-productos"></table>
+        <div class="dash-card-title">
+          <span>Más vendidos <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">(unidades)</span></span>
+          <div class="dash-filters">
+            <select class="dash-filter" id="f-prod-year"  onchange="renderRankProductos()"><option value="">Todos los años</option></select>
+            <select class="dash-filter" id="f-prod-month" onchange="renderRankProductos()"><option value="">Todos los meses</option></select>
+          </div>
+        </div>
+        <div class="rank-list" id="rank-productos"></div>
       </div>
     </div>
 
     <!-- Rankings colaboradores -->
     <div class="dash-row">
       <div class="dash-card">
-        <div class="dash-card-title">Más unidades compradas</div>
-        <table class="rank-table" id="rank-unidades"></table>
+        <div class="dash-card-title">
+          <span>Unidades compradas</span>
+          <div class="dash-filters">
+            <select class="dash-filter" id="f-unid-year"  onchange="renderRankUnidades()"><option value="">Todos los años</option></select>
+            <select class="dash-filter" id="f-unid-month" onchange="renderRankUnidades()"><option value="">Todos los meses</option></select>
+          </div>
+        </div>
+        <div class="rank-list" id="rank-unidades"></div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-title">Mayor gasto <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">(₡ monto)</span></div>
-        <table class="rank-table" id="rank-monto"></table>
+        <div class="dash-card-title">
+          <span>Mayor compra <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">(₡ monto)</span></span>
+          <div class="dash-filters">
+            <select class="dash-filter" id="f-monto-year"  onchange="renderRankMonto()"><option value="">Todos los años</option></select>
+            <select class="dash-filter" id="f-monto-month" onchange="renderRankMonto()"><option value="">Todos los meses</option></select>
+          </div>
+        </div>
+        <div class="rank-list" id="rank-monto"></div>
       </div>
     </div>
 
     <!-- Días favoritos de pedido en el mes -->
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
-        Días favoritos de pedido en el mes
-        <span style="font-size:11px;color:#9ca3af;font-weight:400;text-transform:none;">todos los pedidos, sin importar estado</span>
+        <span>Días favoritos de pedido en el mes</span>
+        <div class="dash-filters">
+          <select class="dash-filter" id="f-diasmes-year"  onchange="renderChartDiasMes()"><option value="">Todos los años</option></select>
+          <select class="dash-filter" id="f-diasmes-month" onchange="renderChartDiasMes()"><option value="">Todos los meses</option></select>
+        </div>
       </div>
-      <canvas id="chart-dias-mes" height="80"></canvas>
+      <div id="chart-diasmes-wrap" style="position:relative;width:100%;height:120px;overflow:hidden;"><canvas id="chart-dias-mes" style="max-width:100%"></canvas></div>
     </div>
 
   </div>
@@ -1737,124 +1787,164 @@ async function loadDashboard() {
   renderDashboard();
 }
 
-function renderDashboard() {
-  const data = _dashData;
+// ── Helpers de filtro ──────────────────────────────────────
+const _MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  // ── KPIs ──
-  const activos    = data.filter(o => o.estado !== 'cancelado');
+function _populateYearSelect(selId, data) {
+  const sel = document.getElementById(selId); if (!sel) return;
+  const cur = sel.value;
+  const years = [...new Set(data.map(o => new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  sel.innerHTML = '<option value="">Todos los años</option>' +
+    years.map(y => `<option value="${y}"${y==cur?' selected':''}>${y}</option>`).join('');
+}
+
+function _populateMonthSelect(selId) {
+  const sel = document.getElementById(selId); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los meses</option>' +
+    _MESES.slice(1).map((m,i) => `<option value="${i}"${i==cur?' selected':''}>${m}</option>`).join('');
+}
+
+function _filterByYearMonth(data, yearSelId, monthSelId) {
+  const y = document.getElementById(yearSelId)?.value;
+  const m = document.getElementById(monthSelId)?.value;
+  return data.filter(o => {
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && m != null && d.getMonth() != m) return false;
+    return true;
+  });
+}
+
+function renderDashboard() {
+  const data   = _dashData;
+  const activos = data.filter(o => o.estado !== 'cancelado');
   const facturados = data.filter(o => o.estado === 'facturado' || o.estado === 'pagado');
-  const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
-  const totalUnid  = activos.reduce((s, o) => s + (o.lineas_pedido || []).reduce((a, l) => a + (l.cantidad || 0), 0), 0);
-  const colab      = new Set(activos.map(o => o.usuario_email)).size;
+
+  // ── Poblar filtros de año (solo primera vez) ──
+  const isFirstLoad = !document.getElementById('f-tiempo-year').options.length || document.getElementById('f-tiempo-year').options.length === 1;
+  ['f-tiempo-year','f-dias-year','f-prod-year','f-unid-year','f-monto-year','f-diasmes-year'].forEach(id => _populateYearSelect(id, data));
+  ['f-dias-month','f-prod-month','f-unid-month','f-monto-month','f-diasmes-month'].forEach(id => _populateMonthSelect(id));
+
+  // Defaults en primera carga: todos en blanco excepto días favoritos → mes actual
+  if (isFirstLoad) {
+    ['f-dias-month','f-prod-month','f-unid-month','f-monto-month'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('f-diasmes-month').value = new Date().getMonth();
+  }
+
+  // ── KPIs (siempre globales) ──
+  const totalFact = facturados.reduce((s,o) => s+(o.total||0), 0);
+  const totalUnid = activos.reduce((s,o) => s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0), 0);
+  const colab     = new Set(activos.map(o => o.usuario_email)).size;
   document.getElementById('dk-total-fact').textContent    = '₡' + totalFact.toLocaleString('es-CR');
   document.getElementById('dk-pedidos').textContent       = activos.length;
-  document.getElementById('dk-promedio').textContent      = activos.length ? '₡' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0) / activos.length).toLocaleString('es-CR') : '₡0';
+  document.getElementById('dk-promedio').textContent      = activos.length ? '₡' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0)/activos.length).toLocaleString('es-CR') : '₡0';
   document.getElementById('dk-productos').textContent     = totalUnid.toLocaleString('es-CR');
   document.getElementById('dk-colaboradores').textContent = colab;
 
-  // ── Gráfico tiempo ──
   renderChartTiempo();
+  renderChartDias();
+  renderRankProductos();
+  renderRankUnidades();
+  renderRankMonto();
+  renderChartDiasMes();
+  _fixDashHeights();
+}
 
-  // ── Días de semana ──
-  const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  const porDia  = Array(7).fill(0);
-  activos.forEach(o => { const d = new Date(o.fecha).getDay(); porDia[d] += o.total || 0; });
-  const maxDia  = Math.max(...porDia) || 1;
+function renderChartDias() {
+  const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const data  = _filterByYearMonth(base, 'f-dias-year', 'f-dias-month');
+  const month = document.getElementById('f-dias-month')?.value;
   const ctxDias = document.getElementById('chart-dias').getContext('2d');
   if (_chartDias) _chartDias.destroy();
-  _chartDias = new Chart(ctxDias, {
-    type: 'bar',
-    data: {
-      labels: diasNom,
-      datasets: [{ data: porDia, backgroundColor: porDia.map(v => v === Math.max(...porDia) ? '#1f2937' : '#e5e7eb'), borderRadius: 6 }]
-    },
-    options: {
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '₡' + Math.round(ctx.raw).toLocaleString('es-CR') } } },
-      scales: { y: { ticks: { callback: v => '₡' + (v/1000).toFixed(0) + 'k', font: { size: 11 } }, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
-    }
-  });
 
-  // ── Ranking productos ──
-  const prodMap = {};
-  activos.forEach(o => (o.lineas_pedido || []).forEach(l => {
-    const k = l.producto_nombre || l.producto_codigo;
-    prodMap[k] = (prodMap[k] || 0) + (l.cantidad || 0);
-  }));
-  const topProd = Object.entries(prodMap).sort((a,b) => b[1]-a[1]).slice(0,8);
-  const maxProd = topProd[0]?.[1] || 1;
-  document.getElementById('rank-productos').innerHTML = topProd.map(([n,v],i) => `
-    <tr>
-      <td class="rank-num">${i+1}</td>
-      <td style="padding:8px 4px">
-        <div style="font-size:12px;font-weight:600;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${esc(n)}</div>
-        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/maxProd*100)}%"></div></div>
-      </td>
-      <td style="text-align:right;font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap">${v} u.</td>
-    </tr>`).join('');
+  if (month !== '' && month != null) {
+    // Mes seleccionado → mostrar cada día del mes
+    const porDia = Array(31).fill(0);
+    data.forEach(o => { porDia[new Date(o.fecha).getUTCDate()-1] += o.total||0; });
+    // Recortar al último día con datos o al último día del mes seleccionado
+    const year = document.getElementById('f-dias-year')?.value || new Date().getFullYear();
+    const diasEnMes = new Date(year, parseInt(month)+1, 0).getDate();
+    const vals   = porDia.slice(0, diasEnMes);
+    const labels = Array.from({length: diasEnMes}, (_,i) => i+1);
+    const mx = Math.max(...vals)||1;
+    _chartDias = new Chart(ctxDias, {
+      type:'bar',
+      data:{ labels, datasets:[{ data:vals, backgroundColor:vals.map(v=>v===mx?'#1f2937':v>=mx*0.7?'#4b5563':'#e5e7eb'), borderRadius:3 }] },
+      options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`Día ${c[0].label}`,label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}}, scales:{y:{ticks:{callback:v=>'₡'+(v/1000).toFixed(0)+'k',font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10}},grid:{display:false}}} }
+    });
+  } else {
+    // Sin mes → mostrar día de semana
+    const diasNom=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const porDia=Array(7).fill(0);
+    data.forEach(o => { porDia[new Date(o.fecha).getDay()] += o.total||0; });
+    const mx=Math.max(...porDia)||1;
+    _chartDias = new Chart(ctxDias, {
+      type:'bar',
+      data:{ labels:diasNom, datasets:[{ data:porDia, backgroundColor:porDia.map(v=>v===mx?'#1f2937':'#e5e7eb'), borderRadius:6 }] },
+      options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}}, scales:{y:{ticks:{callback:v=>'₡'+(v/1000).toFixed(0)+'k',font:{size:11}},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}} }
+    });
+  }
+}
 
-  // ── Ranking unidades por colaborador ──
-  const unidMap = {};
-  activos.forEach(o => {
-    const k = o.usuario_nombre || o.usuario_email;
-    unidMap[k] = (unidMap[k] || 0) + (o.lineas_pedido || []).reduce((s,l) => s + (l.cantidad||0), 0);
-  });
-  const topUnid = Object.entries(unidMap).sort((a,b) => b[1]-a[1]).slice(0,6);
-  const maxUnid = topUnid[0]?.[1] || 1;
-  document.getElementById('rank-unidades').innerHTML = topUnid.map(([n,v],i) => `
-    <tr>
-      <td class="rank-num">${i+1}</td>
-      <td style="padding:8px 4px">
-        <div style="font-size:12px;font-weight:600;color:#1f2937">${esc(n)}</div>
-        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/maxUnid*100)}%"></div></div>
-      </td>
-      <td style="text-align:right;font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap">${v} u.</td>
-    </tr>`).join('');
+function renderRankProductos() {
+  const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const data  = _filterByYearMonth(base, 'f-prod-year', 'f-prod-month');
+  const map   = {};
+  data.forEach(o => (o.lineas_pedido||[]).forEach(l => { const k=l.producto_nombre||l.producto_codigo; map[k]=(map[k]||0)+(l.cantidad||0); }));
+  const top = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const mx  = top[0]?.[1]||1;
+  document.getElementById('rank-productos').innerHTML = top.length ? top.map(([n,v],i)=>`
+    <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
+      <div class="rank-name">${esc(n)}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
+    </div><span class="rank-val">${v} u.</span></div>`).join('')
+    : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
+}
 
-  // ── Ranking monto por colaborador ──
-  const montoMap = {};
-  activos.forEach(o => {
-    const k = o.usuario_nombre || o.usuario_email;
-    montoMap[k] = (montoMap[k] || 0) + (o.total || 0);
-  });
-  const topMonto = Object.entries(montoMap).sort((a,b) => b[1]-a[1]).slice(0,6);
-  const maxMonto = topMonto[0]?.[1] || 1;
-  document.getElementById('rank-monto').innerHTML = topMonto.map(([n,v],i) => `
-    <tr>
-      <td class="rank-num">${i+1}</td>
-      <td style="padding:8px 4px">
-        <div style="font-size:12px;font-weight:600;color:#1f2937">${esc(n)}</div>
-        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/maxMonto*100)}%"></div></div>
-      </td>
-      <td style="text-align:right;font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap">₡${Math.round(v/1000)}k</td>
-    </tr>`).join('');
+function renderRankUnidades() {
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const data = _filterByYearMonth(base, 'f-unid-year', 'f-unid-month');
+  const map  = {};
+  data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
+  const top = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const mx  = top[0]?.[1]||1;
+  document.getElementById('rank-unidades').innerHTML = top.length ? top.map(([n,v],i)=>`
+    <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
+      <div class="rank-name">${esc(n)}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
+    </div><span class="rank-val">${v} u.</span></div>`).join('')
+    : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
+}
 
-  // ── Días favoritos del mes (todos los pedidos) ──
+function renderRankMonto() {
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const data = _filterByYearMonth(base, 'f-monto-year', 'f-monto-month');
+  const map  = {};
+  data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; map[k]=(map[k]||0)+(o.total||0); });
+  const top = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const mx  = top[0]?.[1]||1;
+  document.getElementById('rank-monto').innerHTML = top.length ? top.map(([n,v],i)=>`
+    <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
+      <div class="rank-name">${esc(n)}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
+    </div><span class="rank-val">₡${Math.round(v/1000)}k</span></div>`).join('')
+    : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
+}
+
+function renderChartDiasMes() {
+  const data = _filterByYearMonth(_dashData||[], 'f-diasmes-year', 'f-diasmes-month');
   const porDiaMes = Array(31).fill(0);
-  (_dashAllDays || []).forEach(o => {
-    const dia = new Date(o.fecha).getUTCDate() - 1; // 0-30
-    porDiaMes[dia]++;
-  });
-  const labelsDias = Array.from({length:31}, (_,i) => i+1);
-  const maxDiaMes  = Math.max(...porDiaMes) || 1;
+  data.forEach(o => { porDiaMes[new Date(o.fecha).getUTCDate()-1]++; });
+  const mx = Math.max(...porDiaMes)||1;
   const ctxDM = document.getElementById('chart-dias-mes').getContext('2d');
   if (_chartDiasMes) _chartDiasMes.destroy();
   _chartDiasMes = new Chart(ctxDM, {
-    type: 'bar',
-    data: {
-      labels: labelsDias,
-      datasets: [{
-        data: porDiaMes,
-        backgroundColor: porDiaMes.map(v => v === maxDiaMes ? '#1f2937' : v >= maxDiaMes * 0.7 ? '#4b5563' : '#e5e7eb'),
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      plugins: { legend:{display:false}, tooltip:{ callbacks:{ title: ctx => `Día ${ctx[0].label} del mes`, label: ctx => `${ctx.raw} pedido${ctx.raw!==1?'s':''}` } } },
-      scales: {
-        y: { ticks:{ stepSize:1, font:{size:11} }, grid:{color:'#f3f4f6'} },
-        x: { ticks:{ font:{size:10} }, grid:{display:false} }
-      }
-    }
+    type:'bar',
+    data:{ labels:Array.from({length:31},(_,i)=>i+1), datasets:[{ data:porDiaMes, backgroundColor:porDiaMes.map(v=>v===mx?'#1f2937':v>=mx*0.7?'#4b5563':'#e5e7eb'), borderRadius:4 }] },
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`Día ${c[0].label} del mes`,label:c=>`${c.raw} pedido${c.raw!==1?'s':''}`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10}},grid:{display:false}}} }
   });
 }
 
@@ -1865,7 +1955,8 @@ function setDashPeriod(p) {
 }
 
 function renderChartTiempo() {
-  const data = (_dashData || []).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const data = _filterByYearMonth(base, 'f-tiempo-year', null);
   if (!data.length) return;
 
   // Agrupar según período
@@ -1906,6 +1997,7 @@ function renderChartTiempo() {
       }]
     },
     options: {
+      maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '₡' + Math.round(ctx.raw).toLocaleString('es-CR') } } },
       scales: {
         y: { ticks: { callback: v => '₡' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v), font: { size: 11 } }, grid: { color: '#f3f4f6' } },
@@ -1914,6 +2006,18 @@ function renderChartTiempo() {
     }
   });
 }
+
+// ── COMPENSAR ALTURA DE GRÁFICOS FIJOS AL HACER ZOOM ──────
+function _fixDashHeights() {
+  const zoom = window.innerWidth <= 600 ? window.innerWidth / 900 : 1;
+  [['chart-tiempo-wrap', 130], ['chart-diasmes-wrap', 120]].forEach(([id, base]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.height = Math.round(base / zoom) + 'px';
+  });
+  if (_chartTiempo)  _chartTiempo.resize();
+  if (_chartDiasMes) _chartDiasMes.resize();
+}
+window.addEventListener('resize', _fixDashHeights);
 
 initAuth();
 

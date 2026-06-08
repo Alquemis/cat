@@ -1275,12 +1275,11 @@ function startSessionWatchdog() {
         .select('cedula')
         .eq('cedula', currentUser.cedula)
         .maybeSingle();
-      // Solo cerrar sesión si no hay error Y el usuario definitivamente no existe
-      if (!error && data === null) {
+      if (!data) {
+        // Usuario eliminado — cerrar sesión silenciosamente
         stopSessionWatchdog();
         onLogout();
       }
-      // Si hay error (red, timeout, etc.) → ignorar y reintentar
     } catch(_) { /* ignorar errores de red */ }
   }, 10000);
 }

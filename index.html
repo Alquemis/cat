@@ -380,22 +380,31 @@
   /* ========== NAV TABS ========== */
   .nav-tabs {
     background: #fff; border-bottom: 1px solid #e5e7eb;
-    padding: 0 32px; display: flex; align-items: center; gap: 4px; overflow-x: auto;
+    padding: 0 8px; display: flex; align-items: center; gap: 0;
   }
   .home-btn {
-    background: none; border: none; padding: 18px 18px;
-    font-size: 14px; font-weight: 700; letter-spacing: 1px;
+    background: none; border: none; padding: 16px 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: .5px;
     color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent;
-    transition: all 0.2s; white-space: nowrap; display: none; align-items: center; gap: 6px;
+    transition: all 0.2s; white-space: nowrap; display: none; align-items: center; gap: 4px;
+    flex-shrink: 0;
   }
   .home-btn.visible { display: flex; }
   .home-btn:hover { color: #1f2937; }
   .nav-tab {
-    background: none; border: none; padding: 18px 22px;
-    font-size: 14px; font-weight: 700; letter-spacing: 1px;
+    background: none; border: none; padding: 16px 0;
+    font-size: 12px; font-weight: 700; letter-spacing: .5px;
     color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent;
     transition: all 0.2s; white-space: nowrap;
+    flex: 1 1 auto; text-align: center; min-width: 0;
+    position: relative;
   }
+  .nav-tab::after {
+    content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    height: 50%; width: 1px; background: #e5e7eb;
+  }
+  .nav-tab:last-child::after { display: none; }
+  .nav-tab.cta::after { display: none; }
   .nav-tab:hover { color: #1f2937; }
   .nav-tab.active { color: #1f2937; border-bottom-color: #1f2937; }
   .nav-tab.cta {
@@ -474,6 +483,12 @@
   .products-title { font-size: 18px; font-weight: 700; color: #1f2937; }
   .products-count { font-size: 13px; color: #6b7280; }
   .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
+  .products-grid.promo-grid { grid-template-columns: repeat(auto-fill, minmax(315px, 1fr)); gap: 22px; }
+  .promo-grid .product-card { border: 2px solid #f59e0b; }
+  .promo-grid .product-card:hover { border-color: #d97706; }
+  .promo-grid .product-card .product-code { font-size: 14px; }
+  .promo-grid .product-card .card-name { font-size: 17px; }
+  .promo-grid .product-card .card-price { font-size: 22px; }
 
   .product-card {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
@@ -505,14 +520,17 @@
   #img-lightbox.open #img-lightbox-wrap { transform:scale(1);opacity:1; }
   #img-lightbox.closing #img-lightbox-wrap { transform:scale(0.4);opacity:0; }
   #img-lightbox img { max-width:100%;max-height:100%;object-fit:contain; }
+  /* CHIP DE MARCA — oculto por decisión de diseño (jun 2026).
+     Para reactivar: cambiar display:none por display:inline-block */
   .product-brand-tag {
+    display: none;
     position: absolute; top: 10px; left: 10px;
     background: rgba(255,255,255,0.95); color: #374151;
     font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 6px;
     text-transform: uppercase; letter-spacing: 0.5px;
   }
   .product-price {
-    position: absolute; bottom: 10px; left: 10px;
+    position: absolute; bottom: 2px; left: 10px;
     background: rgba(20,20,20,0.85); color: #fff; font-weight: 700; font-size: 13px;
     padding: 5px 11px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
@@ -524,7 +542,7 @@
   }
   .product-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .product-meta { font-size: 11.5px; color: #6b7280; flex: 1; min-width: 0; }
-  .product-code { font-size: 12px; font-weight: 700; color: #1f2937; white-space: nowrap; }
+  .product-code { font-size: 8px; font-weight: 700; color: #1f2937; white-space: nowrap; }
 
   /* Add-to-cart button */
   .add-btn {
@@ -547,9 +565,9 @@
   .empty-state-title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 4px; }
   .welcome-msg {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 16px;
-    padding: 36px 32px; text-align: center; max-width: 700px; margin: 0 auto;
+    padding: 36px 32px; text-align: center; width: 100%;
   }
-  .welcome-text { font-size: 14px; color: #6b7280; line-height: 1.6; }
+  .welcome-text { font-size: 18px; color: #6b7280; line-height: 1.7; }
 
   /* ========== CART MODAL (ventana flotante central) ========== */
   .cart-overlay {
@@ -752,7 +770,7 @@
 
     /* Nav */
     .nav-tabs { padding: 0; }
-    .nav-tab, .home-btn { flex: 1; min-width: 0; padding: 12px 2px; font-size: 10px; letter-spacing: 0; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
+    .nav-tab, .home-btn { flex: 1 1 auto; min-width: 0; padding: 11px 2px; font-size: 11px; letter-spacing: 0; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
     .nav-tab.cta { flex: none; padding: 7px 10px; font-size: 10px; margin-left: 2px; border-radius: 6px; align-self: center; }
 
     /* Hero */
@@ -769,6 +787,7 @@
 
     /* Products grid */
     .products-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; }
+    .products-grid.promo-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 
     /* Cart modal */
     .cart-modal { max-width: 98vw; max-height: 90vh; }
@@ -907,16 +926,17 @@
     <button class="nav-tab" data-tab="FACIAL" onclick="selectTab('FACIAL')">FACIAL</button>
     <button class="nav-tab" data-tab="CORPORAL" onclick="selectTab('CORPORAL')">CORPORAL</button>
     <button class="nav-tab" data-tab="PACKS" onclick="selectTab('PACKS')">PACKS</button>
+  <button class="nav-tab" data-tab="PROMOCIONES" onclick="selectTab('PROMOCIONES')">PROMOCIONES</button>
   </div>
 
   <!-- ========== SEARCH ROW ========== -->
   <div class="search-row" id="search-row" style="display:none;">
+    <button class="nav-tab cta" onclick="goToFullCatalog()" style="flex:0 0 auto;width:fit-content;white-space:nowrap;padding:7px 16px;font-size:12px;border-radius:8px;">VER TODOS →</button>
     <div class="search-bar">
       <span>🔍</span>
       <input type="text" placeholder="Buscar productos…" id="search-input">
       <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display:none;">✕</button>
     </div>
-    <button class="nav-tab cta" onclick="goToFullCatalog()">VER TODOS →</button>
   </div>
 </div>
 
@@ -1061,7 +1081,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const PRODUCTS = []; // cargado desde Supabase
 const SLIDES = [{"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Aloe.webp", "alt": "Gel Aloe Vera BioLand", "bg": "#e8f3df"}, {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Hialuronico.webp", "alt": "Hialurónico - Piel Radiante", "bg": "#deeefb"}, {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Infusion%20de%20romero.webp", "alt": "Infusión de Romero", "bg": "#ede4f5"}];
 const BANNERS = {"ALIMENTOS": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Palito%20.webp", "alt": "Palitos Seed", "bg": "#e7202c"}, "CAPILAR": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Infusion%20de%20romero.webp", "alt": "Infusión de Romero", "bg": "#ede4f5"}, "FACIAL": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Vitamina%20C.webp", "alt": "Vitamina C BioLand", "bg": "#fff3e0"}, "CORPORAL": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Vegetus.webp", "alt": "Vegetus", "bg": "#f3f6e8"}, "PACKS": {"img": "", "alt": "Packs Especiales", "bg": "#f4ede0"}};
-const TABS = {"ALIMENTOS": {"type": "category", "label": "Categoría", "options": ["Galletas", "Granolas y Barras", "Loncheras", "Palitos", "Primarios", "Bebida"], "icons": {"Galletas": "🍪", "Granolas y Barras": "🥣", "Loncheras": "🎒", "Palitos": "🥨", "Primarios": "🌽", "Bebida": "🥤"}, "match_field": "c", "spc_filter": "Alimentos"}, "CAPILAR": {"type": "brand", "label": "Marca", "options": ["BIOLAND", "TERRE DE VIE", "RESERVE 11"], "icons": {"BIOLAND": "🌿", "TERRE DE VIE": "🌍", "RESERVE 11": "💎"}, "match_field": "b", "cat_filter": "Capilar"}, "FACIAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Cuidado", "Limpieza", "Hidratante"], "icons": {"Cuidado": "✨", "Limpieza": "🧴", "Hidratante": "💧"}, "match_field": "s", "cat_filter": "Facial"}, "CORPORAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Pastillas", "Líquido", "Solar"], "icons": {"Pastillas": "🧼", "Líquido": "🧴", "Solar": "☀️"}, "match_field": "s", "cat_filter": "Corporal"}, "PACKS": {"type": "packs", "label": "Pack", "options": [], "icons": {}, "match_field": "id", "product_ids": ["PT020021", "PT088246", "PT099265"]}};
+const TABS = {"ALIMENTOS": {"type": "category", "label": "Categoría", "options": ["Galletas", "Granolas y Barras", "Loncheras", "Palitos", "Primarios", "Bebida"], "icons": {"Galletas": "🍪", "Granolas y Barras": "🥣", "Loncheras": "🎒", "Palitos": "🥨", "Primarios": "🌽", "Bebida": "🥤"}, "match_field": "c", "spc_filter": "Alimentos"}, "CAPILAR": {"type": "brand", "label": "Marca", "options": ["BIOLAND", "TERRE DE VIE", "RESERVE 11"], "icons": {"BIOLAND": "🌿", "TERRE DE VIE": "🌍", "RESERVE 11": "💎"}, "match_field": "b", "cat_filter": "Capilar"}, "FACIAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Cuidado", "Limpieza", "Hidratante"], "icons": {"Cuidado": "✨", "Limpieza": "🧴", "Hidratante": "💧"}, "match_field": "s", "cat_filter": "Facial"}, "CORPORAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Pastillas", "Líquido", "Solar"], "icons": {"Pastillas": "🧼", "Líquido": "🧴", "Solar": "☀️"}, "match_field": "s", "cat_filter": "Corporal"}, "PACKS": {"type": "packs", "label": "Pack", "options": [], "icons": {}, "match_field": "id", "product_ids": ["PT020021", "PT088246", "PT099265"]}, "PROMOCIONES": {"type": "promo", "label": "Promoción", "options": [], "icons": {}, "match_field": "c", "cat_filter": "Promoción"}};
 
 // ============================================================
 //  ESTADO DE LA APP
@@ -2289,6 +2309,7 @@ function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer 
 // ============================================================
 function renderTabBanner(tab) {
   const b = BANNERS[tab];
+  if (!b) { document.getElementById('banner-area').innerHTML = ''; return; }
   document.getElementById('banner-area').innerHTML = `
     <div class="tab-banner" style="background:${b.bg};">
       <img src="${b.img}" alt="${escAttr(b.alt)}" class="tab-banner-img" onerror="this.style.display='none'">
@@ -2304,7 +2325,7 @@ function selectTab(tab) {
   activeTab = tab; activeButton = null; stopHeroTimer();
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
   document.getElementById('home-btn').classList.add('visible');
-  if (tab === 'PACKS') document.getElementById('banner-area').innerHTML = '';
+  if (tab === 'PACKS' || tab === 'PROMOCIONES') document.getElementById('banner-area').innerHTML = '';
   else renderTabBanner(tab);
   renderTabContent();
 }
@@ -2315,11 +2336,10 @@ function selectButton(opt) { activeButton = opt; renderTabContent(); }
 // ============================================================
 function renderHomeContent() {
   document.getElementById('dynamic-area').innerHTML = `
-    <div class="section">
-      <div class="welcome-msg">
+    <div class="section" style="max-width:100%;padding-left:0;padding-right:0;">
+      <div class="welcome-msg" style="border-radius:0;border-left:none;border-right:none;">
         <div class="welcome-text">
-          Selecciona una pestaña arriba para explorar las marcas y categorías,<br>
-          o haz clic en <strong>VER TODOS →</strong> para ver el catálogo completo.
+          Selecciona una pestaña de arriba para explorar las categorías, o haz clic en <strong>VER TODOS →</strong> para ver el catálogo completo.
         </div>
       </div>
       <div style="text-align:center;margin-top:24px;">
@@ -2340,6 +2360,7 @@ function getFilteredProducts() {
   if (!activeTab) return [];
   const cfg = TABS[activeTab];
   if (cfg.type === 'packs') return _sortProducts(CATALOG.filter(p => cfg.product_ids.includes(p.id)));
+  if (cfg.type === 'promo') return _sortProducts(CATALOG.filter(p => p.c === 'Promoción'));
   let pool = CATALOG;
   if (cfg.spc_filter) pool = pool.filter(p => p.spc === cfg.spc_filter);
   if (cfg.cat_filter) pool = pool.filter(p => p.c === cfg.cat_filter);
@@ -2365,11 +2386,17 @@ function renderTabContent() {
   let html = '';
 
   const filtered = getFilteredProducts();
+  const isPromo = TABS[activeTab]?.type === 'promo';
   html += `<div class="products-section">`;
   if (filtered.length === 0) {
-    html += `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">Sin productos en esta selección</div></div>`;
+    if (isPromo) {
+      html += `<div class="empty-state"><div class="empty-state-icon">🏷️</div><div class="empty-state-title">Pronto habrán promociones</div></div>`;
+    } else {
+      html += `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">Sin productos en esta selección</div></div>`;
+    }
   } else {
-    html += `<div class="products-grid">${filtered.map(renderCard).join('')}</div>`;
+    const gridClass = isPromo ? 'products-grid promo-grid' : 'products-grid';
+    html += `<div class="${gridClass}">${filtered.map(renderCard).join('')}</div>`;
   }
   html += `</div>`;
   area.innerHTML = html;
@@ -2457,7 +2484,7 @@ function clearSearch() {
 // ============================================================
 (function() {
   var sx = 0, sy = 0, tgt = null;
-  var TAB_ORDER = [null, 'ALIMENTOS', 'CAPILAR', 'FACIAL', 'CORPORAL', 'PACKS'];
+  var TAB_ORDER = [null, 'ALIMENTOS', 'CAPILAR', 'FACIAL', 'CORPORAL', 'PACKS', 'PROMOCIONES'];
 
   function isScrollableX(el) {
     while (el && el !== document.body) {

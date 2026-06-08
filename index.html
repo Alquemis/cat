@@ -1603,7 +1603,8 @@ async function loadProductsFromDB() {
         id: r.codigo, n: r.nombre, b: r.marca,
         spc: r.spc, c: r.categoria, s: r.subcategoria,
         pr: r.precio, img: r.imagen,
-        iva: r.iva != null ? r.iva : 13
+        iva: r.iva != null ? r.iva : 13,
+        promo: !!r.promocion
       }));
       loadCart(); // restaurar carrito guardado tras tener el catálogo
     }
@@ -2360,7 +2361,7 @@ function getFilteredProducts() {
   if (!activeTab) return [];
   const cfg = TABS[activeTab];
   if (cfg.type === 'packs') return _sortProducts(CATALOG.filter(p => cfg.product_ids.includes(p.id)));
-  if (cfg.type === 'promo') return _sortProducts(CATALOG.filter(p => p.c === 'Promoción'));
+  if (cfg.type === 'promo') return _sortProducts(CATALOG.filter(p => p.promo));
   let pool = CATALOG;
   if (cfg.spc_filter) pool = pool.filter(p => p.spc === cfg.spc_filter);
   if (cfg.cat_filter) pool = pool.filter(p => p.c === cfg.cat_filter);

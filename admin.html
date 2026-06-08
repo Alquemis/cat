@@ -171,6 +171,9 @@
     .dash-row,.dash-row-3 { grid-template-columns:1fr; }
   }
 
+  /* ── CHECKBOX PROMOCIÓN ── */
+  #f-promocion:checked + #f-promocion-label { color:#dc2626; }
+
   /* ── ESTADOS DE FILA ── */
   tr.row-mora   td { background:#fef2f2; }
   tr.row-mora:hover td { background:#fee2e2; }
@@ -919,6 +922,17 @@
           <img id="img-preview" style="max-width:120px;max-height:120px;border-radius:8px;border:1.5px solid #e5e7eb;object-fit:cover;">
         </div>
       </div>
+      <!-- Checkbox Promoción -->
+      <div class="form-field full">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="f-promocion" onchange="togglePromoStyle(this)"
+            style="width:18px;height:18px;cursor:pointer;accent-color:#dc2626;">
+          <span id="f-promocion-label" style="font-size:13px;font-weight:600;color:#6b7280;">
+            En promoción
+          </span>
+        </label>
+        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Al activar, el producto aparece en la sección PROMOCIONES.</div>
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
@@ -1296,6 +1310,9 @@ function openProductModal(product) {
   document.getElementById('f-iva').value         = product?.iva != null ? product.iva : 13;
   document.getElementById('f-imagen').value      = product?.imagen      || '';
   document.getElementById('f-activo').value      = product?.activo === false ? 'Inactivo' : 'Activo';
+  const promoCheck = document.getElementById('f-promocion');
+  promoCheck.checked = !!product?.promocion;
+  togglePromoStyle(promoCheck);
   // Resetear estado del upload de imagen
   document.getElementById('img-upload-status').style.display = 'none';
   document.getElementById('img-preview-wrap').style.display  = 'none';
@@ -1332,6 +1349,7 @@ async function saveProduct() {
     iva:          parseFloat(document.getElementById('f-iva').value) ?? 13,
     imagen:       document.getElementById('f-imagen').value.trim(),
     activo:       document.getElementById('f-activo').value === 'Activo',
+    promocion:    document.getElementById('f-promocion').checked,
     updated_at:   new Date().toISOString()
   };
 
@@ -2755,6 +2773,14 @@ function _fixDashHeights() {
 window.addEventListener('resize', _fixDashHeights);
 
 initAuth();
+
+// ── CHECKBOX PROMOCIÓN ───────────────────────────────────
+function togglePromoStyle(cb) {
+  const label = document.getElementById('f-promocion-label');
+  if (!label) return;
+  label.style.color = cb.checked ? '#dc2626' : '#6b7280';
+  label.textContent = cb.checked ? '¡En promoción!' : 'En promoción';
+}
 
 // ── EXPORTAR PRODUCTOS A EXCEL ────────────────────────────
 function exportProductsExcel() {

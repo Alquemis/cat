@@ -1517,7 +1517,7 @@ async function descargarPedidoDetalle() {
     };
   });
   const fechaStr = o.fecha ? new Date(o.fecha).toLocaleString('es-CR') : '—';
-  await descargarCopiaRecibo({ id: o.id, fecha: fechaStr, items, total: o.total || 0, usuario: currentUser });
+  await descargarCopiaRecibo({ id: o.id, fecha: fechaStr, items, total: o.total || 0, usuario: currentUser, estado: o.estado || 'pendiente' });
   if (btn) { btn.disabled = false; btn.textContent = '⬇ Descargar copia'; }
 }
 
@@ -1935,7 +1935,8 @@ async function submitOrder() {
     fecha:   new Date().toLocaleString('es-CR'),
     items:   activeCart,
     total:   total,
-    usuario: { ...currentUser }
+    usuario: { ...currentUser },
+    estado:  'pendiente'
   };
 
   // Éxito — limpiar carrito completo (incluyendo agotados)
@@ -1967,7 +1968,7 @@ async function descargarCopiaRecibo(orderData) {
   const btn = orderData ? null : document.getElementById('btn-descargar-recibo');
   if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
 
-  const { id, fecha, items, total, usuario } = data;
+  const { id, fecha, items, total, usuario, estado = 'pendiente' } = data;
   const W = 600, PAD = 36, IMG_S = 48, ROW_H = 68;
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
@@ -2024,11 +2025,30 @@ async function descargarCopiaRecibo(orderData) {
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   ctx.fillStyle = '#1f2937';
   ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillText('#' + id.slice(0, 8).toUpperCase(), W - PAD, 32);
+  ctx.fillText('#' + id.slice(0, 8).toUpperCase(), W - PAD, 26);
   ctx.fillStyle = '#9ca3af';
   ctx.font = '11px system-ui, sans-serif';
-  ctx.fillText(fecha, W - PAD, 56);
-  ctx.textAlign = 'left';
+  ctx.fillText(fecha, W - PAD, 46);
+
+  // Chip de estado
+  const estadoConfig = {
+    pendiente:  { bg: '#fef3c7', text: '#92400e', label: 'Pendiente' },
+    facturado:  { bg: '#dbeafe', text: '#1e40af', label: 'Facturado' },
+    pagado:     { bg: '#dcfce7', text: '#166534', label: 'Pagado' },
+    cancelado:  { bg: '#fee2e2', text: '#dc2626', label: 'Rechazado' },
+  };
+  const ec = estadoConfig[estado] || estadoConfig.pendiente;
+  ctx.font = 'bold 10px system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  const chipLabel = ec.label;
+  const chipW = ctx.measureText(chipLabel).width + 16;
+  const chipX = W - PAD - chipW;
+  const chipY = 58;
+  rr(chipX, chipY, chipW, 16, 8);
+  ctx.fillStyle = ec.bg; ctx.fill();
+  ctx.fillStyle = ec.text; ctx.textBaseline = 'middle';
+  ctx.fillText(chipLabel, W - PAD - 8, chipY + 8);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
   // Línea divisoria bajo header
   ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;

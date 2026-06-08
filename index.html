@@ -481,11 +481,29 @@
   .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); border-color: #d1d5db; }
   .product-img-wrap {
     position: relative; aspect-ratio: 1/1;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center; overflow: hidden;
   }
-  .product-img { max-width: 96%; max-height: 96%; object-fit: contain; }
+  .product-img { max-width: 96%; max-height: 96%; object-fit: contain; cursor:zoom-in; }
   .product-img-placeholder { font-size: 56px; opacity: 0.4; }
+
+  /* Lightbox */
+  #img-lightbox {
+    position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0);
+    display:none;align-items:center;justify-content:center;padding:24px;
+    cursor:zoom-out;transition:background .25s;
+  }
+  #img-lightbox.open { display:flex; background:rgba(0,0,0,.75); }
+  #img-lightbox-wrap {
+    background:#fff;border-radius:16px;padding:20px;
+    display:flex;align-items:center;justify-content:center;
+    width:min(480px,85vw);height:min(480px,85vw);flex-shrink:0;cursor:zoom-out;
+    transform:scale(0.4);opacity:0;
+    transition:transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+  }
+  #img-lightbox.open #img-lightbox-wrap { transform:scale(1);opacity:1; }
+  #img-lightbox.closing #img-lightbox-wrap { transform:scale(0.4);opacity:0; }
+  #img-lightbox img { max-width:100%;max-height:100%;object-fit:contain; }
   .product-brand-tag {
     position: absolute; top: 10px; left: 10px;
     background: rgba(255,255,255,0.95); color: #374151;
@@ -936,6 +954,13 @@
       <button class="mpd-btn-close" onclick="closePedidoDet()">Cerrar</button>
       <button class="mpd-btn-del" id="mpd-btn-del" onclick="pedidoDetDelete()" title="Eliminar de mi historial">🗑</button>
     </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="img-lightbox" onclick="closeLightbox()">
+  <div id="img-lightbox-wrap" onclick="closeLightbox()">
+    <img id="img-lightbox-img" src="" alt="">
   </div>
 </div>
 
@@ -2198,7 +2223,7 @@ function renderCard(p) {
   return `
     <div class="product-card">
       <div class="product-img-wrap">
-        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='block'">` : ''}
+        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" onclick="event.stopPropagation();openLightbox('${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='block'">` : ''}
         <div class="product-img-placeholder" style="${p.img?'display:none':''}"> ${emoji}</div>
         ${p.b ? `<span class="product-brand-tag">${escHtml(p.b)}</span>` : ''}
         <span class="product-price">${priceLabel}</span>
@@ -2671,6 +2696,22 @@ document.addEventListener('click', e => {
 // ============================================================
 //  INICIO
 // ============================================================
+// ── LIGHTBOX ──────────────────────────────────────────────
+function openLightbox(src) {
+  const lb = document.getElementById('img-lightbox');
+  lb.classList.remove('closing');
+  document.getElementById('img-lightbox-img').src = src;
+  lb.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('open')));
+}
+function closeLightbox() {
+  const lb = document.getElementById('img-lightbox');
+  lb.classList.remove('open');
+  lb.classList.add('closing');
+  setTimeout(() => { lb.style.display = 'none'; lb.classList.remove('closing'); }, 250);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
 initAuth();
 </script>
 </body>

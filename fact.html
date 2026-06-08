@@ -685,8 +685,7 @@ function copiarPedido(id) {
   const filas = lineas.map(l =>
     '<tr><td>' + (l.producto_codigo || '') + '</td><td>' + (l.cantidad || 0) + '</td></tr>'
   ).join('');
-  const tablaHtml = '<html><body><table>' + filas + '</table>
-</body></html>';
+  const tablaHtml = '<html><body><table>' + filas + '</table></body></html>';
 
   function confirmarCopia() {
     const btn = document.getElementById('copy-btn-' + id);

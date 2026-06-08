@@ -678,6 +678,31 @@
       </div>
     </div>
 
+    <!-- Unidades vendidas en el tiempo -->
+    <div class="dash-card" style="margin-bottom:20px;">
+      <div class="dash-card-title">
+        <span>Unidades vendidas en el tiempo</span>
+        <div class="dash-filters">
+          <select class="dash-filter" id="f-unid-tiempo-year" onchange="renderChartUnidTiempo()"><option value="">Todos los años</option></select>
+          <div class="dash-period-btns">
+            <button class="dash-period-btn active" id="upbtn-day"   onclick="setUnidPeriod('day')">Día</button>
+            <button class="dash-period-btn"        id="upbtn-week"  onclick="setUnidPeriod('week')">Semana</button>
+            <button class="dash-period-btn"        id="upbtn-month" onclick="setUnidPeriod('month')">Mes</button>
+            <button class="dash-period-btn"        id="upbtn-year"  onclick="setUnidPeriod('year')">Año</button>
+          </div>
+          <div class="dash-period-btns" style="margin-left:4px;">
+            <button class="dash-period-btn active" id="upbtn-line" onclick="setUnidChartType('line')" style="padding:3px 7px;">
+              <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,11 5,6 9,8 15,2"/></svg>
+            </button>
+            <button class="dash-period-btn" id="upbtn-bar" onclick="setUnidChartType('bar')" style="padding:3px 7px;">
+              <svg width="16" height="14" viewBox="0 0 16 14" fill="currentColor"><rect x="1" y="6" width="3" height="7" rx="1"/><rect x="6" y="3" width="3" height="10" rx="1"/><rect x="11" y="1" width="3" height="12" rx="1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="chart-unid-tiempo-wrap" style="position:relative;width:100%;height:130px;overflow:hidden;"><canvas id="chart-unid-tiempo" style="max-width:100%"></canvas></div>
+    </div>
+
     <!-- Días favoritos de pedido en el mes -->
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
@@ -788,7 +813,22 @@
     <div class="prod-detail-filters">
       <select class="dash-filter" id="ud-year" onchange="renderUserDetail()"><option value="">Todos los años</option></select>
       <select class="dash-filter" id="ud-month" onchange="renderUserDetail()"><option value="">Todos los meses</option></select>
+      <div class="dash-period-btns" style="margin-left:auto;">
+        <button class="dash-period-btn active" id="ud-pbtn-day"   onclick="setUdPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="ud-pbtn-week"  onclick="setUdPeriod('week')">Semana</button>
+        <button class="dash-period-btn"        id="ud-pbtn-month" onclick="setUdPeriod('month')">Mes</button>
+        <button class="dash-period-btn"        id="ud-pbtn-year"  onclick="setUdPeriod('year')">Año</button>
+      </div>
+      <div class="dash-period-btns" style="margin-left:4px;">
+        <button class="dash-period-btn active" id="ud-pbtn-line" onclick="setUdChartType('line')" style="padding:3px 7px;">
+          <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,11 5,6 9,8 15,2"/></svg>
+        </button>
+        <button class="dash-period-btn" id="ud-pbtn-bar" onclick="setUdChartType('bar')" style="padding:3px 7px;">
+          <svg width="16" height="14" viewBox="0 0 16 14" fill="currentColor"><rect x="1" y="6" width="3" height="7" rx="1"/><rect x="6" y="3" width="3" height="10" rx="1"/><rect x="11" y="1" width="3" height="12" rx="1"/></svg>
+        </button>
+      </div>
     </div>
+    <div style="position:relative;width:100%;height:140px;margin-bottom:8px;"><canvas id="user-detail-chart"></canvas></div>
     <div id="user-detail-body"></div>
   </div>
 </div>
@@ -2058,7 +2098,10 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 let _dashData    = null;
 let _dashAllDays = null;   // todos los pedidos para análisis de días
 let _dashPeriod    = 'day';
-let _dashChartType = 'line';
+let _dashChartType  = 'line';
+let _unidPeriod     = 'day';
+let _unidChartType  = 'line';
+let _chartUnidTiempo = null;
 let _chartTiempo = null;
 let _chartDias   = null;
 let _chartDiasMes = null;
@@ -2117,7 +2160,7 @@ function renderDashboard() {
 
   // ── Poblar filtros de año (solo primera vez) ──
   const isFirstLoad = !document.getElementById('f-tiempo-year').options.length || document.getElementById('f-tiempo-year').options.length === 1;
-  ['f-tiempo-year','f-dias-year','f-prod-year','f-unid-year','f-monto-year','f-diasmes-year'].forEach(id => _populateYearSelect(id, data));
+  ['f-tiempo-year','f-dias-year','f-prod-year','f-unid-year','f-monto-year','f-diasmes-year','f-unid-tiempo-year'].forEach(id => _populateYearSelect(id, data));
   ['f-dias-month','f-prod-month','f-unid-month','f-monto-month','f-diasmes-month'].forEach(id => _populateMonthSelect(id));
 
   // Defaults en primera carga: todos en blanco excepto días favoritos → mes actual
@@ -2144,6 +2187,7 @@ function renderDashboard() {
   renderRankProductos();
   renderRankUnidades();
   renderRankMonto();
+  renderChartUnidTiempo();
   renderChartDiasMes();
   _fixDashHeights();
 }
@@ -2451,14 +2495,16 @@ function openCollabProfile(cedulaOrNombre) {
     </div>
 
     <div class="profile-kpi-grid">
-      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(totalMonto/1000)}k</div><div class="profile-kpi-lbl">Total comprado</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(totalMonto).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Total comprado</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val">${activos.length}</div><div class="profile-kpi-lbl">Pedidos</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
-      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(avgPedido/1000)}k</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(avgPedido).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
     </div>
 
-    <div class="profile-section-title">Gasto en el tiempo</div>
+    <div class="profile-section-title">Compras en el tiempo</div>
     <div style="position:relative;width:100%;height:130px;"><canvas id="profile-chart-tiempo"></canvas></div>
+    <div class="profile-section-title">Unidades compradas en el tiempo</div>
+    <div style="position:relative;width:100%;height:120px;"><canvas id="profile-chart-unid"></canvas></div>
 
     <div class="profile-section-title">Días favoritos de compra</div>
     <div style="position:relative;width:100%;height:100px;"><canvas id="profile-chart-dias"></canvas></div>
@@ -2509,6 +2555,17 @@ function openCollabProfile(cedulaOrNombre) {
       type:'line', data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#1f2937',backgroundColor:'rgba(31,41,55,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#1f2937'}]},
       options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}
     });
+    // Unidades en el tiempo (por mes)
+    const mapU = {};
+    activos.forEach(o=>{
+      const k = new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+      mapU[k]=(mapU[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    });
+    if (window._collabProfileChart3) window._collabProfileChart3.destroy();
+    window._collabProfileChart3 = new Chart(document.getElementById('profile-chart-unid').getContext('2d'),{
+      type:'line', data:{labels:Object.keys(mapU),datasets:[{data:Object.values(mapU),borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,0.1)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ea5e9'}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}
+    });
     // Días favoritos
     const mxD = Math.max(...porDia)||1;
     if (_collabProfileChart2) _collabProfileChart2.destroy();
@@ -2523,6 +2580,7 @@ function closeCollabProfile() {
   document.getElementById('collab-profile-modal').classList.remove('open');
   if (_collabProfileChart1) { _collabProfileChart1.destroy(); _collabProfileChart1=null; }
   if (_collabProfileChart2) { _collabProfileChart2.destroy(); _collabProfileChart2=null; }
+  if (window._collabProfileChart3) { window._collabProfileChart3.destroy(); window._collabProfileChart3=null; }
 }
 
 // ── DETALLES MONTO ───────────────────────────────────────
@@ -2624,7 +2682,11 @@ function closeMontoDetail() {
 }
 
 // ── DETALLES USUARIO ─────────────────────────────────────
-let _userDetailName = '';
+let _userDetailName   = '';
+let _userDetailChart  = null;
+let _userDetailPeriod = 'month';
+let _userDetailType   = 'line';
+let _userDetailData   = [];
 
 function openUserDetail(nombre) {
   _userDetailName = nombre;
@@ -2650,6 +2712,10 @@ function renderUserDetail() {
 
   const totalUnid = pedidos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
   document.getElementById('user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades`;
+
+  // Guardar datos para el gráfico (orden cronológico)
+  _userDetailData = [...pedidos].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+  renderUdChart();
 
   if (!pedidos.length) {
     document.getElementById('user-detail-body').innerHTML = '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Sin pedidos en el período seleccionado</div>';
@@ -2684,8 +2750,41 @@ function toggleUdOrder(hd) {
   hd.nextElementSibling.classList.toggle('open');
 }
 
+function setUdPeriod(p) {
+  _userDetailPeriod = p;
+  ['day','week','month','year'].forEach(x => document.getElementById('ud-pbtn-'+x).classList.toggle('active', x===p));
+  renderUdChart();
+}
+function setUdChartType(t) {
+  _userDetailType = t;
+  ['line','bar'].forEach(x => document.getElementById('ud-pbtn-'+x).classList.toggle('active', x===t));
+  renderUdChart();
+}
+function renderUdChart() {
+  const map = {};
+  _userDetailData.forEach(o => {
+    const d = new Date(o.fecha);
+    let key;
+    if (_userDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+    else if (_userDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    else if (_userDetailPeriod==='year') key = String(d.getFullYear());
+    else                                 key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+    const unid = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    map[key] = (map[key]||0) + unid;
+  });
+  const labels = Object.keys(map), vals = Object.values(map);
+  const ctx = document.getElementById('user-detail-chart').getContext('2d');
+  if (_userDetailChart) _userDetailChart.destroy();
+  _userDetailChart = new Chart(ctx, {
+    type: _userDetailType,
+    data: { labels, datasets:[{ data:vals, borderColor:'#0ea5e9', backgroundColor:_userDetailType==='bar'?'#0ea5e9':'rgba(14,165,233,0.1)', borderWidth:2, fill:_userDetailType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#0ea5e9', borderRadius:_userDetailType==='bar'?6:0 }] },
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11},maxRotation:45},grid:{display:false}}} }
+  });
+}
+
 function closeUserDetail() {
   document.getElementById('user-detail-modal').classList.remove('open');
+  if (_userDetailChart) { _userDetailChart.destroy(); _userDetailChart = null; }
 }
 
 function renderRankMonto() {
@@ -2703,6 +2802,41 @@ function renderRankMonto() {
     <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openMontoDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
     </div>`).join('')
     : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
+}
+
+function setUnidPeriod(p) {
+  _unidPeriod = p;
+  ['day','week','month','year'].forEach(x => document.getElementById('upbtn-'+x).classList.toggle('active', x===p));
+  renderChartUnidTiempo();
+}
+function setUnidChartType(t) {
+  _unidChartType = t;
+  ['line','bar'].forEach(x => document.getElementById('upbtn-'+x).classList.toggle('active', x===t));
+  renderChartUnidTiempo();
+}
+function renderChartUnidTiempo() {
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const y = document.getElementById('f-unid-tiempo-year')?.value;
+  const data = y ? base.filter(o => new Date(o.fecha).getFullYear() == y) : base;
+  const map = {};
+  data.forEach(o => {
+    const d = new Date(o.fecha);
+    let key;
+    if (_unidPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+    else if (_unidPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    else if (_unidPeriod==='year') key = String(d.getFullYear());
+    else                           key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+    const unid = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    map[key] = (map[key]||0) + unid;
+  });
+  const labels = Object.keys(map), vals = Object.values(map);
+  const ctx = document.getElementById('chart-unid-tiempo').getContext('2d');
+  if (_chartUnidTiempo) _chartUnidTiempo.destroy();
+  _chartUnidTiempo = new Chart(ctx, {
+    type: _unidChartType,
+    data: { labels, datasets:[{ data:vals, borderColor:'#0ea5e9', backgroundColor:_unidChartType==='bar'?'#0ea5e9':'rgba(14,165,233,0.1)', borderWidth:2, fill:_unidChartType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#0ea5e9', borderRadius:_unidChartType==='bar'?6:0 }] },
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11},maxRotation:45},grid:{display:false}}} }
+  });
 }
 
 function renderChartDiasMes() {

@@ -2321,15 +2321,23 @@ function renderHomeContent() {
     </div>`;
 }
 
+function _sortProducts(arr) {
+  return arr.sort((a,b) => {
+    const mb=(a.b||'').localeCompare(b.b||'','es'); if(mb) return mb;
+    const mc=(a.c||'').localeCompare(b.c||'','es'); if(mc) return mc;
+    return (a.s||'').localeCompare(b.s||'','es');
+  });
+}
+
 function getFilteredProducts() {
   if (!activeTab) return [];
   const cfg = TABS[activeTab];
-  if (cfg.type === 'packs') return CATALOG.filter(p => cfg.product_ids.includes(p.id));
+  if (cfg.type === 'packs') return _sortProducts(CATALOG.filter(p => cfg.product_ids.includes(p.id)));
   let pool = CATALOG;
   if (cfg.spc_filter) pool = pool.filter(p => p.spc === cfg.spc_filter);
   if (cfg.cat_filter) pool = pool.filter(p => p.c === cfg.cat_filter);
   if (activeButton)   pool = pool.filter(p => p[cfg.match_field] === activeButton);
-  return pool;
+  return _sortProducts(pool);
 }
 
 function getButtonCounts() {
@@ -2367,7 +2375,7 @@ function goToFullCatalog() {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelector('.nav-tab.cta')?.classList.add('active');
   document.getElementById('banner-area').innerHTML = '';
-  const filtered = CATALOG.slice();
+  const filtered = _sortProducts(CATALOG.slice());
   document.getElementById('dynamic-area').innerHTML = `
     <div class="products-section">
       <div class="products-grid">${filtered.map(renderCard).join('')}</div>
@@ -2385,10 +2393,10 @@ function runSearch(q) {
   stopHeroTimer();
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('home-btn').classList.remove('active');
-  const results = CATALOG.filter(p => {
+  const results = _sortProducts(CATALOG.filter(p => {
     const hay = (p.n+' '+p.id+' '+(p.b||'')+' '+(p.c||'')+' '+(p.s||'')+' '+(p.spc||'')).toLowerCase();
     return hay.includes(q);
-  });
+  }));
   document.getElementById('banner-area').innerHTML = '';
   document.getElementById('dynamic-area').innerHTML = `
     <div class="section">

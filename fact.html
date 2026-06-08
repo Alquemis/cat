@@ -91,7 +91,7 @@
   .modal-title { font-size:18px;font-weight:700;color:#1f2937; }
   .modal-fecha { font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px; }
   .detail-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px; }
-  .detail-grid div { background:#f9fafb;border-radius:8px;padding:10px 12px; }
+  .detail-grid div { background:#f9fafb;border-radius:8px;padding:6px 12px; }
   .detail-grid strong { display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px; }
 
   /* ── STAT ── */
@@ -625,15 +625,15 @@ function openDetail(id, source) {
 
   document.getElementById('detail-card').innerHTML =
     '<div class="modal-header">' +
-      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-        '<div class="modal-title">Pedido ' + o.id.slice(0,8).toUpperCase() + '</div>' +
-        '<button class="btn btn-sm btn-secondary" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-hd-' + o.id + '" style="padding:5px 12px;font-size:12px;">📋 Copiar pedido</button>' +
-        '<div style="font-size:15px;font-weight:800;color:#1f2937;white-space:nowrap;">₡' + total + '</div>' +
+      '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<div class="modal-title" style="margin-right:4px;">Pedido&nbsp;' + o.id.slice(0,8).toUpperCase() + '</div>' +
+        '<button class="btn btn-sm btn-secondary" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-hd-' + o.id + '" style="padding:5px 14px;font-size:12px;">📋 Copiar pedido</button>' +
+        '<div style="font-size:16px;font-weight:800;color:#1f2937;white-space:nowrap;margin-left:auto;">₡' + total + '</div>' +
       '</div>' +
       '<div class="modal-fecha">' + fecha + '</div>' +
     '</div>' +
-    '<div class="detail-grid">' +
-      '<div><strong>Colaborador</strong>' + esc(o.usuario_nombre||'—') + '</div>' +
+    '<div class="detail-grid" style="grid-template-columns:3fr 2fr;">' +
+      '<div><strong>Colaborador</strong>' + esc((o.usuario_nombre||'—').toUpperCase()) + '</div>' +
       '<div><strong>Cédula</strong>' + esc(o.usuario_email||'—') + '</div>' +
       '<div><strong>Departamento</strong>' + esc(o.usuario_departamento||'—') + '</div>' +
       '<div><strong>Lugar</strong>' + esc(o.usuario_lugar||'—') + '</div>' +

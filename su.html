@@ -175,6 +175,65 @@
     .btn-sm { padding:5px 10px;font-size:11px; }
   }
 
+  /* ── MODALES FICHA COLABORADOR SU ── */
+  .collab-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:770;display:none;align-items:center;justify-content:center;padding:16px; }
+  .collab-modal.open { display:flex; }
+  .collab-modal-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(700px,100%);box-sizing:border-box;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .collab-modal-card > * { margin-bottom:10px; }
+  .collab-modal-card > *:last-child { margin-bottom:0; }
+  .collab-list-row { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;border-radius:8px;transition:background .15s; }
+  .collab-list-row:hover { background:#f9fafb; }
+  .collab-list-row:last-child { border-bottom:none; }
+  .collab-avatar { width:34px;height:34px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0; }
+  .profile-kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px; }
+  .profile-kpi { background:#f9fafb;border-radius:10px;padding:10px 12px; }
+  .profile-kpi-val { font-size:18px;font-weight:800;color:#1f2937; }
+  .profile-kpi-lbl { font-size:11px;color:#9ca3af;margin-top:2px; }
+  .profile-section-title { font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 8px; }
+
+  /* ── MODAL DETALLES MONTO SU ── */
+  #su-monto-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:760;display:none;align-items:center;justify-content:center;padding:16px; }
+  #su-monto-detail-modal.open { display:flex; }
+  #su-monto-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(640px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+
+  /* ── MODAL DETALLES USUARIO ── */
+  #su-user-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:760;display:none;align-items:center;justify-content:center;padding:16px; }
+  #su-user-detail-modal.open { display:flex; }
+  #su-user-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(640px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .ud-order { border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:6px; }
+  .ud-order-hd { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:#f9fafb;gap:8px;user-select:none; }
+  .ud-order-hd:hover { background:#f3f4f6; }
+  .ud-order-num { font-size:12px;font-weight:700;color:#1f2937;font-family:monospace; }
+  .ud-order-meta { font-size:11px;color:#9ca3af; }
+  .ud-order-units { font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap; }
+  .ud-order-arrow { font-size:12px;color:#9ca3af;transition:transform .2s; }
+  .ud-order-hd.open .ud-order-arrow { transform:rotate(90deg); }
+  .ud-order-body { display:none;padding:10px 14px;border-top:1px solid #f3f4f6; }
+  .ud-order-body.open { display:block; }
+  .ud-line { display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:#374151;border-bottom:1px solid #f9fafb; }
+  .ud-line:last-child { border-bottom:none; }
+  .ud-line-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px; }
+  .ud-line-qty { flex-shrink:0;font-weight:700;color:#1f2937; }
+
+  /* ── MODAL DETALLES PRODUCTO ── */
+  #su-prod-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;padding:16px; }
+  #su-prod-detail-modal.open { display:flex; }
+  #su-prod-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(680px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;box-shadow:0 25px 60px rgba(0,0,0,.2);overflow:hidden; }
+  .prod-detail-filters { display:flex;gap:6px;align-items:center;flex-wrap:wrap; }
+  .prod-detail-table { width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed; }
+  .prod-detail-table th { background:#f9fafb;padding:6px 10px;font-size:10px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;overflow:hidden; }
+  .prod-detail-table td { padding:5px 10px;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .prod-detail-table tr:last-child td { border-bottom:none; }
+  .prod-detail-table td:first-child { width:auto; }
+  .prod-detail-table td:nth-child(2) { width:56px;text-align:right; }
+  .prod-detail-table td:last-child  { width:64px;color:#9ca3af;font-size:11px;white-space:nowrap;padding-right:4px; }
+  .prod-detail-bar-wrap { width:44px;background:#f3f4f6;border-radius:999px;height:4px;display:inline-block;vertical-align:middle;margin-left:4px; }
+  .prod-detail-bar { height:4px;border-radius:999px;background:#7c3aed; }
+  @media(max-width:600px) {
+    #su-prod-detail-modal { padding:12px; }
+    #su-prod-detail-card { border-radius:16px;padding:16px; }
+  }
+
   /* ── TOAST ── */
   #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
     background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
@@ -402,7 +461,13 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th>Registro</th></tr></thead>
+        <thead><tr>
+          <th class="th-sort" onclick="sortSuUsers('nombre')"      id="suth-nombre">Nombre <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortSuUsers('cedula')"      id="suth-cedula">Cédula <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortSuUsers('departamento')" id="suth-departamento">Departamento <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortSuUsers('lugar')"       id="suth-lugar">Lugar <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortSuUsers('created_at')"  id="suth-created_at">Registro <span class="sort-icon">↕</span></th>
+        </tr></thead>
         <tbody id="users-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -440,7 +505,10 @@
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-promedio">₡—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-unidades">—</div><div class="dash-kpi-lbl">Unidades vendidas</div></div>
-      <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-colaboradores">—</div><div class="dash-kpi-lbl">Colaboradores activos</div></div>
+      <div class="dash-kpi" onclick="openSuCollabList()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
+        <div class="dash-kpi-val" id="sdk-colaboradores">—</div>
+        <div class="dash-kpi-lbl">Colaboradores activos <span style="font-size:10px;color:#9ca3af;">↗</span></div>
+      </div>
     </div>
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
@@ -603,6 +671,93 @@
   </div>
 
 </div><!-- /container -->
+
+<!-- MODAL DETALLES PRODUCTO -->
+<div id="su-prod-detail-modal" onclick="if(event.target===this)closeSuProdDetail()">
+  <div id="su-prod-detail-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1f2937;" id="su-prod-detail-title">Producto</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="su-prod-detail-sub"></div>
+      </div>
+      <button onclick="closeSuProdDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="prod-detail-filters">
+      <select class="dash-filter" id="su-pd-year" onchange="renderSuProdDetail()"><option value="">Todos los años</option></select>
+      <select class="dash-filter" id="su-pd-month" onchange="renderSuProdDetail()"><option value="">Todos los meses</option></select>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
+      <div class="dash-period-btns" id="su-pd-period-btns">
+        <button class="dash-period-btn active" id="su-pd-pbtn-day"   onclick="setSuProdDetailPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-pd-pbtn-week"  onclick="setSuProdDetailPeriod('week')">Semana</button>
+        <button class="dash-period-btn"        id="su-pd-pbtn-month" onclick="setSuProdDetailPeriod('month')">Mes</button>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:140px;"><canvas id="su-prod-detail-chart"></canvas></div>
+    <div id="su-prod-detail-body"></div>
+  </div>
+</div>
+
+<!-- MODAL LISTA COLABORADORES SU -->
+<div id="su-collab-list-modal" class="collab-modal" onclick="if(event.target===this)closeSuCollabList()">
+  <div class="collab-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="font-size:17px;font-weight:700;color:#1f2937;">Colaboradores</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="su-collab-search" placeholder="Buscar…" oninput="filterSuCollabList()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <button onclick="closeSuCollabList()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
+      </div>
+    </div>
+    <div id="su-collab-list-body"></div>
+  </div>
+</div>
+
+<!-- MODAL PERFIL COLABORADOR SU -->
+<div id="su-collab-profile-modal" class="collab-modal" style="z-index:780;" onclick="if(event.target===this)closeSuCollabProfile()">
+  <div class="collab-modal-card" id="su-collab-profile-card"></div>
+</div>
+
+<!-- MODAL DETALLES MONTO SU -->
+<div id="su-monto-detail-modal" onclick="if(event.target===this)closeSuMontoDetail()">
+  <div id="su-monto-detail-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1f2937;" id="su-monto-detail-title"></div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="su-monto-detail-sub"></div>
+      </div>
+      <button onclick="closeSuMontoDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="prod-detail-filters">
+      <select class="dash-filter" id="su-md-year" onchange="renderSuMontoDetail()"><option value="">Todos los años</option></select>
+      <select class="dash-filter" id="su-md-month" onchange="renderSuMontoDetail()"><option value="">Todos los meses</option></select>
+      <div class="dash-period-btns" style="margin-left:auto;">
+        <button class="dash-period-btn active" id="su-md-pbtn-day"   onclick="setSuMontoPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-md-pbtn-week"  onclick="setSuMontoPeriod('week')">Semana</button>
+        <button class="dash-period-btn"        id="su-md-pbtn-month" onclick="setSuMontoPeriod('month')">Mes</button>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:140px;margin-bottom:8px;"><canvas id="su-monto-detail-chart"></canvas></div>
+    <div id="su-monto-detail-body"></div>
+  </div>
+</div>
+
+<!-- MODAL DETALLES USUARIO SU -->
+<div id="su-user-detail-modal" onclick="if(event.target===this)closeSuUserDetail()">
+  <div id="su-user-detail-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1f2937;" id="su-user-detail-title"></div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="su-user-detail-sub"></div>
+      </div>
+      <button onclick="closeSuUserDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="prod-detail-filters">
+      <select class="dash-filter" id="su-ud-year" onchange="renderSuUserDetail()"><option value="">Todos los años</option></select>
+      <select class="dash-filter" id="su-ud-month" onchange="renderSuUserDetail()"><option value="">Todos los meses</option></select>
+    </div>
+    <div id="su-user-detail-body"></div>
+  </div>
+</div>
 
 <!-- TOAST -->
 <div id="app-toast"></div>
@@ -1122,12 +1277,35 @@ async function loadUsers() {
   renderUsers(allUsers);
 }
 
+let _suUsersSort = { col: 'nombre', dir: 'asc' };
+
+function sortSuUsers(col) {
+  if (_suUsersSort.col === col) { _suUsersSort.dir = _suUsersSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _suUsersSort.col = col; _suUsersSort.dir = 'asc'; }
+  ['nombre','cedula','departamento','lugar','created_at'].forEach(c => {
+    const th = document.getElementById('suth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _suUsersSort.col) th.classList.add(_suUsersSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterUsers();
+}
+
 function filterUsers() {
   const q = document.getElementById('user-search').value.toLowerCase();
-  renderUsers(allUsers.filter(u =>
+  let list = allUsers.filter(u =>
     (u.nombre || '').toLowerCase().includes(q) ||
     (u.cedula || '').toLowerCase().includes(q)
-  ));
+  );
+  const { col, dir } = _suUsersSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'created_at') { va = new Date(va||0); vb = new Date(vb||0); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderUsers(list);
 }
 
 let _suUsersPage     = 1;
@@ -1415,9 +1593,9 @@ let _suChartDias    = null;
 let _suChartDiasMes = null;
 
 async function loadSuDashboard() {
-  if (_suDashData) { renderSuDashboard(); return; }
+  if (_suDashData) { _suDashData = null; } // forzar re-fetch para incluir precio_unitario
   const { data } = await sb.from('pedidos')
-    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad)')
+    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
     .order('fecha', { ascending: true });
   _suDashData    = data || [];
   _suDashAllDays = _suDashData;
@@ -1511,7 +1689,151 @@ function renderSuRankProductos() {
   data.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{const k=l.producto_nombre||l.producto_codigo;map[k]=(map[k]||0)+(l.cantidad||0);}));
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-productos').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-productos').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuProdDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+}
+
+// ── DETALLES PRODUCTO ────────────────────────────────────
+let _suProdDetailName   = '';
+let _suProdDetailRowData = [];
+let _suProdDetailChart  = null;
+let _suProdDetailPeriod = 'month';
+let _suProdDetailData   = [];
+
+function openSuProdDetail(nombre) {
+  _suProdDetailName = nombre;
+  document.getElementById('su-prod-detail-title').textContent = nombre;
+  const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('su-pd-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  document.getElementById('su-pd-month').innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  renderSuProdDetail();
+  document.getElementById('su-prod-detail-modal').classList.add('open');
+}
+
+function renderSuProdDetail() {
+  const y = document.getElementById('su-pd-year').value;
+  const m = document.getElementById('su-pd-month').value;
+  const data = (_suDashData||[]).filter(o => {
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && d.getMonth() != m) return false;
+    return true;
+  });
+  const userMap = {};
+  data.forEach(o => {
+    (o.lineas_pedido||[]).forEach(l => {
+      if ((l.producto_nombre||l.producto_codigo) !== _suProdDetailName) return;
+      const k = o.usuario_nombre || o.usuario_email;
+      if (!userMap[k]) userMap[k] = { total:0, ultima:o.fecha };
+      userMap[k].total += (l.cantidad||0);
+      if (o.fecha > userMap[k].ultima) userMap[k].ultima = o.fecha;
+    });
+  });
+  const rows = Object.entries(userMap).sort((a,b)=>b[1].total-a[1].total);
+  const maxU = rows[0]?.[1].total || 1;
+  const totalUnid = rows.reduce((s,[,v])=>s+v.total, 0);
+  document.getElementById('su-prod-detail-sub').textContent = `${totalUnid} unidades · ${rows.length} colaborador${rows.length!==1?'es':''}`;
+
+  _suProdDetailData = data;
+  renderSuProdDetailChart();
+
+  if (!rows.length) {
+    document.getElementById('su-prod-detail-body').innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin compras en el período seleccionado</div>';
+    return;
+  }
+  const header = `<div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #e5e7eb;margin-bottom:2px;">
+    <span style="flex:1;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Colaborador</span>
+    <span style="width:44px;text-align:right;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Unid.</span>
+    <span style="width:56px;text-align:right;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Última</span>
+    <span style="width:14px;"></span>
+  </div>`;
+  _suProdDetailRowData = [];
+  const rowsHtml = rows.map(([n,v], idx)=>{
+    const fecha = new Date(v.ultima).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const pedidos = data.filter(o=>(o.usuario_nombre===n||o.usuario_email===n)).map(o=>({
+      num: o.id.slice(0,8).toUpperCase(),
+      fecha: new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'}),
+      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_nombre||l.producto_codigo)===_suProdDetailName).reduce((s,l)=>s+(l.cantidad||0),0)
+    })).filter(p=>p.qty>0);
+    _suProdDetailRowData[idx] = pedidos;
+    return `<div style="border-bottom:1px solid #f3f4f6;">
+      <div onclick="toggleProdDetailOrders(this,${idx})" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
+        <span style="flex:1;font-size:13px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n}</span>
+        <span style="width:44px;text-align:right;font-size:13px;font-weight:700;color:#1f2937;white-space:nowrap;">${v.total} u.</span>
+        <span style="width:56px;text-align:right;font-size:11px;color:#9ca3af;white-space:nowrap;">${fecha}</span>
+        <span style="width:14px;font-size:11px;color:#9ca3af;text-align:right;">›</span>
+      </div>
+      <div class="pd-orders-wrap" style="display:none;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('su-prod-detail-body').innerHTML = header + rowsHtml;
+}
+
+function toggleProdDetailOrders(row, idx) {
+  const wrap  = row.nextElementSibling;
+  const arrow = row.querySelector('span:last-child');
+  if (wrap.style.display === 'none') {
+    const pedidos = _suProdDetailRowData[idx] || [];
+    wrap.innerHTML = pedidos.map(p=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
+        <span style="font-family:monospace;font-weight:700;color:#1f2937;">#${p.num}</span>
+        <span style="color:#9ca3af;">${p.fecha}</span>
+        <span style="font-weight:700;color:#1f2937;white-space:nowrap;">${p.qty} u.</span>
+      </div>`).join('');
+    wrap.style.display = 'block';
+    if (arrow) { arrow.textContent = '↓'; arrow.style.color = '#1f2937'; }
+  } else {
+    wrap.style.display = 'none';
+    if (arrow) { arrow.textContent = '›'; arrow.style.color = '#9ca3af'; }
+  }
+}
+
+function setSuProdDetailPeriod(p) {
+  _suProdDetailPeriod = p;
+  ['day','week','month'].forEach(x => document.getElementById('su-pd-pbtn-'+x).classList.toggle('active', x===p));
+  renderSuProdDetailChart();
+}
+
+function renderSuProdDetailChart() {
+  const data = _suProdDetailData;
+  const map  = {};
+  data.forEach(o => {
+    (o.lineas_pedido||[]).forEach(l => {
+      if ((l.producto_nombre||l.producto_codigo) !== _suProdDetailName) return;
+      const d = new Date(o.fecha);
+      let key;
+      if (_suProdDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+      else if (_suProdDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+      else                                   key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+      map[key] = (map[key]||0) + (l.cantidad||0);
+    });
+  });
+  const labels = Object.keys(map);
+  const vals   = Object.values(map);
+  const ctx    = document.getElementById('su-prod-detail-chart').getContext('2d');
+  if (_suProdDetailChart) _suProdDetailChart.destroy();
+  _suProdDetailChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets:[{
+      data: vals, borderColor:'#7c3aed',
+      backgroundColor:'rgba(124,58,237,0.08)',
+      borderWidth:2, fill:true, tension:0.4,
+      pointRadius:3, pointBackgroundColor:'#7c3aed',
+    }]},
+    options:{
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},
+      scales:{
+        y:{ ticks:{stepSize:1,font:{size:11}}, grid:{color:'#f3f4f6'} },
+        x:{ ticks:{font:{size:11},maxRotation:45}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+function closeSuProdDetail() {
+  document.getElementById('su-prod-detail-modal').classList.remove('open');
+  if (_suProdDetailChart) { _suProdDetailChart.destroy(); _suProdDetailChart = null; }
 }
 
 function renderSuRankUnidades() {
@@ -1521,7 +1843,254 @@ function renderSuRankUnidades() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+}
+
+// ── LISTA Y FICHA COLABORADORES SU ───────────────────────
+let _suCollabListData = [];
+let _suCollabProfileChart1 = null;
+let _suCollabProfileChart2 = null;
+
+async function openSuCollabList() {
+  if (!allUsers.length) await loadUsers();
+  _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at}));
+  filterSuCollabList();
+  document.getElementById('su-collab-list-modal').classList.add('open');
+}
+function closeSuCollabList() { document.getElementById('su-collab-list-modal').classList.remove('open'); }
+
+function filterSuCollabList() {
+  const q = (document.getElementById('su-collab-search').value||'').toLowerCase();
+  const list = _suCollabListData.filter(u=>(u.nombre||'').toLowerCase().includes(q)||(u.cedula||'').toLowerCase().includes(q)||(u.departamento||'').toLowerCase().includes(q));
+  if (!list.length) { document.getElementById('su-collab-list-body').innerHTML='<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>'; return; }
+  document.getElementById('su-collab-list-body').innerHTML = list.map(u=>{
+    const ini=(u.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    return `<div class="collab-list-row" onclick="openSuCollabProfile('${esc(u.cedula||u.nombre).replace(/'/g,"\\'")}')">
+      <div class="collab-avatar">${ini}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(u.nombre||'—')}</div>
+        <div style="font-size:11px;color:#9ca3af;">${esc(u.departamento||'—')} · ${esc(u.lugar||'—')}</div>
+      </div>
+      <div style="font-size:12px;color:#9ca3af;white-space:nowrap;">${esc(u.cedula||'—')}</div>
+      <span style="font-size:13px;color:#9ca3af;">›</span>
+    </div>`;
+  }).join('');
+}
+
+function openSuCollabProfile(cedulaOrNombre) {
+  const user = _suCollabListData.find(u=>u.cedula===cedulaOrNombre||u.nombre===cedulaOrNombre);
+  if (!user) return;
+  const pedidos = (_suDashData||[]).filter(o=>o.usuario_email===user.cedula||o.usuario_nombre===user.nombre).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const activos = pedidos.filter(o=>o.estado!=='cancelado');
+  const totalMonto = activos.reduce((s,o)=>s+(o.total||0),0);
+  const totalUnid  = activos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
+  const avgPedido  = activos.length?Math.round(totalMonto/activos.length):0;
+  const fechaReg   = user.created_at?new Date(user.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const prodMap={};
+  activos.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{const k=l.producto_nombre||l.producto_codigo;prodMap[k]=(prodMap[k]||0)+(l.cantidad||0);}));
+  const topProds=Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxP=topProds[0]?.[1]||1;
+  const diasNom=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const porDia=Array(7).fill(0);
+  activos.forEach(o=>{porDia[new Date(o.fecha).getDay()]++;});
+  const card=document.getElementById('su-collab-profile-card');
+  card.innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">${ini}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:18px;font-weight:800;color:#1f2937;">${esc(user.nombre||'—')}</div>
+        <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
+        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg}</div>
+      </div>
+      <button onclick="closeSuCollabProfile()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="profile-kpi-grid">
+      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(totalMonto/1000)}k</div><div class="profile-kpi-lbl">Total comprado</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">${activos.length}</div><div class="profile-kpi-lbl">Pedidos</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(avgPedido/1000)}k</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
+    </div>
+    <div class="profile-section-title">Gasto en el tiempo</div>
+    <div style="position:relative;width:100%;height:130px;"><canvas id="su-profile-chart-tiempo"></canvas></div>
+    <div class="profile-section-title">Días favoritos de compra</div>
+    <div style="position:relative;width:100%;height:100px;"><canvas id="su-profile-chart-dias"></canvas></div>
+    <div class="profile-section-title">Productos más comprados</div>
+    ${topProds.map(([n,v])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#374151;">${esc(n)}</span><span style="font-weight:700;color:#1f2937;white-space:nowrap;">${v} u.</span><div style="width:60px;background:#f3f4f6;border-radius:999px;height:4px;flex-shrink:0;"><div style="width:${Math.round(v/maxP*100)}%;height:4px;background:#7c3aed;border-radius:999px;"></div></div></div>`).join('')}
+    <div class="profile-section-title" style="margin-top:8px;">Historial de pedidos</div>
+    ${pedidos.map(o=>{
+      const num=o.id.slice(0,8).toUpperCase();
+      const fecha=new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const unid=(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+      const estadoBadge=o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>':'';
+      const lines=(o.lineas_pedido||[]).map(l=>`<div class="ud-line"><span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span><span class="ud-line-qty">${l.cantidad} u.</span></div>`).join('');
+      return `<div class="ud-order"><div class="ud-order-hd" onclick="toggleUdOrder(this)"><div><div class="ud-order-num">#${num}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div></div><span class="ud-order-units">${unid} u. · ₡${(o.total||0).toLocaleString('es-CR')}</span><span class="ud-order-arrow">›</span></div><div class="ud-order-body">${lines}</div></div>`;
+    }).join('')}`;
+  document.getElementById('su-collab-profile-modal').classList.add('open');
+  requestAnimationFrame(()=>{
+    const mapT={};
+    activos.forEach(o=>{const k=new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});mapT[k]=(mapT[k]||0)+(o.total||0);});
+    if(_suCollabProfileChart1)_suCollabProfileChart1.destroy();
+    _suCollabProfileChart1=new Chart(document.getElementById('su-profile-chart-tiempo').getContext('2d'),{type:'line',data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#7c3aed'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+    const mxD=Math.max(...porDia)||1;
+    if(_suCollabProfileChart2)_suCollabProfileChart2.destroy();
+    _suCollabProfileChart2=new Chart(document.getElementById('su-profile-chart-dias').getContext('2d'),{type:'bar',data:{labels:diasNom,datasets:[{data:porDia,backgroundColor:porDia.map(v=>v===mxD?'#7c3aed':'#e5e7eb'),borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} pedido${c.raw!==1?'s':''}`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  });
+}
+function closeSuCollabProfile() {
+  document.getElementById('su-collab-profile-modal').classList.remove('open');
+  if(_suCollabProfileChart1){_suCollabProfileChart1.destroy();_suCollabProfileChart1=null;}
+  if(_suCollabProfileChart2){_suCollabProfileChart2.destroy();_suCollabProfileChart2=null;}
+}
+
+// ── DETALLES MONTO SU ────────────────────────────────────
+let _suMontoDetailName   = '';
+let _suMontoDetailChart  = null;
+let _suMontoDetailPeriod = 'month';
+let _suMontoDetailData   = [];
+
+function openSuMontoDetail(nombre) {
+  _suMontoDetailName = nombre;
+  document.getElementById('su-monto-detail-title').textContent = nombre;
+  const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('su-md-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  document.getElementById('su-md-month').innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  renderSuMontoDetail();
+  document.getElementById('su-monto-detail-modal').classList.add('open');
+}
+
+function setSuMontoPeriod(p) {
+  _suMontoDetailPeriod = p;
+  ['day','week','month'].forEach(x => document.getElementById('su-md-pbtn-'+x).classList.toggle('active', x===p));
+  renderSuMontoDetailChart();
+}
+
+function renderSuMontoDetail() {
+  const y = document.getElementById('su-md-year').value;
+  const m = document.getElementById('su-md-month').value;
+  _suMontoDetailData = (_suDashData||[]).filter(o => {
+    if (o.usuario_nombre !== _suMontoDetailName && o.usuario_email !== _suMontoDetailName) return false;
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && d.getMonth() != m) return false;
+    return true;
+  }).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+
+  const totalMonto = _suMontoDetailData.reduce((s,o)=>s+(o.total||0),0);
+  document.getElementById('su-monto-detail-sub').textContent = `${_suMontoDetailData.length} pedido${_suMontoDetailData.length!==1?'s':''} · ₡${totalMonto.toLocaleString('es-CR')}`;
+
+  renderSuMontoDetailChart();
+
+  const sorted = [..._suMontoDetailData].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  if (!sorted.length) {
+    document.getElementById('su-monto-detail-body').innerHTML = '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Sin pedidos en el período seleccionado</div>';
+    return;
+  }
+  document.getElementById('su-monto-detail-body').innerHTML = sorted.map(o => {
+    const num   = o.id.slice(0,8).toUpperCase();
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const monto = (o.total||0).toLocaleString('es-CR');
+    const lines = (o.lineas_pedido||[]).map(l=>`
+      <div class="ud-line">
+        <span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span>
+        <span class="ud-line-qty">${l.cantidad} u. · ₡${(l.subtotal || (l.precio_unitario||0)*(l.cantidad||0) || 0).toLocaleString('es-CR')}</span>
+      </div>`).join('');
+    return `<div class="ud-order">
+      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+        <div><div class="ud-order-num">#${num}</div><div class="ud-order-meta">${fecha}</div></div>
+        <span class="ud-order-units">₡${monto}</span>
+        <span class="ud-order-arrow">›</span>
+      </div>
+      <div class="ud-order-body">${lines}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSuMontoDetailChart() {
+  const map = {};
+  _suMontoDetailData.forEach(o => {
+    const d = new Date(o.fecha);
+    let key;
+    if (_suMontoDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+    else if (_suMontoDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    else                                    key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+    map[key] = (map[key]||0) + (o.total||0);
+  });
+  const labels = Object.keys(map), vals = Object.values(map);
+  const ctx = document.getElementById('su-monto-detail-chart').getContext('2d');
+  if (_suMontoDetailChart) _suMontoDetailChart.destroy();
+  _suMontoDetailChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{ data:vals, borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.08)', borderWidth:2, fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#7c3aed' }] },
+    options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}}, scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11},maxRotation:45},grid:{display:false}}} }
+  });
+}
+
+function closeSuMontoDetail() {
+  document.getElementById('su-monto-detail-modal').classList.remove('open');
+  if (_suMontoDetailChart) { _suMontoDetailChart.destroy(); _suMontoDetailChart = null; }
+}
+
+// ── DETALLES USUARIO ─────────────────────────────────────
+let _suUserDetailName = '';
+
+function openSuUserDetail(nombre) {
+  _suUserDetailName = nombre;
+  document.getElementById('su-user-detail-title').textContent = nombre;
+  const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('su-ud-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  document.getElementById('su-ud-month').innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  renderSuUserDetail();
+  document.getElementById('su-user-detail-modal').classList.add('open');
+}
+
+function renderSuUserDetail() {
+  const y = document.getElementById('su-ud-year').value;
+  const m = document.getElementById('su-ud-month').value;
+  const pedidos = (_suDashData||[]).filter(o => {
+    if (o.usuario_nombre !== _suUserDetailName && o.usuario_email !== _suUserDetailName) return false;
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && d.getMonth() != m) return false;
+    return true;
+  }).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+  const totalUnid = pedidos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
+  document.getElementById('su-user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades`;
+
+  if (!pedidos.length) {
+    document.getElementById('su-user-detail-body').innerHTML = '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Sin pedidos en el período seleccionado</div>';
+    return;
+  }
+  document.getElementById('su-user-detail-body').innerHTML = pedidos.map(o => {
+    const num   = o.id.slice(0,8).toUpperCase();
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const unid  = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    const lines = (o.lineas_pedido||[]).map(l=>`
+      <div class="ud-line">
+        <span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span>
+        <span class="ud-line-qty">${l.cantidad} u.</span>
+      </div>`).join('');
+    return `<div class="ud-order">
+      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+        <div><div class="ud-order-num">#${num}</div><div class="ud-order-meta">${fecha}</div></div>
+        <span class="ud-order-units">${unid} u.</span>
+        <span class="ud-order-arrow">›</span>
+      </div>
+      <div class="ud-order-body">${lines}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleUdOrder(hd) {
+  hd.classList.toggle('open');
+  hd.nextElementSibling.classList.toggle('open');
+}
+
+function closeSuUserDetail() {
+  document.getElementById('su-user-detail-modal').classList.remove('open');
 }
 
 function renderSuRankMonto() {
@@ -1531,7 +2100,7 @@ function renderSuRankMonto() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.total||0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">₡${Math.round(v/1000)}k</span></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">₡${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 function renderSuChartDiasMes() {

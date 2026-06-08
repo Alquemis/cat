@@ -294,6 +294,65 @@
     .pr-code { font-size:10px; }
   }
 
+  /* ── MODALES FICHA COLABORADOR ── */
+  .collab-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:770;display:none;align-items:center;justify-content:center;padding:16px; }
+  .collab-modal.open { display:flex; }
+  .collab-modal-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(700px,100%);box-sizing:border-box;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .collab-modal-card > * { margin-bottom:10px; }
+  .collab-modal-card > *:last-child { margin-bottom:0; }
+  .collab-list-row { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;border-radius:8px;transition:background .15s; }
+  .collab-list-row:hover { background:#f9fafb; }
+  .collab-list-row:last-child { border-bottom:none; }
+  .collab-avatar { width:34px;height:34px;border-radius:50%;background:#1f2937;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0; }
+  .profile-kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px; }
+  .profile-kpi { background:#f9fafb;border-radius:10px;padding:10px 12px; }
+  .profile-kpi-val { font-size:18px;font-weight:800;color:#1f2937; }
+  .profile-kpi-lbl { font-size:11px;color:#9ca3af;margin-top:2px; }
+  .profile-section-title { font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 8px; }
+
+  /* ── MODAL DETALLES MONTO ── */
+  #monto-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:760;display:none;align-items:center;justify-content:center;padding:16px; }
+  #monto-detail-modal.open { display:flex; }
+  #monto-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(640px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+
+  /* ── MODAL DETALLES USUARIO ── */
+  #user-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:760;display:none;align-items:center;justify-content:center;padding:16px; }
+  #user-detail-modal.open { display:flex; }
+  #user-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(640px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .ud-order { border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:6px; }
+  .ud-order-hd { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:#f9fafb;gap:8px;user-select:none; }
+  .ud-order-hd:hover { background:#f3f4f6; }
+  .ud-order-num { font-size:12px;font-weight:700;color:#1f2937;font-family:monospace; }
+  .ud-order-meta { font-size:11px;color:#9ca3af; }
+  .ud-order-units { font-size:12px;font-weight:700;color:#1f2937;white-space:nowrap; }
+  .ud-order-arrow { font-size:12px;color:#9ca3af;transition:transform .2s; }
+  .ud-order-hd.open .ud-order-arrow { transform:rotate(90deg); }
+  .ud-order-body { display:none;padding:10px 14px;border-top:1px solid #f3f4f6; }
+  .ud-order-body.open { display:block; }
+  .ud-line { display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:#374151;border-bottom:1px solid #f9fafb; }
+  .ud-line:last-child { border-bottom:none; }
+  .ud-line-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px; }
+  .ud-line-qty { flex-shrink:0;font-weight:700;color:#1f2937; }
+
+  /* ── MODAL DETALLES PRODUCTO ── */
+  #prod-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;padding:16px; }
+  #prod-detail-modal.open { display:flex; }
+  #prod-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(680px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;box-shadow:0 25px 60px rgba(0,0,0,.2);overflow:hidden; }
+  .prod-detail-filters { display:flex;gap:6px;align-items:center;flex-wrap:wrap; }
+  .prod-detail-table { width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed; }
+  .prod-detail-table th { background:#f9fafb;padding:6px 10px;font-size:10px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;overflow:hidden; }
+  .prod-detail-table td { padding:5px 10px;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .prod-detail-table tr:last-child td { border-bottom:none; }
+  .prod-detail-table td:first-child { width:auto; }
+  .prod-detail-table td:nth-child(2) { width:56px;text-align:right; }
+  .prod-detail-table td:last-child  { width:64px;color:#9ca3af;font-size:11px;white-space:nowrap;padding-right:4px; }
+  .prod-detail-bar-wrap { width:44px;background:#f3f4f6;border-radius:999px;height:4px;display:inline-block;vertical-align:middle;margin-left:4px; }
+  .prod-detail-bar { height:4px;border-radius:999px;background:#1f2937; }
+  @media(max-width:600px) {
+    #prod-detail-modal { padding:12px; }
+    #prod-detail-card { border-radius:16px;padding:16px; }
+  }
+
   /* ── TOAST ── */
   #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
     background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
@@ -536,7 +595,10 @@
       <div class="dash-kpi"><div class="dash-kpi-val" id="dk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="dk-promedio">₡—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="dk-productos">—</div><div class="dash-kpi-lbl">Unidades vendidas</div></div>
-      <div class="dash-kpi"><div class="dash-kpi-val" id="dk-colaboradores">—</div><div class="dash-kpi-lbl">Colaboradores activos</div></div>
+      <div class="dash-kpi" onclick="openCollabList()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#1f2937'" onmouseout="this.style.borderColor='#e5e7eb'">
+        <div class="dash-kpi-val" id="dk-colaboradores">—</div>
+        <div class="dash-kpi-lbl">Colaboradores activos <span style="font-size:10px;color:#9ca3af;">↗</span></div>
+      </div>
     </div>
 
     <!-- Gráfico de ventas en el tiempo -->
@@ -673,6 +735,93 @@
 
 <!-- TOAST -->
 <div id="app-toast"></div>
+
+<!-- MODAL DETALLES PRODUCTO -->
+<div id="prod-detail-modal" onclick="if(event.target===this)closeProdDetail()">
+  <div id="prod-detail-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1f2937;" id="prod-detail-title">Producto</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="prod-detail-sub"></div>
+      </div>
+      <button onclick="closeProdDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="prod-detail-filters">
+      <select class="dash-filter" id="pd-year" onchange="renderProdDetail()"><option value="">Todos los años</option></select>
+      <select class="dash-filter" id="pd-month" onchange="renderProdDetail()"><option value="">Todos los meses</option></select>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
+      <div class="dash-period-btns" id="pd-period-btns">
+        <button class="dash-period-btn active" id="pd-pbtn-day"   onclick="setProdDetailPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="pd-pbtn-week"  onclick="setProdDetailPeriod('week')">Semana</button>
+        <button class="dash-period-btn"        id="pd-pbtn-month" onclick="setProdDetailPeriod('month')">Mes</button>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:140px;"><canvas id="prod-detail-chart"></canvas></div>
+    <div id="prod-detail-body"></div>
+  </div>
+</div>
+
+<!-- MODAL DETALLES USUARIO -->
+<div id="user-detail-modal" onclick="if(event.target===this)closeUserDetail()">
+  <div id="user-detail-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1f2937;" id="user-detail-title"></div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="user-detail-sub"></div>
+      </div>
+      <button onclick="closeUserDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="prod-detail-filters">
+      <select class="dash-filter" id="ud-year" onchange="renderUserDetail()"><option value="">Todos los años</option></select>
+      <select class="dash-filter" id="ud-month" onchange="renderUserDetail()"><option value="">Todos los meses</option></select>
+    </div>
+    <div id="user-detail-body"></div>
+  </div>
+</div>
+
+<!-- MODAL LISTA COLABORADORES -->
+<div id="collab-list-modal" class="collab-modal" onclick="if(event.target===this)closeCollabList()">
+  <div class="collab-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="font-size:17px;font-weight:700;color:#1f2937;">Colaboradores</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="collab-search" placeholder="Buscar…" oninput="filterCollabList()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <button onclick="closeCollabList()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
+      </div>
+    </div>
+    <div id="collab-list-body"></div>
+  </div>
+</div>
+
+<!-- MODAL PERFIL COLABORADOR -->
+<div id="collab-profile-modal" class="collab-modal" style="z-index:780;" onclick="if(event.target===this)closeCollabProfile()">
+  <div class="collab-modal-card" id="collab-profile-card"></div>
+</div>
+
+<!-- MODAL DETALLES MONTO -->
+<div id="monto-detail-modal" onclick="if(event.target===this)closeMontoDetail()">
+  <div id="monto-detail-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#1f2937;" id="monto-detail-title"></div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="monto-detail-sub"></div>
+      </div>
+      <button onclick="closeMontoDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div class="prod-detail-filters">
+      <select class="dash-filter" id="md-year" onchange="renderMontoDetail()"><option value="">Todos los años</option></select>
+      <select class="dash-filter" id="md-month" onchange="renderMontoDetail()"><option value="">Todos los meses</option></select>
+      <div class="dash-period-btns" style="margin-left:auto;">
+        <button class="dash-period-btn active" id="md-pbtn-day"   onclick="setMontoPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="md-pbtn-week"  onclick="setMontoPeriod('week')">Semana</button>
+        <button class="dash-period-btn"        id="md-pbtn-month" onclick="setMontoPeriod('month')">Mes</button>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:140px;margin-bottom:8px;"><canvas id="monto-detail-chart"></canvas></div>
+    <div id="monto-detail-body"></div>
+  </div>
+</div>
 
 <!-- MORA MODAL -->
 <div id="mora-modal" onclick="closeMoraModal()">
@@ -1886,10 +2035,10 @@ let _chartDias   = null;
 let _chartDiasMes = null;
 
 async function loadDashboard() {
-  if (_dashData) { renderDashboard(); return; }
+  if (_dashData) { _dashData = null; } // forzar re-fetch para incluir precio_unitario
 
   const { data } = await sb.from('pedidos')
-    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal)')
+    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
     .order('fecha', { ascending: true });
 
   _dashData    = data || [];
@@ -2010,8 +2159,157 @@ function renderRankProductos() {
     <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
       <div class="rank-name">${esc(n)}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
-    </div><span class="rank-val">${v} u.</span></div>`).join('')
+    </div><span class="rank-val">${v} u.</span>
+    <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openProdDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
+    </div>`).join('')
     : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
+}
+
+// ── DETALLES PRODUCTO ────────────────────────────────────
+let _prodDetailName   = '';
+let _prodDetailRowData = [];
+let _prodDetailChart  = null;
+let _prodDetailPeriod = 'month';
+let _prodDetailData   = [];
+
+function openProdDetail(nombre) {
+  _prodDetailName = nombre;
+  document.getElementById('prod-detail-title').textContent = nombre;
+  // Poblar filtros de año
+  const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('pd-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  document.getElementById('pd-month').innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  renderProdDetail();
+  document.getElementById('prod-detail-modal').classList.add('open');
+}
+
+function renderProdDetail() {
+  const y = document.getElementById('pd-year').value;
+  const m = document.getElementById('pd-month').value;
+  const data = (_dashData||[]).filter(o => {
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && d.getMonth() != m) return false;
+    return true;
+  });
+  // Agrupar por usuario
+  const userMap = {};
+  data.forEach(o => {
+    (o.lineas_pedido||[]).forEach(l => {
+      if ((l.producto_nombre||l.producto_codigo) !== _prodDetailName) return;
+      const k = o.usuario_nombre || o.usuario_email;
+      if (!userMap[k]) userMap[k] = { total: 0, ultima: o.fecha };
+      userMap[k].total += (l.cantidad||0);
+      if (o.fecha > userMap[k].ultima) userMap[k].ultima = o.fecha;
+    });
+  });
+  const rows = Object.entries(userMap).sort((a,b)=>b[1].total-a[1].total);
+  const maxU = rows[0]?.[1].total || 1;
+  const totalUnid = rows.reduce((s,[,v])=>s+v.total,0);
+  document.getElementById('prod-detail-sub').textContent = `${totalUnid} unidades · ${rows.length} colaborador${rows.length!==1?'es':''}`;
+
+  // Gráfico de línea en el tiempo
+  _prodDetailData = data;
+  renderProdDetailChart();
+
+  if (!rows.length) {
+    document.getElementById('prod-detail-body').innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin compras en el período seleccionado</div>';
+    return;
+  }
+  const header = `<div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #e5e7eb;margin-bottom:2px;">
+    <span style="flex:1;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Colaborador</span>
+    <span style="width:44px;text-align:right;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Unid.</span>
+    <span style="width:56px;text-align:right;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Última</span>
+    <span style="width:14px;"></span>
+  </div>`;
+  _prodDetailRowData = [];
+  const rowsHtml = rows.map(([n,v], idx)=>{
+    const fecha = new Date(v.ultima).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const pedidos = data.filter(o=>(o.usuario_nombre===n||o.usuario_email===n)).map(o=>({
+      num: o.id.slice(0,8).toUpperCase(),
+      fecha: new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'}),
+      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_nombre||l.producto_codigo)===_prodDetailName).reduce((s,l)=>s+(l.cantidad||0),0)
+    })).filter(p=>p.qty>0);
+    _prodDetailRowData[idx] = pedidos;
+    return `<div style="border-bottom:1px solid #f3f4f6;">
+      <div onclick="toggleProdDetailOrders(this,${idx})" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
+        <span style="flex:1;font-size:13px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(n)}</span>
+        <span style="width:44px;text-align:right;font-size:13px;font-weight:700;color:#1f2937;white-space:nowrap;">${v.total} u.</span>
+        <span style="width:56px;text-align:right;font-size:11px;color:#9ca3af;white-space:nowrap;">${fecha}</span>
+        <span style="width:14px;font-size:11px;color:#9ca3af;text-align:right;">›</span>
+      </div>
+      <div class="pd-orders-wrap" style="display:none;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('prod-detail-body').innerHTML = header + rowsHtml;
+}
+
+function toggleProdDetailOrders(row, idx) {
+  const wrap  = row.nextElementSibling;
+  const arrow = row.querySelector('span:last-child');
+  if (wrap.style.display === 'none') {
+    const pedidos = (typeof _suProdDetailRowData!=='undefined'&&_suProdDetailRowData[idx])||_prodDetailRowData[idx]||[];
+    wrap.innerHTML = pedidos.map(p=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
+        <span style="font-family:monospace;font-weight:700;color:#1f2937;">#${p.num}</span>
+        <span style="color:#9ca3af;">${p.fecha}</span>
+        <span style="font-weight:700;color:#1f2937;white-space:nowrap;">${p.qty} u.</span>
+      </div>`).join('');
+    wrap.style.display = 'block';
+    if (arrow) { arrow.textContent = '↓'; arrow.style.color = '#1f2937'; }
+  } else {
+    wrap.style.display = 'none';
+    if (arrow) { arrow.textContent = '›'; arrow.style.color = '#9ca3af'; }
+  }
+}
+
+function setProdDetailPeriod(p) {
+  _prodDetailPeriod = p;
+  ['day','week','month'].forEach(x => document.getElementById('pd-pbtn-'+x).classList.toggle('active', x===p));
+  renderProdDetailChart();
+}
+
+function renderProdDetailChart() {
+  const data = _prodDetailData;
+  const map  = {};
+  data.forEach(o => {
+    (o.lineas_pedido||[]).forEach(l => {
+      if ((l.producto_nombre||l.producto_codigo) !== _prodDetailName) return;
+      const d = new Date(o.fecha);
+      let key;
+      if (_prodDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+      else if (_prodDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+      else                                 key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+      map[key] = (map[key]||0) + (l.cantidad||0);
+    });
+  });
+  const labels = Object.keys(map);
+  const vals   = Object.values(map);
+  const ctx    = document.getElementById('prod-detail-chart').getContext('2d');
+  if (_prodDetailChart) _prodDetailChart.destroy();
+  _prodDetailChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets:[{
+      data: vals, borderColor:'#1f2937',
+      backgroundColor:'rgba(31,41,55,0.08)',
+      borderWidth:2, fill:true, tension:0.4,
+      pointRadius:3, pointBackgroundColor:'#1f2937',
+    }]},
+    options:{
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},
+      scales:{
+        y:{ ticks:{stepSize:1,font:{size:11}}, grid:{color:'#f3f4f6'} },
+        x:{ ticks:{font:{size:11},maxRotation:45}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+function closeProdDetail() {
+  document.getElementById('prod-detail-modal').classList.remove('open');
+  if (_prodDetailChart) { _prodDetailChart.destroy(); _prodDetailChart = null; }
 }
 
 function renderRankUnidades() {
@@ -2025,8 +2323,333 @@ function renderRankUnidades() {
     <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
       <div class="rank-name">${esc(n)}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
-    </div><span class="rank-val">${v} u.</span></div>`).join('')
+    </div><span class="rank-val">${v} u.</span>
+    <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openUserDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
+    </div>`).join('')
     : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
+}
+
+// ── LISTA Y FICHA COLABORADORES ──────────────────────────
+let _collabListData = [];
+let _collabProfileChart1 = null;
+let _collabProfileChart2 = null;
+
+async function openCollabList() {
+  if (!allUsers.length) await loadUsers();
+  _collabListData = allUsers.map(u => ({
+    nombre: u.nombre, cedula: u.cedula,
+    departamento: u.departamento, lugar: u.lugar, created_at: u.created_at
+  }));
+  filterCollabList();
+  document.getElementById('collab-list-modal').classList.add('open');
+}
+
+function closeCollabList() {
+  document.getElementById('collab-list-modal').classList.remove('open');
+}
+
+function filterCollabList() {
+  const q = (document.getElementById('collab-search').value||'').toLowerCase();
+  const list = _collabListData.filter(u =>
+    (u.nombre||'').toLowerCase().includes(q) ||
+    (u.cedula||'').toLowerCase().includes(q) ||
+    (u.departamento||'').toLowerCase().includes(q)
+  );
+  if (!list.length) {
+    document.getElementById('collab-list-body').innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>';
+    return;
+  }
+  document.getElementById('collab-list-body').innerHTML = list.map(u => {
+    const ini = (u.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    return `<div class="collab-list-row" onclick="openCollabProfile('${esc(u.cedula||u.nombre).replace(/'/g,"\\'")}')">
+      <div class="collab-avatar">${ini}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(u.nombre||'—')}</div>
+        <div style="font-size:11px;color:#9ca3af;">${esc(u.departamento||'—')} · ${esc(u.lugar||'—')}</div>
+      </div>
+      <div style="font-size:12px;color:#9ca3af;white-space:nowrap;">${esc(u.cedula||'—')}</div>
+      <span style="font-size:13px;color:#9ca3af;">›</span>
+    </div>`;
+  }).join('');
+}
+
+function openCollabProfile(cedulaOrNombre) {
+  const user = _collabListData.find(u => u.cedula === cedulaOrNombre || u.nombre === cedulaOrNombre);
+  if (!user) return;
+
+  const pedidos = (_dashData||[]).filter(o =>
+    o.usuario_email === user.cedula || o.usuario_nombre === user.nombre
+  ).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+  const activos = pedidos.filter(o => o.estado !== 'cancelado');
+  const totalMonto = activos.reduce((s,o)=>s+(o.total||0),0);
+  const totalUnid  = activos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
+  const avgPedido  = activos.length ? Math.round(totalMonto/activos.length) : 0;
+  const fechaReg   = user.created_at ? new Date(user.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+  // Top productos
+  const prodMap = {};
+  activos.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{
+    const k=l.producto_nombre||l.producto_codigo;
+    prodMap[k]=(prodMap[k]||0)+(l.cantidad||0);
+  }));
+  const topProds = Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxP = topProds[0]?.[1]||1;
+
+  // Días favoritos (día semana)
+  const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const porDia  = Array(7).fill(0);
+  activos.forEach(o=>{ porDia[new Date(o.fecha).getDay()]++; });
+
+  const card = document.getElementById('collab-profile-card');
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:#1f2937;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">${ini}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:18px;font-weight:800;color:#1f2937;">${esc(user.nombre||'—')}</div>
+        <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
+        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg}</div>
+      </div>
+      <button onclick="closeCollabProfile()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+
+    <div class="profile-kpi-grid">
+      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(totalMonto/1000)}k</div><div class="profile-kpi-lbl">Total comprado</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">${activos.length}</div><div class="profile-kpi-lbl">Pedidos</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
+      <div class="profile-kpi"><div class="profile-kpi-val">₡${Math.round(avgPedido/1000)}k</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
+    </div>
+
+    <div class="profile-section-title">Gasto en el tiempo</div>
+    <div style="position:relative;width:100%;height:130px;"><canvas id="profile-chart-tiempo"></canvas></div>
+
+    <div class="profile-section-title">Días favoritos de compra</div>
+    <div style="position:relative;width:100%;height:100px;"><canvas id="profile-chart-dias"></canvas></div>
+
+    <div class="profile-section-title">Productos más comprados</div>
+    ${topProds.map(([n,v])=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#374151;">${esc(n)}</span>
+        <span style="font-weight:700;color:#1f2937;white-space:nowrap;">${v} u.</span>
+        <div style="width:60px;background:#f3f4f6;border-radius:999px;height:4px;flex-shrink:0;">
+          <div style="width:${Math.round(v/maxP*100)}%;height:4px;background:#1f2937;border-radius:999px;"></div>
+        </div>
+      </div>`).join('')}
+
+    <div class="profile-section-title" style="margin-top:8px;">Historial de pedidos</div>
+    ${pedidos.map(o=>{
+      const num   = o.id.slice(0,8).toUpperCase();
+      const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const unid  = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+      const estadoBadge = o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':
+                         o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':
+                         o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>':'';
+      const lines = (o.lineas_pedido||[]).map(l=>`
+        <div class="ud-line"><span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span><span class="ud-line-qty">${l.cantidad} u.</span></div>`).join('');
+      return `<div class="ud-order">
+        <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+          <div><div class="ud-order-num">#${num}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div></div>
+          <span class="ud-order-units">${unid} u. · ₡${(o.total||0).toLocaleString('es-CR')}</span>
+          <span class="ud-order-arrow">›</span>
+        </div>
+        <div class="ud-order-body">${lines}</div>
+      </div>`;
+    }).join('')}
+  `;
+
+  document.getElementById('collab-profile-modal').classList.add('open');
+
+  // Renderizar gráficos después del DOM
+  requestAnimationFrame(() => {
+    // Gasto en el tiempo (por mes)
+    const mapT = {};
+    activos.forEach(o=>{
+      const k = new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+      mapT[k]=(mapT[k]||0)+(o.total||0);
+    });
+    if (_collabProfileChart1) _collabProfileChart1.destroy();
+    _collabProfileChart1 = new Chart(document.getElementById('profile-chart-tiempo').getContext('2d'),{
+      type:'line', data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#1f2937',backgroundColor:'rgba(31,41,55,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#1f2937'}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}
+    });
+    // Días favoritos
+    const mxD = Math.max(...porDia)||1;
+    if (_collabProfileChart2) _collabProfileChart2.destroy();
+    _collabProfileChart2 = new Chart(document.getElementById('profile-chart-dias').getContext('2d'),{
+      type:'bar', data:{labels:diasNom,datasets:[{data:porDia,backgroundColor:porDia.map(v=>v===mxD?'#1f2937':'#e5e7eb'),borderRadius:4}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} pedido${c.raw!==1?'s':''}`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}
+    });
+  });
+}
+
+function closeCollabProfile() {
+  document.getElementById('collab-profile-modal').classList.remove('open');
+  if (_collabProfileChart1) { _collabProfileChart1.destroy(); _collabProfileChart1=null; }
+  if (_collabProfileChart2) { _collabProfileChart2.destroy(); _collabProfileChart2=null; }
+}
+
+// ── DETALLES MONTO ───────────────────────────────────────
+let _montoDetailName   = '';
+let _montoDetailChart  = null;
+let _montoDetailPeriod = 'month';
+let _montoDetailData   = [];
+
+function openMontoDetail(nombre) {
+  _montoDetailName = nombre;
+  document.getElementById('monto-detail-title').textContent = nombre;
+  const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('md-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  document.getElementById('md-month').innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  renderMontoDetail();
+  document.getElementById('monto-detail-modal').classList.add('open');
+}
+
+function setMontoPeriod(p) {
+  _montoDetailPeriod = p;
+  ['day','week','month'].forEach(x => document.getElementById('md-pbtn-'+x).classList.toggle('active', x===p));
+  renderMontoDetailChart();
+}
+
+function renderMontoDetail() {
+  const y = document.getElementById('md-year').value;
+  const m = document.getElementById('md-month').value;
+  _montoDetailData = (_dashData||[]).filter(o => {
+    if (o.usuario_nombre !== _montoDetailName && o.usuario_email !== _montoDetailName) return false;
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && d.getMonth() != m) return false;
+    return true;
+  }).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+
+  const totalMonto = _montoDetailData.reduce((s,o)=>s+(o.total||0),0);
+  document.getElementById('monto-detail-sub').textContent = `${_montoDetailData.length} pedido${_montoDetailData.length!==1?'s':''} · ₡${totalMonto.toLocaleString('es-CR')}`;
+
+  renderMontoDetailChart();
+
+  // Lista de pedidos (más recientes primero)
+  const sorted = [..._montoDetailData].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  if (!sorted.length) {
+    document.getElementById('monto-detail-body').innerHTML = '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Sin pedidos en el período seleccionado</div>';
+    return;
+  }
+  document.getElementById('monto-detail-body').innerHTML = sorted.map(o => {
+    const num   = o.id.slice(0,8).toUpperCase();
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const monto = (o.total||0).toLocaleString('es-CR');
+    const lines = (o.lineas_pedido||[]).map(l=>`
+      <div class="ud-line">
+        <span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span>
+        <span class="ud-line-qty">${l.cantidad} u. · ₡${(l.subtotal || (l.precio_unitario||0)*(l.cantidad||0) || 0).toLocaleString('es-CR')}</span>
+      </div>`).join('');
+    return `<div class="ud-order">
+      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+        <div><div class="ud-order-num">#${num}</div><div class="ud-order-meta">${fecha}</div></div>
+        <span class="ud-order-units">₡${monto}</span>
+        <span class="ud-order-arrow">›</span>
+      </div>
+      <div class="ud-order-body">${lines}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderMontoDetailChart() {
+  const map = {};
+  _montoDetailData.forEach(o => {
+    const d = new Date(o.fecha);
+    let key;
+    if (_montoDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+    else if (_montoDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    else                                  key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+    map[key] = (map[key]||0) + (o.total||0);
+  });
+  const labels = Object.keys(map);
+  const vals   = Object.values(map);
+  const ctx    = document.getElementById('monto-detail-chart').getContext('2d');
+  if (_montoDetailChart) _montoDetailChart.destroy();
+  _montoDetailChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets:[{ data:vals, borderColor:'#1f2937', backgroundColor:'rgba(31,41,55,0.08)', borderWidth:2, fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#1f2937' }] },
+    options: {
+      maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}} },
+      scales:{
+        y:{ ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:11}}, grid:{color:'#f3f4f6'} },
+        x:{ ticks:{font:{size:11},maxRotation:45}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+function closeMontoDetail() {
+  document.getElementById('monto-detail-modal').classList.remove('open');
+  if (_montoDetailChart) { _montoDetailChart.destroy(); _montoDetailChart = null; }
+}
+
+// ── DETALLES USUARIO ─────────────────────────────────────
+let _userDetailName = '';
+
+function openUserDetail(nombre) {
+  _userDetailName = nombre;
+  document.getElementById('user-detail-title').textContent = nombre;
+  const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('ud-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  document.getElementById('ud-month').innerHTML = '<option value="">Todos los meses</option>' + meses.slice(1).map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  renderUserDetail();
+  document.getElementById('user-detail-modal').classList.add('open');
+}
+
+function renderUserDetail() {
+  const y = document.getElementById('ud-year').value;
+  const m = document.getElementById('ud-month').value;
+  const pedidos = (_dashData||[]).filter(o => {
+    if (o.usuario_nombre !== _userDetailName && o.usuario_email !== _userDetailName) return false;
+    const d = new Date(o.fecha);
+    if (y && d.getFullYear() != y) return false;
+    if (m !== '' && d.getMonth() != m) return false;
+    return true;
+  }).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+  const totalUnid = pedidos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
+  document.getElementById('user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades`;
+
+  if (!pedidos.length) {
+    document.getElementById('user-detail-body').innerHTML = '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Sin pedidos en el período seleccionado</div>';
+    return;
+  }
+
+  document.getElementById('user-detail-body').innerHTML = pedidos.map(o => {
+    const num   = o.id.slice(0,8).toUpperCase();
+    const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const unid  = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    const lines = (o.lineas_pedido||[]).map(l=>`
+      <div class="ud-line">
+        <span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span>
+        <span class="ud-line-qty">${l.cantidad} u.</span>
+      </div>`).join('');
+    return `<div class="ud-order">
+      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+        <div>
+          <div class="ud-order-num">#${num}</div>
+          <div class="ud-order-meta">${fecha}</div>
+        </div>
+        <span class="ud-order-units">${unid} u.</span>
+        <span class="ud-order-arrow">›</span>
+      </div>
+      <div class="ud-order-body">${lines}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleUdOrder(hd) {
+  hd.classList.toggle('open');
+  hd.nextElementSibling.classList.toggle('open');
+}
+
+function closeUserDetail() {
+  document.getElementById('user-detail-modal').classList.remove('open');
 }
 
 function renderRankMonto() {
@@ -2040,7 +2663,9 @@ function renderRankMonto() {
     <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
       <div class="rank-name">${esc(n)}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
-    </div><span class="rank-val">₡${Math.round(v/1000)}k</span></div>`).join('')
+    </div><span class="rank-val">₡${Math.round(v/1000)}k</span>
+    <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openMontoDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
+    </div>`).join('')
     : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
 }
 

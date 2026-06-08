@@ -1368,6 +1368,27 @@ function renderMyOrders(list) {
 // ── DETALLE PEDIDO ────────────────────────────────────────
 let _currentDetIdx = null;
 
+async function openPedidoDetById(orderId) {
+  // Buscar en la lista cargada primero
+  let o = window._myOrdersList && window._myOrdersList.find(x => x.id === orderId);
+  if (!o) {
+    // Fetch directo si no está en memoria
+    const { data } = await sb.from('pedidos')
+      .select('*, lineas_pedido(*)')
+      .eq('id', orderId)
+      .maybeSingle();
+    o = data;
+  }
+  if (!o) return;
+  // Inyectar en lista temporal y abrir
+  if (!window._myOrdersList) window._myOrdersList = [];
+  let idx = window._myOrdersList.findIndex(x => x.id === orderId);
+  if (idx === -1) { window._myOrdersList.push(o); idx = window._myOrdersList.length - 1; }
+  // Asegurar que el modal de mis pedidos esté abierto
+  document.getElementById('modal-mis-pedidos').classList.add('open');
+  openPedidoDet(idx);
+}
+
 function openPedidoDet(idx) {
   const o = window._myOrdersList && window._myOrdersList[idx];
   if (!o) return;
@@ -2525,6 +2546,16 @@ async function refreshNotifBadge() {
   btn.classList.toggle('shaking', unread > 0);
 }
 
+async function notifOpenOrder(orderId, notifId) {
+  // Marcar como leída
+  await sb.from('notificaciones').update({ read: true }).eq('id', notifId);
+  // Cerrar panel
+  document.getElementById('notif-panel').classList.remove('open');
+  await refreshNotifBadge();
+  // Abrir detalle del pedido
+  await openPedidoDetById(orderId);
+}
+
 async function toggleNotifPanel(e) {
   e.stopPropagation();
   const panel = document.getElementById('notif-panel');
@@ -2558,13 +2589,13 @@ async function renderNotifList() {
     const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : 'Rechazado';
     const chipClass = `chip-${n.estado}`;
     const msg = typeof meta.title === 'function' ? meta.title(escHtml(n.order_num)) : meta.title;
-    return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}">
+    return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}" style="cursor:pointer;" onclick="notifOpenOrder('${n.order_id}','${n.id}')">
       <div class="notif-top-row">
         <div class="notif-meta">
           <span class="notif-date">${fecha}</span>
           <span class="notif-chip ${chipClass}">${chipLabel}</span>
         </div>
-        <button class="notif-close" onclick="dismissNotif('${n.id}')">✕</button>
+        <button class="notif-close" onclick="event.stopPropagation();dismissNotif('${n.id}')">✕</button>
       </div>
       <div class="notif-msg">${msg}</div>
     </div>`;

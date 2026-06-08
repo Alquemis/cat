@@ -914,6 +914,7 @@
       </button>
       <div class="user-dropdown">
         <button class="user-dropdown-item" onclick="openMyOrders()">📋 Mis pedidos</button>
+        <button class="user-dropdown-item" id="menu-install-btn" onclick="installAppFromMenu()" style="display:none;">📲 Instalar app</button>
         <div class="user-dropdown-sep"></div>
         <button class="user-dropdown-item danger" onclick="doLogout()">Cerrar sesión</button>
       </div>
@@ -1200,6 +1201,7 @@ async function onLogin(session, isRestore = false) {
   try { document.getElementById('notif-wrap').classList.add('visible'); } catch(e) {}
   try { if (typeof renderNotifBadge === 'function') renderNotifBadge(); } catch(e) {}
   try { if (typeof startNotifPolling === 'function') startNotifPolling(); } catch(e) {}
+  try { _updateInstallMenuBtn(); } catch(e) {}
 
   // Intentar cargar productos desde Supabase
   await loadProductsFromDB();
@@ -2789,6 +2791,42 @@ function closeLightbox() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
+// ── DETECCIÓN DE PLATAFORMA ───────────────────────────────
+const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const _isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+function _updateInstallMenuBtn() {
+  const btn = document.getElementById('menu-install-btn');
+  if (!btn) return;
+  // Mostrar si no está instalada y (hay prompt disponible O es iOS)
+  if (!_isInstalled && (_installPrompt || _isIOS)) {
+    btn.style.display = 'block';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function installAppFromMenu() {
+  closeUserMenu();
+  if (_isIOS) {
+    // iOS: mostrar banner con instrucciones
+    const banner = document.getElementById('install-banner');
+    banner.querySelector('.ib-sub').textContent = 'Toca Compartir ⬆ → "Agregar a pantalla de inicio"';
+    banner.querySelector('#install-btn').style.display = 'none';
+    banner.classList.add('show');
+    localStorage.removeItem('pwa_dismissed');
+  } else if (_installPrompt) {
+    // Chrome/Android: disparar instalación nativa
+    _installPrompt.prompt();
+    const { outcome } = await _installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      _installPrompt = null;
+      _updateInstallMenuBtn();
+      localStorage.setItem('pwa_dismissed', '1');
+    }
+  }
+}
+
 // ── PWA: Service Worker + Banner de instalación ───────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -2799,11 +2837,17 @@ let _installPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _installPrompt = e;
+  _updateInstallMenuBtn();
   // Mostrar banner solo si no fue descartado antes
   if (!localStorage.getItem('pwa_dismissed')) {
     setTimeout(() => document.getElementById('install-banner').classList.add('show'), 3000);
   }
 });
+
+// iOS: mostrar botón en menú si no está instalada
+if (_isIOS && !_isInstalled) {
+  document.addEventListener('DOMContentLoaded', _updateInstallMenuBtn);
+}
 
 document.getElementById('install-btn').addEventListener('click', async () => {
   document.getElementById('install-banner').classList.remove('show');

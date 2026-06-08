@@ -276,9 +276,9 @@
   .dash-filter:focus { border-color:#7c3aed; }
   .dash-filters { display:flex;gap:4px;align-items:center;flex-wrap:wrap;flex-shrink:0; }
   .dash-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:28px; }
-  .dash-kpi { background:#fff;border-radius:14px;padding:16px 18px;border:1px solid #e5e7eb; }
-  .dash-kpi-val { font-size:24px;font-weight:800;color:#1f2937; }
-  .dash-kpi-lbl { font-size:12px;color:#6b7280;margin-top:3px; }
+  .dash-kpi { background:#fff;border-radius:12px;padding:10px 14px;border:1px solid #e5e7eb; }
+  .dash-kpi-val { font-size:18px;font-weight:800;color:#1f2937; }
+  .dash-kpi-lbl { font-size:11px;color:#6b7280;margin-top:2px; }
   .dash-row { display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px; }
   .dash-card { background:#fff;border-radius:14px;padding:20px;border:1px solid #e5e7eb;overflow:hidden; }
   .dash-card-title { font-size:13px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap; }
@@ -503,6 +503,7 @@
     <div class="dash-grid">
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-total-fact">₡—</div><div class="dash-kpi-lbl">Total facturado</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
+      <div class="dash-kpi" style="border-color:#fde68a;background:#fffbeb;"><div class="dash-kpi-val" style="color:#b45309;" id="sdk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#b45309;">Pedidos pendientes</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-promedio">₡—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-unidades">—</div><div class="dash-kpi-lbl">Unidades vendidas</div></div>
       <div class="dash-kpi" onclick="openSuCollabList()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
@@ -519,6 +520,15 @@
             <button class="dash-period-btn active" id="spbtn-day"   onclick="setSuDashPeriod('day')">Día</button>
             <button class="dash-period-btn"         id="spbtn-week"  onclick="setSuDashPeriod('week')">Semana</button>
             <button class="dash-period-btn"         id="spbtn-month" onclick="setSuDashPeriod('month')">Mes</button>
+            <button class="dash-period-btn"         id="spbtn-year"  onclick="setSuDashPeriod('year')">Año</button>
+          </div>
+          <div class="dash-period-btns" style="margin-left:4px;">
+            <button class="dash-period-btn active" id="spbtn-line" onclick="setSuChartType('line')" title="Línea" style="padding:3px 7px;">
+              <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,11 5,6 9,8 15,2"/></svg>
+            </button>
+            <button class="dash-period-btn" id="spbtn-bar" onclick="setSuChartType('bar')" title="Barras" style="padding:3px 7px;">
+              <svg width="16" height="14" viewBox="0 0 16 14" fill="currentColor"><rect x="1" y="6" width="3" height="7" rx="1"/><rect x="6" y="3" width="3" height="10" rx="1"/><rect x="11" y="1" width="3" height="12" rx="1"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -1619,18 +1629,25 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 // ── DASHBOARD ────────────────────────────────────────────
 let _suDashData    = null;
 let _suDashAllDays = null;
-let _suDashPeriod  = 'day';
+let _suDashPeriod    = 'day';
+let _suDashChartType = 'line';
 let _suChartTiempo  = null;
 let _suChartDias    = null;
 let _suChartDiasMes = null;
 
+let _suDashTotalUsers = 0;
+
 async function loadSuDashboard() {
   if (_suDashData) { _suDashData = null; } // forzar re-fetch para incluir precio_unitario
-  const { data } = await sb.from('pedidos')
-    .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
-    .order('fecha', { ascending: true });
-  _suDashData    = data || [];
-  _suDashAllDays = _suDashData;
+  const [resPed, resUsers] = await Promise.all([
+    sb.from('pedidos')
+      .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
+      .order('fecha', { ascending: true }),
+    sb.from('usuarios').select('cedula', { count: 'exact', head: true })
+  ]);
+  _suDashData      = resPed.data || [];
+  _suDashAllDays   = _suDashData;
+  _suDashTotalUsers = resUsers.count || 0;
   renderSuDashboard();
 }
 
@@ -1666,9 +1683,10 @@ function renderSuDashboard() {
   const colab = new Set(activos.map(o => o.usuario_email)).size;
   document.getElementById('sdk-total-fact').textContent    = '₡' + totalFact.toLocaleString('es-CR');
   document.getElementById('sdk-pedidos').textContent       = activos.length;
+  document.getElementById('sdk-pendientes').textContent    = data.filter(o => o.estado === 'pendiente').length;
   document.getElementById('sdk-promedio').textContent      = activos.length ? '₡' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0)/activos.length).toLocaleString('es-CR') : '₡0';
   document.getElementById('sdk-unidades').textContent      = totalUnid.toLocaleString('es-CR');
-  document.getElementById('sdk-colaboradores').textContent = colab;
+  document.getElementById('sdk-colaboradores').textContent = `${colab} / ${_suDashTotalUsers}`;
 
   const suFirstLoad = !document.getElementById('sf-tiempo-year').options.length || document.getElementById('sf-tiempo-year').options.length === 1;
   ['sf-tiempo-year','sf-dias-year','sf-prod-year','sf-unid-year','sf-monto-year','sf-diasmes-year'].forEach(id => _suPopulateYearSelect(id));
@@ -2147,7 +2165,13 @@ function renderSuChartDiasMes() {
 
 function setSuDashPeriod(p) {
   _suDashPeriod = p;
-  ['day','week','month'].forEach(x => document.getElementById('spbtn-'+x).classList.toggle('active', x===p));
+  ['day','week','month','year'].forEach(x => document.getElementById('spbtn-'+x).classList.toggle('active', x===p));
+  renderSuChartTiempo();
+}
+
+function setSuChartType(t) {
+  _suDashChartType = t;
+  ['line','bar'].forEach(x => document.getElementById('spbtn-'+x).classList.toggle('active', x===t));
   renderSuChartTiempo();
 }
 
@@ -2160,14 +2184,15 @@ function renderSuChartTiempo() {
     let key;
     if (_suDashPeriod==='day')        key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
     else if (_suDashPeriod==='week')  { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    else if (_suDashPeriod==='year')  key = String(d.getFullYear());
     else                              key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
     map[key]=(map[key]||0)+(o.total||0);
   });
   const ctx = document.getElementById('su-chart-tiempo').getContext('2d');
   if (_suChartTiempo) _suChartTiempo.destroy();
   _suChartTiempo = new Chart(ctx, {
-    type: _suDashPeriod==='month'?'bar':'line',
-    data: { labels:Object.keys(map), datasets:[{ data:Object.values(map), borderColor:'#7c3aed', backgroundColor:_suDashPeriod==='month'?'#7c3aed':'rgba(124,58,237,0.08)', borderWidth:2, fill:_suDashPeriod!=='month', tension:0.4, pointRadius:3, pointBackgroundColor:'#7c3aed', borderRadius:_suDashPeriod==='month'?6:0 }] },
+    type: _suDashChartType,
+    data: { labels:Object.keys(map), datasets:[{ data:Object.values(map), borderColor:'#7c3aed', backgroundColor:_suDashChartType==='bar'?'#7c3aed':'rgba(124,58,237,0.08)', borderWidth:2, fill:_suDashChartType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#7c3aed', borderRadius:_suDashChartType==='bar'?6:0 }] },
     options: { maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}}, scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11},maxRotation:45},grid:{display:false}}} }
   });
 }

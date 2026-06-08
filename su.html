@@ -1221,9 +1221,41 @@ function renderAdminOrders(tbodyId, list) {
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}">₡${(o.total||0).toLocaleString('es-CR')}</td>
-      <td><button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>
+        <button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>
+      </td>
     </tr>`;
   }).join('');
+}
+
+function confirmDeleteOrder(id, num) {
+  showConfirm(
+    `¿Eliminar pedido #${num}?`,
+    'Se eliminarán el pedido y todas sus líneas. Esta acción no se puede deshacer.',
+    async () => {
+      const { error: errL } = await sb.from('lineas_pedido').delete().eq('pedido_id', id);
+      if (errL) { showToast('Error al eliminar líneas: ' + errL.message, false); return; }
+      const { error: errP } = await sb.from('pedidos').delete().eq('id', id);
+      if (errP) { showToast('Error al eliminar pedido: ' + errP.message, false); return; }
+      allAdminPend = allAdminPend.filter(o => o.id !== id);
+      allAdminHist = allAdminHist.filter(o => o.id !== id);
+      // Actualizar stats
+      document.getElementById('stat-orders').textContent = allAdminPend.length;
+      document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
+      const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
+      const facturados = allAdminHist.filter(o => o.estado === 'facturado');
+      const totalFact  = facturados.reduce((s,o)=>s+(o.total||0),0);
+      const totalPorFact = allAdminPend.reduce((s,o)=>s+(o.total||0),0);
+      document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
+      document.getElementById('stat-orders-porfacturar').textContent = '₡' + totalPorFact.toLocaleString('es-CR');
+      document.getElementById('stat-orders-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
+      filterAdminPend();
+      filterAdminHist();
+      showToast('Pedido eliminado.', true);
+    },
+    { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
 }
 
 function openOrderDetail(id) {

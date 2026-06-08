@@ -1115,12 +1115,10 @@ async function onLogin(session, isRestore = false) {
   // Iniciar vigilancia de sesión (detecta eliminación por superuser)
   startSessionWatchdog();
 
-  // Notificaciones
-  try {
-    document.getElementById('notif-wrap').classList.add('visible');
-    renderNotifBadge();
-    startNotifPolling();
-  } catch(e) { console.warn('Notificaciones no disponibles:', e.message); }
+  // Notificaciones — cada llamada aislada para que un fallo no cancele las demás
+  try { document.getElementById('notif-wrap').classList.add('visible'); } catch(e) {}
+  try { if (typeof renderNotifBadge === 'function') renderNotifBadge(); } catch(e) {}
+  try { if (typeof startNotifPolling === 'function') startNotifPolling(); } catch(e) {}
 
   // Intentar cargar productos desde Supabase
   await loadProductsFromDB();

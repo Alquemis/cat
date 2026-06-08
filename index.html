@@ -1289,6 +1289,7 @@ function stopSessionWatchdog() {
 // ── USER MENU DROPDOWN ────────────────────────────────────
 function toggleUserMenu(e) {
   e.stopPropagation();
+  closeNotifPanel();
   const wrap = document.getElementById('user-chip');
   wrap.classList.toggle('open');
 }
@@ -1384,8 +1385,6 @@ async function openPedidoDetById(orderId) {
   if (!window._myOrdersList) window._myOrdersList = [];
   let idx = window._myOrdersList.findIndex(x => x.id === orderId);
   if (idx === -1) { window._myOrdersList.push(o); idx = window._myOrdersList.length - 1; }
-  // Asegurar que el modal de mis pedidos esté abierto
-  document.getElementById('modal-mis-pedidos').classList.add('open');
   openPedidoDet(idx);
 }
 
@@ -1662,6 +1661,7 @@ function refreshAddButtons() {
 }
 
 function openCart() {
+  closeNotifPanel();
   closeQadd();
   renderCartItems();
   document.getElementById('cart-overlay').classList.add('open');

@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Martimac">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="theme-color" content="#1f2937">
 <title>Catálogo Colaboradores – Martimac</title>
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -289,6 +295,24 @@
     transition: color 0.15s, background 0.15s; flex-shrink: 0;
   }
   .mpc-del-btn:hover { color: #dc2626; background: #fee2e2; }
+
+  /* ── BANNER INSTALAR APP ── */
+  #install-banner {
+    position:fixed; bottom:0; left:0; right:0; z-index:9990;
+    background:#1f2937; color:#fff;
+    padding:14px 20px; display:none; align-items:center; gap:12px;
+    box-shadow:0 -4px 20px rgba(0,0,0,.25);
+    animation: slideUp .3s ease;
+  }
+  #install-banner.show { display:flex; }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  #install-banner img { width:40px; height:40px; border-radius:10px; flex-shrink:0; }
+  #install-banner .ib-text { flex:1; min-width:0; }
+  #install-banner .ib-title { font-size:14px; font-weight:700; }
+  #install-banner .ib-sub { font-size:12px; color:#9ca3af; margin-top:1px; }
+  #install-banner .ib-btn { background:#fff; color:#1f2937; border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; }
+  #install-banner .ib-btn:hover { background:#f3f4f6; }
+  #install-banner .ib-close { background:none; border:none; color:#9ca3af; font-size:20px; cursor:pointer; padding:0 4px; flex-shrink:0; line-height:1; }
 
   /* ── TOAST ── */
   #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
@@ -976,6 +1000,17 @@
       <button class="mpd-btn-del" id="mpd-btn-del" onclick="pedidoDetDelete()" title="Eliminar de mi historial">🗑</button>
     </div>
   </div>
+</div>
+
+<!-- BANNER INSTALAR APP -->
+<div id="install-banner">
+  <img src="icon-512.png" alt="Martimac" onerror="this.src='favicon.svg'">
+  <div class="ib-text">
+    <div class="ib-title">Instalar app</div>
+    <div class="ib-sub">Agrega Martimac a tu pantalla de inicio</div>
+  </div>
+  <button class="ib-btn" id="install-btn">Instalar</button>
+  <button class="ib-close" id="install-close">×</button>
 </div>
 
 <!-- LIGHTBOX -->
@@ -2753,6 +2788,47 @@ function closeLightbox() {
   setTimeout(() => { lb.style.display = 'none'; lb.classList.remove('closing'); }, 250);
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ── PWA: Service Worker + Banner de instalación ───────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+let _installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  // Mostrar banner solo si no fue descartado antes
+  if (!localStorage.getItem('pwa_dismissed')) {
+    setTimeout(() => document.getElementById('install-banner').classList.add('show'), 3000);
+  }
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  document.getElementById('install-banner').classList.remove('show');
+  if (_installPrompt) {
+    _installPrompt.prompt();
+    const { outcome } = await _installPrompt.userChoice;
+    if (outcome === 'accepted') localStorage.setItem('pwa_dismissed', '1');
+    _installPrompt = null;
+  }
+});
+
+document.getElementById('install-close').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('pwa_dismissed', '1');
+});
+
+// iOS: mostrar instrucciones si es Safari en iPhone/iPad y no está instalada
+if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone && !localStorage.getItem('pwa_dismissed')) {
+  setTimeout(() => {
+    const banner = document.getElementById('install-banner');
+    banner.querySelector('.ib-sub').textContent = 'Toca Compartir → "Agregar a pantalla de inicio"';
+    banner.querySelector('#install-btn').style.display = 'none';
+    banner.classList.add('show');
+  }, 4000);
+}
 
 initAuth();
 </script>

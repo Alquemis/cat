@@ -1395,7 +1395,7 @@ function renderMyOrders(list) {
 // ── DETALLE PEDIDO ────────────────────────────────────────
 let _currentDetIdx = null;
 
-async function openPedidoDetById(orderId) {
+async function openPedidoDetById(orderId, opts = {}) {
   // Buscar en la lista cargada primero
   let o = window._myOrdersList && window._myOrdersList.find(x => x.id === orderId);
   if (!o) {
@@ -1412,11 +1412,18 @@ async function openPedidoDetById(orderId) {
   let idx = window._myOrdersList.findIndex(x => x.id === orderId);
   if (idx === -1) { window._myOrdersList.push(o); idx = window._myOrdersList.length - 1; }
   openPedidoDet(idx);
+  if (opts.hideDelete) {
+    const btn = document.getElementById('mpd-btn-del');
+    if (btn) btn.style.display = 'none';
+  }
 }
 
 function openPedidoDet(idx) {
   const o = window._myOrdersList && window._myOrdersList[idx];
   if (!o) return;
+  // Siempre restaurar el botón de eliminar al abrir desde mis pedidos
+  const delBtn = document.getElementById('mpd-btn-del');
+  if (delBtn) delBtn.style.display = '';
   // Marcar fila seleccionada
   document.querySelectorAll('.mpc-row').forEach(r => r.classList.remove('selected'));
   const rowEl = document.getElementById('mpc-row-' + idx);
@@ -2601,13 +2608,11 @@ async function refreshNotifBadge() {
 }
 
 async function notifOpenOrder(orderId, notifId) {
-  // Marcar como leída
   await sb.from('notificaciones').update({ read: true }).eq('id', notifId);
-  // Cerrar panel
   document.getElementById('notif-panel').classList.remove('open');
   await refreshNotifBadge();
-  // Abrir detalle del pedido
-  await openPedidoDetById(orderId);
+  // Abrir detalle sin botón de eliminar
+  await openPedidoDetById(orderId, { hideDelete: true });
 }
 
 async function toggleNotifPanel(e) {

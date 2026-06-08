@@ -2461,34 +2461,53 @@ const _notifMeta = {
 async function checkNotifications() {
   if (!currentUser) return;
 
-  // 1. Traer pedidos relevantes del usuario
-  const { data: pedidos } = await sb.from('pedidos')
+  // Traer TODOS los pedidos del usuario (todos los estados)
+  const { data: pedidos, error } = await sb.from('pedidos')
     .select('id, estado')
-    .eq('usuario_email', currentUser.cedula)
-    .in('estado', ['facturado', 'pagado', 'cancelado']);
-  if (!pedidos) return;
+    .eq('usuario_email', currentUser.cedula);
+  if (error || !pedidos) return;
 
-  // 2. Traer notificaciones ya existentes para este usuario
-  const { data: existentes } = await sb.from('notificaciones')
-    .select('order_id, estado')
-    .eq('usuario_cedula', currentUser.cedula);
-  const yaNotificados = new Set((existentes || []).map(n => n.order_id + '_' + n.estado));
+  // Cargar estados conocidos desde localStorage
+  const storeKey = `notif_states_${currentUser.cedula}`;
+  let knownStates = {};
+  try { knownStates = JSON.parse(localStorage.getItem(storeKey) || '{}'); } catch(_) {}
 
-  // 3. Insertar las nuevas que no existan aún
-  const nuevas = pedidos
-    .filter(o => !yaNotificados.has(o.id + '_' + o.estado))
-    .map(o => ({
-      usuario_cedula: currentUser.cedula,
-      order_id:       o.id,
-      order_num:      o.id.slice(0,8).toUpperCase(),
-      estado:         o.estado,
-      read:           false,
-    }));
+  // Detectar transiciones de estado
+  const nuevas = [];
+  pedidos.forEach(o => {
+    const prev = knownStates[o.id];
+    const curr = o.estado;
+    // Si cambió a un estado notificable y no lo teníamos registrado igual
+    if (prev !== curr && _notifMeta[curr]) {
+      nuevas.push({
+        usuario_cedula: currentUser.cedula,
+        order_id:       o.id,
+        order_num:      o.id.slice(0,8).toUpperCase(),
+        estado:         curr,
+        read:           false,
+      });
+    }
+    knownStates[o.id] = curr;
+  });
 
-  if (nuevas.length) await sb.from('notificaciones').insert(nuevas);
+  // Guardar estados actualizados
+  localStorage.setItem(storeKey, JSON.stringify(knownStates));
 
-  // 4. Actualizar badge
-  await refreshNotifBadge();
+  // Insertar nuevas notificaciones evitando duplicados en Supabase
+  if (nuevas.length) {
+    const { data: existentes } = await sb.from('notificaciones')
+      .select('order_id, estado').eq('usuario_cedula', currentUser.cedula);
+    const ya = new Set((existentes||[]).map(n => n.order_id + '_' + n.estado));
+    const toInsert = nuevas.filter(n => !ya.has(n.order_id + '_' + n.estado));
+    if (toInsert.length) {
+      await sb.from('notificaciones').insert(toInsert);
+      await refreshNotifBadge(); // solo actualizar si hubo cambios
+      return;
+    }
+  }
+
+  // Si no hubo cambios, solo refrescar badge si hay cache desactualizado
+  if (!_notifCache.length || nuevas.length) await refreshNotifBadge();
 }
 
 async function refreshNotifBadge() {
@@ -2585,7 +2604,7 @@ async function clearAllNotif() {
 
 function startNotifPolling() {
   checkNotifications();
-  _notifTimer = setInterval(checkNotifications, 30000);
+  _notifTimer = setInterval(checkNotifications, 8000);
 }
 
 function stopNotifPolling() {

@@ -1198,17 +1198,17 @@ async function doQuickLogin() {
 
   const session = { nombre: perfil.nombre, cedula: perfil.cedula, departamento: perfil.departamento, lugar: perfil.lugar };
   localStorage.setItem('catalogo_session', JSON.stringify(session));
-  showWelcomePopup(perfil.nombre, session);
+  showWelcomePopup(perfil.nombre, session, true);
 }
 
-function showWelcomePopup(nombre, session) {
+function showWelcomePopup(nombre, session, isRestore = false) {
   const popup = document.getElementById('welcome-popup');
   document.getElementById('welcome-name').textContent = nombre.split(' ')[0];
   document.getElementById('login-overlay').classList.add('hidden');
   popup.style.display = 'flex';
   setTimeout(() => {
     popup.style.display = 'none';
-    onLogin(session, true);
+    onLogin(session, isRestore);
   }, 2200);
 }
 
@@ -1270,17 +1270,18 @@ function startSessionWatchdog() {
   _watchdogTimer = setInterval(async () => {
     if (!currentUser) { stopSessionWatchdog(); return; }
     try {
-      const { data } = await sb
+      const { data, error } = await sb
         .from('usuarios')
         .select('cedula')
         .eq('cedula', currentUser.cedula)
         .maybeSingle();
-      if (!data) {
-        // Usuario eliminado — cerrar sesión silenciosamente
+      // Solo cerrar sesión si no hay error Y el usuario definitivamente no existe
+      if (!error && data === null) {
         stopSessionWatchdog();
         onLogout();
       }
-    } catch(_) { /* ignorar errores de red, reintentar en el próximo tick */ }
+      // Si hay error (red, timeout, etc.) → ignorar y reintentar
+    } catch(_) { /* ignorar errores de red */ }
   }, 10000);
 }
 

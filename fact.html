@@ -317,6 +317,51 @@ const SESSION_KEY = 'fact_session';
 let allPendientes = [];
 let allHistorial  = [];
 
+/* ── Detección de duplicados ── */
+const _DUP_COLORS = [
+  '#ffe0b255', // naranja claro
+  '#c8e6c955', // verde claro
+  '#bbdefb55', // azul claro
+  '#f8bbd055', // rosa claro
+  '#e1bee755', // morado claro
+  '#fff9c455', // amarillo claro
+  '#b2ebf255', // cian claro
+  '#ffccbc55', // salmón claro
+  '#dcedc855', // lima claro
+  '#d7ccc855', // arena claro
+];
+let _factDupMap = {}; // orderId → color
+
+function _factDupFingerprint(order) {
+  return (order.lineas_pedido || [])
+    .map(l => `${(l.producto_codigo || l.producto_nombre || '').trim()}:${l.cantidad}`)
+    .sort().join('|');
+}
+
+function _rebuildDupMap() {
+  const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
+  const all = [...allPendientes, ...allHistorial].filter(o =>
+    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
+  );
+  const groups = {};
+  for (const o of all) {
+    const fp = _factDupFingerprint(o);
+    if (!fp) continue;
+    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
+    const key  = user + '||' + fp;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o.id);
+  }
+  _factDupMap = {};
+  let ci = 0;
+  for (const ids of Object.values(groups)) {
+    if (ids.length < 2) continue;
+    const color = _DUP_COLORS[ci % _DUP_COLORS.length];
+    ci++;
+    for (const id of ids) _factDupMap[id] = color;
+  }
+}
+
 // ── AUTH ──────────────────────────────────────────────────────
 async function doLogin() {
   const user = document.getElementById('login-user').value.trim();
@@ -434,16 +479,20 @@ function filterPendientes() {
 }
 
 function renderPendientes(list) {
+  _rebuildDupMap();
   const tbody = document.getElementById('pend-tbody');
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos pendientes</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(o => {
-    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
-    const num   = o.id.slice(0,8).toUpperCase();
-    return '<tr>' +
-      '<td>' + fecha + '</td>' +
+    const fecha    = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const num      = o.id.slice(0,8).toUpperCase();
+    const dupColor = _factDupMap[o.id] || '';
+    const rowStyle = dupColor ? `background:${dupColor};` : '';
+    const dupChip  = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+    return '<tr style="' + rowStyle + '">' +
+      '<td>' + fecha + dupChip + '</td>' +
       '<td><code style="font-size:12px">' + esc(num) + '</code></td>' +
       '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
       '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
@@ -584,22 +633,25 @@ function filterHistorial() {
 }
 
 function renderHistorial(list) {
+  _rebuildDupMap();
   const tbody = document.getElementById('hist-tbody');
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos en historial</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(o => {
-    const cancelado= o.estado === 'cancelado';
-    const fecha = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
-    const num   = o.id.slice(0,8).toUpperCase();
-    const rowStyle = cancelado ? 'background:#fef2f2;' : '';
-    const badgeIgn = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>' : '';
+    const cancelado = o.estado === 'cancelado';
+    const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const num       = o.id.slice(0,8).toUpperCase();
+    const dupColor  = !cancelado ? (_factDupMap[o.id] || '') : '';
+    const rowStyle  = cancelado ? 'background:#fef2f2;' : (dupColor ? `background:${dupColor};` : '');
+    const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+    const badgeIgn  = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>' : '';
     const accionBtn = cancelado
       ? '<td></td>'
       : '<td><button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'hist\')">Cancelar</button></td>';
     return '<tr style="' + rowStyle + '">' +
-      '<td>' + fecha + '</td>' +
+      '<td>' + fecha + dupChip + '</td>' +
       '<td><code style="font-size:12px">' + esc(num) + '</code>' + badgeIgn + '</td>' +
       '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
       '<td>' + esc(o.usuario_departamento||'—') + '</td>' +

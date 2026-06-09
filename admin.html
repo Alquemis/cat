@@ -1045,6 +1045,33 @@ let currentUser    = null;
 let allProducts    = [];
 let allAdminPend   = [];
 let allAdminHist   = [];
+
+/* ── Mapa de duplicados para tabla de pedidos ── */
+const _ADMIN_DUP_COLORS = ['#ffe0b255','#c8e6c955','#bbdefb55','#f8bbd055','#e1bee755','#fff9c455','#b2ebf255','#ffccbc55','#dcedc855','#d7ccc855'];
+let _adminDupMap = {};
+function _rebuildAdminDupMap() {
+  const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
+  const all = [...allAdminPend, ...allAdminHist].filter(o =>
+    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
+  );
+  const groups = {};
+  for (const o of all) {
+    const fp = _dupFingerprint(o);
+    if (!fp) continue;
+    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
+    const key  = user + '||' + fp;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o.id);
+  }
+  _adminDupMap = {};
+  let ci = 0;
+  for (const ids of Object.values(groups)) {
+    if (ids.length < 2) continue;
+    const color = _ADMIN_DUP_COLORS[ci % _ADMIN_DUP_COLORS.length];
+    ci++;
+    for (const id of ids) _adminDupMap[id] = color;
+  }
+}
 let allUsers       = [];
 let editingProduct = null;
 
@@ -1057,6 +1084,13 @@ async function initAuth() {
     return;
   }
   document.getElementById('login-overlay').classList.remove('hidden');
+}
+
+/* ── Fingerprint para detección de duplicados ── */
+function _dupFingerprint(order) {
+  return (order.lineas_pedido || [])
+    .map(l => `${(l.producto_codigo || l.producto_nombre || '').trim()}:${l.cantidad}`)
+    .sort().join('|');
 }
 
 async function onLogin() {
@@ -1569,6 +1603,7 @@ function filterAdminHist() {
 }
 
 function renderAdminOrders(tbodyId, list) {
+  _rebuildAdminDupMap();
   const tbody = document.getElementById(tbodyId);
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return;
@@ -1596,8 +1631,13 @@ function renderAdminOrders(tbodyId, list) {
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num        = o.id.slice(0,8).toUpperCase();
 
-    // Clase de fila
-    const rowClass = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+    // Duplicado
+    const dupColor   = !cancelado ? (_adminDupMap[o.id] || '') : '';
+    const dupChip    = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+
+    // Clase y estilo de fila
+    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+    const rowStyle   = dupColor && !mora && !cancelado && !pagado ? `background:${dupColor};` : '';
 
     // Badge en columna pedido
     let badgeHtml = '';
@@ -1622,8 +1662,8 @@ function renderAdminOrders(tbodyId, list) {
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
 
-    return `<tr class="${rowClass}">
-      <td>${fecha}</td>
+    return `<tr class="${rowClass}" style="${rowStyle}">
+      <td>${fecha}${dupChip}</td>
       <td><code style="font-size:12px">${num}</code>${badgeHtml}</td>
       <td style="font-weight:600">${esc(o.usuario_nombre||'—')}${chipMora}</td>
       <td>${esc(o.usuario_departamento||'—')}</td>

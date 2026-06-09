@@ -160,6 +160,15 @@
   .user-dropdown-item.danger:hover { background: #fef2f2; }
   .user-dropdown-sep { height: 1px; background: #f3f4f6; margin: 0; }
 
+  /* ── Menú desplegable usuario ── MÓVIL: +30% tamaño ── */
+  @media (max-width: 768px) {
+    .user-dropdown {
+      min-width: 234px; border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    }
+    .user-dropdown-item { font-size: 18px; padding: 16px 21px; gap: 13px; }
+  }
+
   /* ========== MIS PEDIDOS — LISTA ========== */
   #modal-mis-pedidos {
     position: fixed; inset: 0; z-index: 600;

@@ -1078,11 +1078,19 @@ let editingProduct = null;
 
 // ── AUTH — usuario/contraseña en app_config ───────────────
 async function initAuth() {
-  // Recuperar sesión guardada
   const saved = localStorage.getItem('admin_session');
-  if (saved === 'ok') {
-    await onLogin();
-    return;
+  if (saved && saved !== 'ok') {
+    try {
+      const { data } = await sb.from('app_config').select('value').eq('key', 'admin_session_token').maybeSingle();
+      if (data?.value === saved) { await onLogin(); return; }
+      localStorage.removeItem('admin_session');
+    } catch(e) {
+      // Sin red → mantener sesión
+      await onLogin(); return;
+    }
+  } else if (saved === 'ok') {
+    // Sesión antigua sin token → forzar re-login
+    localStorage.removeItem('admin_session');
   }
   document.getElementById('login-overlay').classList.remove('hidden');
 }
@@ -1133,7 +1141,16 @@ async function doLogin() {
     const okPass = (cfg.admin_pass || 'admin') === pass;
 
     if (okUser && okPass) {
-      localStorage.setItem('admin_session', 'ok');
+      // Obtener o generar token de sesión
+      let token;
+      const { data: td } = await sb.from('app_config').select('value').eq('key', 'admin_session_token').maybeSingle();
+      if (td?.value) {
+        token = td.value;
+      } else {
+        token = Date.now().toString();
+        await sb.from('app_config').upsert([{ key: 'admin_session_token', value: token }], { onConflict: 'key' });
+      }
+      localStorage.setItem('admin_session', token);
       btn.disabled = false; btn.textContent = 'Ingresar';
       await onLogin();
     } else {
@@ -1989,17 +2006,25 @@ async function saveConfig() {
   btn.disabled = true; btn.textContent = 'Guardando…';
 
   const updates = [{ key: 'admin_user', value: user }];
-  if (pass) updates.push({ key: 'admin_pass', value: pass });
+  if (pass) {
+    const newToken = Date.now().toString();
+    updates.push({ key: 'admin_pass', value: pass });
+    updates.push({ key: 'admin_session_token', value: newToken });
+  }
 
   const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
   btn.disabled = false; btn.textContent = 'Guardar cambios';
 
   if (error) { showMsg('Error al guardar: ' + error.message, false); }
   else {
-    showMsg('✅ Credenciales actualizadas correctamente.', true);
+    // Actualizar token local para no cerrar el dispositivo actual
+    if (pass) {
+      const { data: td } = await sb.from('app_config').select('value').eq('key', 'admin_session_token').maybeSingle();
+      if (td?.value) localStorage.setItem('admin_session', td.value);
+    }
+    showMsg('✅ Credenciales actualizadas. Otros dispositivos deberán iniciar sesión de nuevo.', true);
     document.getElementById('cfg-pass').value  = '';
     document.getElementById('cfg-pass2').value = '';
-    // Actualizar sesión — no cerrar al cambiar credenciales
   }
 }
 

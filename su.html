@@ -1031,7 +1031,17 @@ function _dupFingerprint(order) {
 // ── AUTH ─────────────────────────────────────────────────
 async function initAuth() {
   const saved = localStorage.getItem('su_session');
-  if (saved === 'ok') { await onLogin(); return; }
+  if (saved && saved !== 'ok') {
+    try {
+      const { data } = await sb.from('app_config').select('value').eq('key', 'su_session_token').maybeSingle();
+      if (data?.value === saved) { await onLogin(); return; }
+      localStorage.removeItem('su_session');
+    } catch(e) {
+      await onLogin(); return;
+    }
+  } else if (saved === 'ok') {
+    localStorage.removeItem('su_session');
+  }
   document.getElementById('login-overlay').classList.remove('hidden');
 }
 
@@ -1067,7 +1077,15 @@ async function doLogin() {
     const okUser = (cfg.su_user || 'admin') === user;
     const okPass = (cfg.su_pass || 'admin') === pass;
     if (okUser && okPass) {
-      localStorage.setItem('su_session', 'ok');
+      let token;
+      const { data: td } = await sb.from('app_config').select('value').eq('key', 'su_session_token').maybeSingle();
+      if (td?.value) {
+        token = td.value;
+      } else {
+        token = Date.now().toString();
+        await sb.from('app_config').upsert([{ key: 'su_session_token', value: token }], { onConflict: 'key' });
+      }
+      localStorage.setItem('su_session', token);
       btn.disabled = false; btn.textContent = 'Ingresar';
       await onLogin();
     } else {
@@ -1765,14 +1783,21 @@ async function saveSuCred(type) {
   };
   if (!user || !pass) { showMsg('Usuario y contraseña no pueden estar vacíos.', false); return; }
   btn.disabled = true; btn.textContent = 'Guardando…';
+  const newToken = Date.now().toString();
+  const tokenKey = type + '_session_token';
   const updates = [
-    { key: type + '_user', value: user },
-    { key: type + '_pass', value: pass }
+    { key: type + '_user',  value: user },
+    { key: type + '_pass',  value: pass },
+    { key: tokenKey,        value: newToken }
   ];
   const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
   btn.disabled = false; btn.textContent = 'Guardar';
   if (error) { showMsg('Error: ' + error.message, false); }
-  else       { showMsg('✅ Guardado correctamente.', true); }
+  else {
+    // Actualizar token local si es el propio panel su
+    if (type === 'su') localStorage.setItem('su_session', newToken);
+    showMsg('✅ Guardado. Otros dispositivos deberán iniciar sesión de nuevo.', true);
+  }
 }
 
 // ── SUPERUSUARIO — ELIMINAR COLABORADORES ────────────────────

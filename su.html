@@ -729,7 +729,14 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th>Registro</th><th></th></tr></thead>
+            <thead><tr>
+              <th class="th-sort" onclick="sortSuDeleteUsers('nombre')"       id="sudth-nombre">Nombre <span class="sort-icon">↕</span></th>
+              <th class="th-sort" onclick="sortSuDeleteUsers('cedula')"       id="sudth-cedula">Cédula <span class="sort-icon">↕</span></th>
+              <th class="th-sort" onclick="sortSuDeleteUsers('departamento')" id="sudth-departamento">Departamento <span class="sort-icon">↕</span></th>
+              <th class="th-sort" onclick="sortSuDeleteUsers('lugar')"        id="sudth-lugar">Lugar <span class="sort-icon">↕</span></th>
+              <th class="th-sort" onclick="sortSuDeleteUsers('created_at')"   id="sudth-created_at">Registro <span class="sort-icon">↕</span></th>
+              <th></th>
+            </tr></thead>
             <tbody id="su-users-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
           </table>
         </div>
@@ -1801,19 +1808,42 @@ async function saveSuCred(type) {
 }
 
 // ── SUPERUSUARIO — ELIMINAR COLABORADORES ────────────────────
+let _suDelSort = { col: 'nombre', dir: 'asc' };
+
+function sortSuDeleteUsers(col) {
+  if (_suDelSort.col === col) { _suDelSort.dir = _suDelSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _suDelSort.col = col; _suDelSort.dir = 'asc'; }
+  ['nombre','cedula','departamento','lugar','created_at'].forEach(c => {
+    const th = document.getElementById('sudth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _suDelSort.col) th.classList.add(_suDelSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterSuUsers();
+}
+
 async function loadSuUsers() {
   const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
   if (error) { console.error(error); return; }
   allSuUsers = data || [];
-  renderSuUsers(allSuUsers);
+  filterSuUsers();
 }
 
 function filterSuUsers() {
   const q = document.getElementById('su-user-search').value.toLowerCase();
-  renderSuUsers(allSuUsers.filter(u =>
+  let list = allSuUsers.filter(u =>
     (u.nombre || '').toLowerCase().includes(q) ||
     (u.cedula || '').toLowerCase().includes(q)
-  ));
+  );
+  const { col, dir } = _suDelSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'created_at') { va = new Date(va||0); vb = new Date(vb||0); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderSuUsers(list);
 }
 
 function renderSuUsers(list) {

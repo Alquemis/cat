@@ -1890,14 +1890,14 @@ function renderQadd() {
     '<div class="qadd-body">' +
       (p.b ? '<div class="qadd-brand">' + escHtml(p.b) + '</div>' : '') +
       '<div class="qadd-name">' + escHtml(p.n) + '</div>' +
-      '<div class="qadd-price-unit" style="text-align:right;">' + priceLabel + ' por unidad · ' + escHtml(p.id) + '</div>' +
+      '<div class="qadd-price-unit">' + priceLabel + ' por unidad · ' + escHtml(p.id) + '</div>' +
       '<div class="qadd-qty-row">' +
         '<button class="qadd-qty-btn" onclick="updateQaddQty(-1)">−</button>' +
         '<span class="qadd-qty-val">' + item.qty + '</span>' +
         '<button class="qadd-qty-btn" onclick="updateQaddQty(1)">+</button>' +
       '</div>' +
-      '<div class="qadd-subtotal" style="margin-bottom:4px;text-align:right;">Subtotal</div>' +
-      '<div style="font-size:26px;font-weight:800;color:#143c5a;margin-bottom:16px;text-align:right;">' + (subtotal === '—' ? '—' : '<span class="col-sign">₡</span>' + subtotal) + '</div>' +
+      '<div class="qadd-subtotal" style="margin-bottom:4px;text-align:center;">Subtotal</div>' +
+      '<div style="font-size:26px;font-weight:800;color:#143c5a;margin-bottom:16px;text-align:center;">' + (subtotal === '—' ? '—' : '<span class="col-sign">₡</span>' + subtotal) + '</div>' +
       '<div class="qadd-btns">' +
         '<button class="qadd-btn-sec" onclick="confirmQadd()" style="background:#16a34a;color:#fff;">' + (_qaddOrigQty !== null && item.qty !== _qaddOrigQty ? 'Actualizar pedido' : 'Agregar al pedido') + '</button>' +
       '</div>' +

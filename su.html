@@ -1090,6 +1090,14 @@ document.getElementById('login-user').addEventListener('keydown', e => { if(e.ke
 // ── PAGES ────────────────────────────────────────────────
 const ALL_PAGES = ['products','orders','users','dashboard','su'];
 
+// ── RESPONSIVE ZOOM ──────────────────────────────────────
+function applyZoom() {
+  const vw = window.innerWidth;
+  document.body.style.zoom = vw < 600 ? (vw / 600) : '';
+}
+window.addEventListener('resize', applyZoom);
+applyZoom();
+
 function showPage(page) {
   ALL_PAGES.forEach(p => {
     document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
@@ -1163,9 +1171,9 @@ function renderProducts(list) {
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
     html +=   '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">';
     html +=     '<div class="pr-code" style="margin-top:0;">' + codigo + '</div>';
-    html +=     '<div class="pr-price-mob">&#x20A1;' + precio + '</div>';
+    html +=     '<div class="pr-price-mob"><span class="col-sign">₡</span>' + precio + '</div>';
     html +=   '</div></div>';
-    html +=   '<div class="pr-price">&#x20A1;' + precio + '</div>';
+    html +=   '<div class="pr-price"><span class="col-sign">₡</span>' + precio + '</div>';
     html +=   '<div class="pr-bottom">';
     html +=     '<button class="badge ' + badgeClass + '" style="flex-shrink:0;cursor:pointer;border:none;font-family:inherit;font-size:inherit" onclick="toggleActivo(\'' + codigo + '\')" id="badge-activo-' + codigo + '">' + badgeLabel + '</button>';
     html +=     '<div class="pr-actions">';

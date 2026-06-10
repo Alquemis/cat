@@ -2614,6 +2614,22 @@ function _fixSuDashHeights() {
 }
 window.addEventListener('resize', _fixSuDashHeights);
 
+// ── TECLADO MÓVIL — subir login ──────────────────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    const overlay = document.getElementById('login-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const kbHeight = window.innerHeight - window.visualViewport.height;
+    if (kbHeight > 100) {
+      overlay.style.alignItems  = 'flex-start';
+      overlay.style.paddingTop  = Math.max(12, (window.visualViewport.height - 480) / 2) + 'px';
+    } else {
+      overlay.style.alignItems  = '';
+      overlay.style.paddingTop  = '';
+    }
+  });
+}
+
 initAuth();
 
 // ── EXPORTAR PRODUCTOS A EXCEL ────────────────────────────

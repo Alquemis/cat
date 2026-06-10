@@ -333,6 +333,33 @@
   #app-toast.toast-ok    { background:#16a34a; }
   #app-toast.toast-warn  { background:#d97706; }
 
+  /* ── OVERLAY INSTALANDO PWA ── */
+  #pwa-installing-overlay {
+    display:none; position:fixed; inset:0; z-index:10000;
+    background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; flex-direction:column; gap:18px;
+  }
+  #pwa-installing-overlay.show { display:flex; }
+  .pwa-install-box {
+    background:#fff; border-radius:20px; padding:36px 40px; text-align:center;
+    box-shadow:0 16px 48px rgba(0,0,0,.25); max-width:300px; width:85vw;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  .pwa-install-box img { width:64px; height:64px; border-radius:16px; }
+  .pwa-install-spinner {
+    width:40px; height:40px; border:4px solid #e5e7eb;
+    border-top-color:#143c5a; border-radius:50%;
+    animation:pwa-spin .8s linear infinite;
+  }
+  @keyframes pwa-spin { to { transform:rotate(360deg); } }
+  .pwa-install-title { font-size:17px; font-weight:700; color:#111827; }
+  .pwa-install-sub { font-size:13px; color:#6b7280; line-height:1.4; }
+  .pwa-install-check {
+    width:48px; height:48px; border-radius:50%; background:#16a34a;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; color:#fff;
+  }
+
   /* ── NOTIFICACIONES ── */
   @keyframes bell-shake {
     0%,100%{ transform:rotate(0); }
@@ -1047,6 +1074,16 @@
   </div>
 </div>
 
+<!-- OVERLAY INSTALANDO PWA -->
+<div id="pwa-installing-overlay">
+  <div class="pwa-install-box" id="pwa-install-box">
+    <img src="icon-512.png" alt="Martimac" onerror="this.src='favicon.svg'">
+    <div class="pwa-install-spinner" id="pwa-install-spinner"></div>
+    <div class="pwa-install-title" id="pwa-install-title">Instalando app…</div>
+    <div class="pwa-install-sub" id="pwa-install-sub">Espera un momento</div>
+  </div>
+</div>
+
 <!-- BANNER INSTALAR APP -->
 <div id="install-banner">
   <img src="icon-512.png" alt="Martimac" onerror="this.src='favicon.svg'">
@@ -1758,7 +1795,6 @@ function addToCart(productId) {
     openQadd(productId, false);
   } else {
     cart.push({ product, qty: 1 });
-    updateCartBadge();
     openQadd(productId, true); // recién agregado: ✕ lo quitará
   }
 }
@@ -1852,6 +1888,7 @@ function confirmQadd() {
   _qaddOrigQty = null; // confirmar: no revertir al cerrar
   _qaddWasNew = false;
   saveCart();
+  updateCartBadge();
   refreshAddButtons();
   document.getElementById('qadd-overlay').classList.remove('open');
   _qaddId = null;
@@ -1862,7 +1899,6 @@ function updateQaddQty(delta) {
   const item = cart.find(i => i.product.id === _qaddId);
   if (!item) return;
   item.qty = Math.max(1, item.qty + delta);
-  updateCartBadge();
   renderQadd();
 }
 
@@ -2879,10 +2915,11 @@ async function installAppFromMenu() {
     _installPrompt.prompt();
     const { outcome } = await _installPrompt.userChoice;
     if (outcome === 'accepted') {
-      _installPrompt = null;
-      _updateInstallMenuBtn();
       localStorage.setItem('pwa_dismissed', '1');
+      _showPwaInstalling(); // appinstalled cerrará el overlay con el check
     }
+    _installPrompt = null;
+    _updateInstallMenuBtn();
   }
 }
 
@@ -2908,12 +2945,50 @@ if (_isIOS && !_isInstalled) {
   document.addEventListener('DOMContentLoaded', _updateInstallMenuBtn);
 }
 
+// ── Helpers overlay instalación ───────────────────────────
+function _showPwaInstalling() {
+  document.getElementById('pwa-install-spinner').style.display = '';
+  document.getElementById('pwa-install-title').textContent    = 'Instalando app…';
+  document.getElementById('pwa-install-sub').textContent      = 'Espera un momento';
+  document.getElementById('pwa-installing-overlay').classList.add('show');
+}
+
+function _showPwaInstalled() {
+  const spinner = document.getElementById('pwa-install-spinner');
+  const title   = document.getElementById('pwa-install-title');
+  const sub     = document.getElementById('pwa-install-sub');
+  spinner.style.display = 'none';
+  // Insertar check verde si no existe
+  if (!document.getElementById('pwa-install-check')) {
+    const check = document.createElement('div');
+    check.className = 'pwa-install-check'; check.id = 'pwa-install-check';
+    check.textContent = '✓';
+    spinner.parentNode.insertBefore(check, spinner);
+  }
+  title.textContent = '¡App instalada!';
+  sub.textContent   = 'Búscala en tu pantalla de inicio';
+  // Auto-cerrar luego de 2.5 s
+  setTimeout(() => {
+    document.getElementById('pwa-installing-overlay').classList.remove('show');
+  }, 2500);
+}
+
+window.addEventListener('appinstalled', () => {
+  _showPwaInstalled();
+  localStorage.setItem('pwa_dismissed', '1');
+  _installPrompt = null;
+  _updateInstallMenuBtn();
+});
+
 document.getElementById('install-btn').addEventListener('click', async () => {
   document.getElementById('install-banner').classList.remove('show');
   if (_installPrompt) {
     _installPrompt.prompt();
     const { outcome } = await _installPrompt.userChoice;
-    if (outcome === 'accepted') localStorage.setItem('pwa_dismissed', '1');
+    if (outcome === 'accepted') {
+      localStorage.setItem('pwa_dismissed', '1');
+      _showPwaInstalling(); // mostrar "Instalando…" — appinstalled lo cerrará
+    }
     _installPrompt = null;
   }
 });
@@ -2931,6 +3006,22 @@ if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone && !l
     banner.querySelector('#install-btn').style.display = 'none';
     banner.classList.add('show');
   }, 4000);
+}
+
+// ── TECLADO MÓVIL — subir login ──────────────────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    const overlay = document.getElementById('login-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const kbHeight = window.innerHeight - window.visualViewport.height;
+    if (kbHeight > 100) {
+      overlay.style.alignItems  = 'flex-start';
+      overlay.style.paddingTop  = Math.max(12, (window.visualViewport.height - 480) / 2) + 'px';
+    } else {
+      overlay.style.alignItems  = '';
+      overlay.style.paddingTop  = '';
+    }
+  });
 }
 
 initAuth();

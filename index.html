@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Martimac">
 <link rel="apple-touch-icon" href="icon-512.png">
-<meta name="theme-color" content="#1f2937">
+<meta name="theme-color" content="#143c5a">
 <title>Catálogo Colaboradores – Martimac</title>
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,14 +17,14 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #fafafa; color: #1a1a1a; min-height: 100vh; overflow-x: hidden;
+    background: #f0f0f0; color: #1a1a1a; min-height: 100vh; overflow-x: hidden;
     overscroll-behavior-x: none; touch-action: pan-y pinch-zoom;
   }
 
   /* ========== LOGIN OVERLAY ========== */
   .login-overlay {
     position: fixed; inset: 0; z-index: 9999;
-    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    background: linear-gradient(135deg, #143c5a 0%, #374151 100%);
     display: flex; align-items: center; justify-content: center;
   }
   .login-overlay.hidden { display: none; }
@@ -36,7 +36,7 @@
   }
   .login-logo { height: 56px; margin-bottom: 8px; }
   .login-title {
-    font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 4px;
+    font-size: 20px; font-weight: 700; color: #143c5a; margin-bottom: 4px;
   }
   .login-sub {
     font-size: 13px; color: #6b7280; margin-bottom: 28px;
@@ -51,11 +51,11 @@
   .login-field input {
     width: 100%; padding: 11px 16px; border: 1.5px solid #e5e7eb;
     border-radius: 10px; font-size: 14px; outline: none;
-    transition: border-color 0.2s; color: #1f2937;
+    transition: border-color 0.2s; color: #143c5a;
   }
-  .login-field input:focus { border-color: #1f2937; }
+  .login-field input:focus { border-color: #143c5a; }
   .login-btn {
-    width: 100%; padding: 13px; background: #1f2937; color: #fff;
+    width: 100%; padding: 13px; background: #143c5a; color: #fff;
     border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
     cursor: pointer; transition: background 0.2s; margin-top: 8px;
   }
@@ -75,7 +75,7 @@
     cursor: pointer; text-align: center; transition: all 0.18s; user-select: none;
   }
   .lugar-opt:hover { border-color: #9ca3af; background: #f9fafb; }
-  .lugar-opt.selected { background: #1f2937; color: #fff; border-color: #1f2937; }
+  .lugar-opt.selected { background: #143c5a; color: #fff; border-color: #143c5a; }
 
   /* ========== TOPBAR ========== */
   .sticky-header {
@@ -89,7 +89,7 @@
   }
   .topbar-left { display: flex; align-items: center; gap: 16px; }
   .topbar-logo { height: 44px; }
-  .topbar-title { font-size: 18px; font-weight: 700; color: #1f2937; letter-spacing: 0.2px; }
+  .topbar-title { font-size: 18px; font-weight: 700; color: #143c5a; letter-spacing: 0.2px; }
   .topbar-title .small {
     display: block; font-size: 11px; font-weight: 500; color: #6b7280;
     text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px;
@@ -110,7 +110,7 @@
   .search-bar:hover { background: #e5e7eb; }
   .search-bar input {
     background: transparent; border: none; outline: none;
-    font-size: 14px; flex: 1; color: #1f2937;
+    font-size: 14px; flex: 1; color: #143c5a;
   }
   .search-bar input::placeholder { color: #9ca3af; }
   .search-clear {
@@ -133,11 +133,11 @@
   .user-chip:hover { background: #e5e7eb; }
   .user-avatar {
     width: 28px; height: 28px; border-radius: 50%;
-    background: #1f2937; color: #fff;
+    background: #143c5a; color: #fff;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; flex-shrink: 0;
   }
-  .user-name { font-size: 13px; font-weight: 600; color: #1f2937; }
+  .user-name { font-size: 13px; font-weight: 600; color: #143c5a; }
   .user-chevron { font-size: 10px; color: #6b7280; margin-left: 2px; transition: transform 0.2s; }
   .user-menu-wrap.open .user-chevron { transform: rotate(180deg); }
 
@@ -192,7 +192,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 24px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0;
   }
-  .mp-title { font-size: 17px; font-weight: 700; color: #1f2937; }
+  .mp-title { font-size: 17px; font-weight: 700; color: #143c5a; }
   .mp-close {
     background: #f3f4f6; border: none; border-radius: 50%;
     width: 32px; height: 32px; font-size: 16px; cursor: pointer;
@@ -214,7 +214,7 @@
   .mpc-num { font-size: 12px; font-weight: 700; color: #6b7280; font-family: monospace; }
   .mpc-date { font-size: 12px; color: #9ca3af; margin-top: 2px; }
   .mpc-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; flex-shrink: 0; }
-  .mpc-total { font-size: 15px; font-weight: 800; color: #1f2937; flex-shrink: 0; }
+  .mpc-total { font-size: 15px; font-weight: 800; color: #143c5a; flex-shrink: 0; }
   .mpc-arrow { font-size: 14px; color: #d1d5db; flex-shrink: 0; }
   .mp-empty  { text-align: center; padding: 60px 20px; color: #9ca3af; }
   .mp-loading { text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 14px; }
@@ -247,7 +247,7 @@
   .mpd-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; flex-shrink: 0; margin-top: 2px; }
   .mpd-body { flex: 1; overflow-y: auto; padding: 16px 22px; }
   .mpd-user { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f3f4f6; }
-  .mpd-user-name { font-size: 14px; font-weight: 700; color: #1f2937; }
+  .mpd-user-name { font-size: 14px; font-weight: 700; color: #143c5a; }
   .mpd-user-sub { font-size: 12px; color: #6b7280; margin-top: 3px; }
   .mpd-line {
     display: flex; align-items: center; gap: 12px;
@@ -264,14 +264,14 @@
     justify-content: center; font-size: 24px; flex-shrink: 0;
   }
   .mpd-line-info { flex: 1; min-width: 0; }
-  .mpd-line-name { font-size: 13px; font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mpd-line-name { font-size: 13px; font-weight: 600; color: #143c5a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mpd-line-qty { font-size: 12px; color: #6b7280; margin-top: 3px; }
-  .mpd-line-sub { font-size: 14px; font-weight: 700; color: #1f2937; flex-shrink: 0; }
+  .mpd-line-sub { font-size: 14px; font-weight: 700; color: #143c5a; flex-shrink: 0; }
   .mpd-totals { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
   .mpd-total-row { display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; margin-bottom: 5px; }
   .mpd-total-final {
     display: flex; justify-content: space-between; align-items: center;
-    background: #1f2937; border-radius: 10px; padding: 12px 16px;
+    background: #143c5a; border-radius: 10px; padding: 12px 16px;
     margin-top: 8px;
     font-size: 15px; font-weight: 800; color: #fff;
   }
@@ -308,7 +308,7 @@
   /* ── BANNER INSTALAR APP ── */
   #install-banner {
     position:fixed; bottom:0; left:0; right:0; z-index:9990;
-    background:#1f2937; color:#fff;
+    background:#143c5a; color:#fff;
     padding:14px 20px; display:none; align-items:center; gap:12px;
     box-shadow:0 -4px 20px rgba(0,0,0,.25);
     animation: slideUp .3s ease;
@@ -319,13 +319,13 @@
   #install-banner .ib-text { flex:1; min-width:0; }
   #install-banner .ib-title { font-size:14px; font-weight:700; }
   #install-banner .ib-sub { font-size:12px; color:#9ca3af; margin-top:1px; }
-  #install-banner .ib-btn { background:#fff; color:#1f2937; border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; }
+  #install-banner .ib-btn { background:#fff; color:#143c5a; border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; }
   #install-banner .ib-btn:hover { background:#f3f4f6; }
   #install-banner .ib-close { background:none; border:none; color:#9ca3af; font-size:20px; cursor:pointer; padding:0 4px; flex-shrink:0; line-height:1; }
 
   /* ── TOAST ── */
   #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    background:#143c5a;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
     box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
     white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
   #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
@@ -369,7 +369,7 @@
   .notif-panel.open { display:flex; }
   .notif-panel-hd {
     padding:14px 16px 10px; font-size:14px; font-weight:700;
-    color:#1f2937; border-bottom:1px solid #f3f4f6; flex-shrink:0;
+    color:#143c5a; border-bottom:1px solid #f3f4f6; flex-shrink:0;
     display:flex; align-items:center; justify-content:space-between;
   }
   .notif-list { overflow-y:auto; flex:1; }
@@ -420,7 +420,7 @@
 
   /* Cart button */
   .cart-btn {
-    position: relative; background: #1f2937; color: #fff;
+    position: relative; background: #143c5a; color: #fff;
     border: none; border-radius: 999px; padding: 10px 18px;
     font-size: 14px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; gap: 7px;
@@ -450,7 +450,7 @@
     flex-shrink: 0;
   }
   .home-btn.visible { display: flex; }
-  .home-btn:hover { color: #1f2937; }
+  .home-btn:hover { color: #143c5a; }
   .nav-tab {
     background: none; border: none; padding: 16px 0;
     font-size: 12px; font-weight: 700; letter-spacing: .5px;
@@ -465,10 +465,10 @@
   }
   .nav-tab:last-child::after { display: none; }
   .nav-tab.cta::after { display: none; }
-  .nav-tab:hover { color: #1f2937; }
-  .nav-tab.active { color: #1f2937; border-bottom-color: #1f2937; }
+  .nav-tab:hover { color: #143c5a; }
+  .nav-tab.active { color: #143c5a; border-bottom-color: #143c5a; }
   .nav-tab.cta {
-    background: #1f2937; color: #fff;
+    background: #143c5a; color: #fff;
     padding: 10px 20px; border-radius: 999px; font-size: 13px; letter-spacing: 0.5px;
     border-bottom: none; align-self: center; transition: background 0.2s;
     white-space: nowrap; flex-shrink: 0;
@@ -496,12 +496,12 @@
     width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.25);
     cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.85);
   }
-  .hero-dot.active { background: #1f2937; width: 28px; border-radius: 5px; }
+  .hero-dot.active { background: #143c5a; width: 28px; border-radius: 5px; }
   .hero-arrow {
     position: absolute; top: 50%; transform: translateY(-50%);
     width: 44px; height: 44px; border-radius: 50%;
     background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-    border: 1px solid rgba(0,0,0,0.05); color: #1f2937; font-size: 22px; cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.05); color: #143c5a; font-size: 22px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     z-index: 5; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
@@ -512,13 +512,13 @@
   /* ========== TAB BANNER ========== */
   .tab-banner {
     position: relative; width: 100%; max-width: 100%;
-    overflow: hidden; height: clamp(140px, 32vw, 460px);
+    overflow: hidden; height: clamp(200px, 36vw, 460px);
   }
   .tab-banner-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 
   /* ========== SECTIONS / GRIDS ========== */
   .section { padding: 36px 32px 24px; max-width: 1280px; margin: 0 auto; }
-  .section-title { font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 6px; }
+  .section-title { font-size: 22px; font-weight: 700; color: #143c5a; margin-bottom: 6px; }
   .section-sub { font-size: 14px; color: #6b7280; margin-bottom: 22px; }
   .button-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -530,8 +530,8 @@
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     transition: all 0.2s; text-align: center;
   }
-  .pill-btn:hover { border-color: #1f2937; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
-  .pill-btn.active { background: #1f2937; color: #fff; border-color: #1f2937; }
+  .pill-btn:hover { border-color: #143c5a; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+  .pill-btn.active { background: #143c5a; color: #fff; border-color: #143c5a; }
   .pill-icon { font-size: 32px; }
   .pill-name { font-size: 14px; font-weight: 600; }
   .pill-count { font-size: 11px; color: #9ca3af; }
@@ -540,7 +540,7 @@
   /* ========== PRODUCTS GRID ========== */
   .products-section { padding: 8px 32px 60px; max-width: 1280px; margin: 0 auto; }
   .products-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; }
-  .products-title { font-size: 18px; font-weight: 700; color: #1f2937; }
+  .products-title { font-size: 18px; font-weight: 700; color: #143c5a; }
   .products-count { font-size: 13px; color: #6b7280; }
   .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
   .products-grid.promo-grid { grid-template-columns: repeat(auto-fill, minmax(315px, 1fr)); gap: 22px; }
@@ -590,28 +590,30 @@
     text-transform: uppercase; letter-spacing: 0.5px;
   }
   .product-price {
-    position: absolute; bottom: 2px; left: 10px;
-    background: rgba(20,20,20,0.85); color: #fff; font-weight: 700; font-size: 13px;
-    padding: 5px 11px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-size: 19px; font-weight: 700; color: #111827;
   }
+  .product-price .price-symbol {
+    font-size: 11px; font-weight: 600; vertical-align: baseline;
+  }
+  .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
   .product-info { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
   .product-name {
-    font-size: 13.5px; font-weight: 600; color: #1f2937; line-height: 1.35;
+    font-size: 13.5px; font-weight: 600; color: #143c5a; line-height: 1.35;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden; min-height: 2.7em;
   }
   .product-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .product-meta { font-size: 11.5px; color: #6b7280; flex: 1; min-width: 0; }
-  .product-code { font-size: 8px; font-weight: 700; color: #1f2937; white-space: nowrap; }
+  .product-code { font-size: 8px; font-weight: 700; color: #143c5a; white-space: nowrap; }
 
   /* Add-to-cart button */
   .add-btn {
     width: 100%; padding: 9px; margin-top: 4px;
-    background: #f3f4f6; border: 1.5px solid #e5e7eb; border-radius: 8px;
-    font-size: 13px; font-weight: 600; color: #1f2937; cursor: pointer;
+    background: #e5e7eb; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    font-size: 13px; font-weight: 600; color: #374151; cursor: pointer;
     transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
   }
-  .add-btn:hover { background: #1f2937; color: #fff; border-color: #1f2937; }
+  .add-btn:hover { background: #143c5a; color: #fff; border-color: #143c5a; }
   .add-btn.added { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
   .add-btn-qty {
     background: #16a34a; color: #fff; border-radius: 999px;
@@ -622,7 +624,7 @@
   /* Empty / welcome */
   .empty-state { padding: 60px 20px; text-align: center; color: #6b7280; }
   .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state-title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 4px; }
+  .empty-state-title { font-size: 16px; font-weight: 600; color: #143c5a; margin-bottom: 4px; }
   .welcome-msg {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 16px;
     padding: 36px 32px; text-align: center; width: 100%;
@@ -650,7 +652,7 @@
     display: flex; align-items: center; justify-content: space-between;
     flex-shrink: 0;
   }
-  .cart-header-title { font-size: 18px; font-weight: 700; color: #1f2937; }
+  .cart-header-title { font-size: 18px; font-weight: 700; color: #143c5a; }
   .cart-close {
     background: #f3f4f6; border: none; border-radius: 50%;
     width: 34px; height: 34px; font-size: 18px; cursor: pointer;
@@ -672,7 +674,7 @@
   }
   .cart-item-img img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
   .cart-item-info { flex: 1; min-width: 0; }
-  .cart-item-name { font-size: 13px; font-weight: 600; color: #1f2937; line-height: 1.3; margin-bottom: 4px; }
+  .cart-item-name { font-size: 13px; font-weight: 600; color: #143c5a; line-height: 1.3; margin-bottom: 4px; }
   .cart-item-price { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
   .cart-qty-row { display: flex; align-items: center; gap: 8px; }
   .qty-btn {
@@ -680,17 +682,17 @@
     background: #f9fafb; font-size: 16px; cursor: pointer; font-weight: 700;
     display: flex; align-items: center; justify-content: center; transition: all 0.15s;
   }
-  .qty-btn:hover { background: #1f2937; color: #fff; border-color: #1f2937; }
+  .qty-btn:hover { background: #143c5a; color: #fff; border-color: #143c5a; }
   .qty-val { font-size: 15px; font-weight: 700; min-width: 20px; text-align: center; }
   .cart-item-remove { color: #ef4444; background: none; border: none; cursor: pointer; font-size: 13px; margin-left: auto; align-self: flex-start; padding: 2px 6px; border-radius: 4px; }
   .cart-item-remove:hover { background: #fee2e2; }
-  .cart-subtotal { font-size: 14px; font-weight: 700; color: #1f2937; margin-left: auto; }
+  .cart-subtotal { font-size: 14px; font-weight: 700; color: #143c5a; margin-left: auto; }
   .cart-footer { padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #fafafa; border-radius: 0 0 20px 20px; flex-shrink: 0; }
   .cart-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .cart-total-label { font-size: 15px; color: #6b7280; }
-  .cart-total-val { font-size: 22px; font-weight: 800; color: #1f2937; }
+  .cart-total-val { font-size: 22px; font-weight: 800; color: #143c5a; }
   .checkout-btn {
-    width: 100%; padding: 14px; background: #1f2937; color: #fff;
+    width: 100%; padding: 14px; background: #143c5a; color: #fff;
     border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
     cursor: pointer; transition: background 0.2s;
   }
@@ -731,7 +733,7 @@
   .qadd-close-btn:hover { background: #fff; }
   .qadd-body { padding: 20px 24px 24px; }
   .qadd-brand { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
-  .qadd-name { font-size: 16px; font-weight: 700; color: #1f2937; line-height: 1.3; margin-bottom: 4px; }
+  .qadd-name { font-size: 16px; font-weight: 700; color: #143c5a; line-height: 1.3; margin-bottom: 4px; }
   .qadd-price-unit { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
   .qadd-qty-row {
     display: flex; align-items: center; justify-content: center; gap: 0;
@@ -739,19 +741,16 @@
   }
   .qadd-qty-btn {
     width: 44px; height: 44px; border-radius: 10px; border: none;
-    background: #fff; font-size: 22px; font-weight: 300; cursor: pointer; color: #1f2937;
+    background: #fff; font-size: 22px; font-weight: 300; cursor: pointer; color: #143c5a;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.15s;
   }
-  .qadd-qty-btn:hover { background: #1f2937; color: #fff; box-shadow: none; }
+  .qadd-qty-btn:hover { background: #143c5a; color: #fff; box-shadow: none; }
   .qadd-qty-val {
-    font-size: 22px; font-weight: 800; color: #1f2937;
+    font-size: 22px; font-weight: 800; color: #143c5a;
     min-width: 64px; text-align: center;
   }
-  .qadd-subtotal {
-    text-align: center; font-size: 16px; color: #6b7280; margin-bottom: 20px;
-  }
-  .qadd-subtotal strong { color: #1f2937; font-size: 26px; font-weight: 800; }
+  .qadd-subtotal { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
   .qadd-btns { display: flex; gap: 10px; }
   .qadd-btn-sec {
     flex: 1; padding: 12px; background: #f3f4f6; border: none; border-radius: 12px;
@@ -759,7 +758,7 @@
   }
   .qadd-btn-sec:hover { background: #e5e7eb; }
   .qadd-btn-pri {
-    flex: 1.6; padding: 12px; background: #1f2937; color: #fff; border: none;
+    flex: 1.6; padding: 12px; background: #143c5a; color: #fff; border: none;
     border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;
   }
   .qadd-btn-pri:hover { background: #111827; }
@@ -785,14 +784,14 @@
     padding: 12px 16px; margin: 0 28px 14px;
   }
   .modal-ft { padding: 0 28px 24px; flex-shrink: 0; }
-  .modal-title { font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 6px; }
+  .modal-title { font-size: 20px; font-weight: 700; color: #143c5a; margin-bottom: 6px; }
   .modal-sub { font-size: 14px; color: #6b7280; margin-bottom: 0; }
   .modal-summary {
     background: #f9fafb; border-radius: 12px; padding: 16px;
     margin-bottom: 20px; max-height: 200px; overflow-y: auto;
   }
   .modal-summary-item { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #374151; }
-  .modal-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1f2937; padding-top: 10px; border-top: 1.5px solid #e5e7eb; margin-top: 6px; margin-bottom: 14px; }
+  .modal-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #143c5a; padding-top: 10px; border-top: 1.5px solid #e5e7eb; margin-top: 6px; margin-bottom: 14px; }
   .modal-notes { margin-bottom: 20px; }
   .modal-notes label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
   .modal-notes textarea {
@@ -800,12 +799,12 @@
     font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; outline: none;
     transition: border-color 0.2s;
   }
-  .modal-notes textarea:focus { border-color: #1f2937; }
+  .modal-notes textarea:focus { border-color: #143c5a; }
   .modal-btns { display: flex; gap: 12px; }
   .modal-cancel { flex: 1; padding: 13px; background: #f3f4f6; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; color: #374151; }
   .modal-cancel:hover { background: #e5e7eb; }
   .modal-confirm {
-    flex: 2; padding: 13px; background: #1f2937; color: #fff; border: none;
+    flex: 2; padding: 13px; background: #143c5a; color: #fff; border: none;
     border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.2s;
   }
   .modal-confirm:hover { background: #111827; }
@@ -814,7 +813,7 @@
   /* Success state */
   .order-success { text-align: center; padding: 40px 28px; flex: 1; }
   .order-success-icon { font-size: 64px; margin-bottom: 16px; }
-  .order-success-title { font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 8px; }
+  .order-success-title { font-size: 22px; font-weight: 700; color: #143c5a; margin-bottom: 8px; }
   .order-success-sub { font-size: 14px; color: #6b7280; line-height: 1.6; }
 
   /* ========== RESPONSIVE ========== */
@@ -836,6 +835,7 @@
     /* Hero */
     #banner-area { width: 100%; }
     .hero-rotator { width: 100%; height: auto; aspect-ratio: 1200 / 424; margin: 0; }
+    .tab-banner   { width: 100%; height: auto; aspect-ratio: 1200 / 424; }
     .hero-arrow { width: 36px; height: 36px; font-size: 16px; }
     .hero-arrow.prev { left: 10px; }
     .hero-arrow.next { right: 10px; }
@@ -858,6 +858,14 @@
     /* User */
     .user-name { display: inline; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .user-chip { padding: 6px 10px 6px 8px; }
+
+    /* Qadd card */
+    .qadd-card { max-width: 96vw; }
+    .qadd-img-wrap { max-height: 288px; }
+    .qadd-body { padding: 24px 28px 28px; }
+    .qadd-name { font-size: 19px; }
+    .qadd-qty-btn { width: 46px; height: 46px; font-size: 22px; }
+    .qadd-qty-val { font-size: 22px; }
   }
 
 </style>
@@ -884,8 +892,8 @@
       <div style="display:flex;align-items:center;gap:12px;margin:22px 0 18px;">
         <div style="flex:1;height:1px;background:#f3f4f6;"></div>
       </div>
-      <div style="font-size:15px;font-weight:700;color:#1f2937;margin-bottom:12px;text-align:center;">Si no estás registrado</div>
-      <button class="login-btn" style="background:#f3f4f6;color:#1f2937;" onclick="showRegisterScreen()">¡Regístrate!</button>
+      <div style="font-size:15px;font-weight:700;color:#143c5a;margin-bottom:12px;text-align:center;">Si no estás registrado</div>
+      <button class="login-btn" style="background:#f3f4f6;color:#143c5a;" onclick="showRegisterScreen()">¡Regístrate!</button>
     </div>
 
     <!-- PANTALLA B: Registro completo -->
@@ -924,7 +932,7 @@
 <div id="welcome-popup" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:24px;padding:44px 40px;text-align:center;max-width:340px;width:90%;box-shadow:0 32px 80px rgba(0,0,0,0.3);">
     <div style="font-size:52px;margin-bottom:16px;">👋</div>
-    <div style="font-size:26px;font-weight:800;color:#1f2937;margin-bottom:16px;">¡Hola!</div>
+    <div style="font-size:26px;font-weight:800;color:#143c5a;margin-bottom:16px;">¡Hola!</div>
     <div id="welcome-name" style="font-size:26px;font-weight:800;color:#1d4ed8;margin-bottom:8px;"></div>
   </div>
 </div>
@@ -1079,7 +1087,7 @@
 <div class="modal-overlay" id="del-order-modal" style="z-index:900">
   <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
     <div style="font-size:34px;margin-bottom:12px;" id="del-order-icon">🗑</div>
-    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:8px;">¿Eliminar este pedido?</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:8px;">¿Eliminar este pedido?</div>
     <div style="font-size:14px;color:#6b7280;margin-bottom:8px;" id="del-order-msg"></div>
     <div style="display:flex;gap:10px;margin-top:20px;">
       <button style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" onclick="closeDelOrderModal()">Cancelar</button>
@@ -1104,7 +1112,7 @@
     <div class="cart-footer" id="cart-footer" style="display:none;">
       <div class="cart-total-row">
         <span class="cart-total-label">Total</span>
-        <span class="cart-total-val" id="cart-total">₡0</span>
+        <span class="cart-total-val" id="cart-total"><span class="col-sign">₡</span>0</span>
       </div>
       <button class="checkout-btn" id="cart-send-btn" onclick="openOrderModal()">Enviar pedido a Facturación →</button>
     </div>
@@ -1153,7 +1161,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const PRODUCTS = []; // cargado desde Supabase
 const SLIDES = [{"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Aloe.webp", "alt": "Gel Aloe Vera BioLand", "bg": "#e8f3df"}, {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Hialuronico.webp", "alt": "Hialurónico - Piel Radiante", "bg": "#deeefb"}, {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Infusion%20de%20romero.webp", "alt": "Infusión de Romero", "bg": "#ede4f5"}];
 const BANNERS = {"ALIMENTOS": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Palito%20.webp", "alt": "Palitos Seed", "bg": "#e7202c"}, "CAPILAR": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Infusion%20de%20romero.webp", "alt": "Infusión de Romero", "bg": "#ede4f5"}, "FACIAL": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Vitamina%20C.webp", "alt": "Vitamina C BioLand", "bg": "#fff3e0"}, "CORPORAL": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Vegetus.webp", "alt": "Vegetus", "bg": "#f3f6e8"}, "PACKS": {"img": "", "alt": "Packs Especiales", "bg": "#f4ede0"}};
-const TABS = {"ALIMENTOS": {"type": "category", "label": "Categoría", "options": ["Galletas", "Granolas y Barras", "Loncheras", "Palitos", "Primarios", "Bebida"], "icons": {"Galletas": "🍪", "Granolas y Barras": "🥣", "Loncheras": "🎒", "Palitos": "🥨", "Primarios": "🌽", "Bebida": "🥤"}, "match_field": "c", "spc_filter": "Alimentos"}, "CAPILAR": {"type": "brand", "label": "Marca", "options": ["BIOLAND", "TERRE DE VIE", "RESERVE 11"], "icons": {"BIOLAND": "🌿", "TERRE DE VIE": "🌍", "RESERVE 11": "💎"}, "match_field": "b", "cat_filter": "Capilar"}, "FACIAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Cuidado", "Limpieza", "Hidratante"], "icons": {"Cuidado": "✨", "Limpieza": "🧴", "Hidratante": "💧"}, "match_field": "s", "cat_filter": "Facial"}, "CORPORAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Pastillas", "Líquido", "Solar"], "icons": {"Pastillas": "🧼", "Líquido": "🧴", "Solar": "☀️"}, "match_field": "s", "cat_filter": "Corporal"}, "PACKS": {"type": "packs", "label": "Pack", "options": [], "icons": {}, "match_field": "id", "product_ids": ["PT020021", "PT088246", "PT099265"]}, "PROMOCIONES": {"type": "promo", "label": "Promoción", "options": [], "icons": {}, "match_field": "c", "cat_filter": "Promoción"}};
+const TABS = {"ALIMENTOS": {"type": "category", "label": "Categoría", "options": ["Galletas", "Granolas y Barras", "Loncheras", "Palitos", "Primarios", "Bebida"], "icons": {"Galletas": "🍪", "Granolas y Barras": "🥣", "Loncheras": "🎒", "Palitos": "🥨", "Primarios": "🌽", "Bebida": "🥤"}, "match_field": "c", "spc_filter": "Alimentos"}, "CAPILAR": {"type": "brand", "label": "Marca", "options": ["BIOLAND", "TERRE DE VIE", "RESERVE 11"], "icons": {"BIOLAND": "🌿", "TERRE DE VIE": "🌍", "RESERVE 11": "💎"}, "match_field": "b", "cat_filter": "Capilar"}, "FACIAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Cuidado", "Limpieza", "Hidratante"], "icons": {"Cuidado": "✨", "Limpieza": "🧴", "Hidratante": "💧"}, "match_field": "s", "cat_filter": "Facial"}, "CORPORAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Pastillas", "Líquido", "Solar"], "icons": {"Pastillas": "🧼", "Líquido": "🧴", "Solar": "☀️"}, "match_field": "s", "cat_filter": "Corporal"}, "PACKS": {"type": "category", "label": "Pack", "options": [], "icons": {}, "match_field": "c", "cat_filter": "Packs"}, "PROMOCIONES": {"type": "promo", "label": "Promoción", "options": [], "icons": {}, "match_field": "c", "cat_filter": "Promoción"}};
 
 // ============================================================
 //  ESTADO DE LA APP
@@ -1176,14 +1184,18 @@ async function initAuth() {
     try {
       const session = JSON.parse(saved);
       if (session.nombre && session.cedula && session.departamento && session.lugar) {
-        // Verificar que el usuario sigue existiendo en la DB antes de restaurar
-        const { data } = await sb.from('usuarios').select('cedula').eq('cedula', session.cedula).maybeSingle();
-        if (data) {
-          onLogin(session, true);
-          return;
-        }
-        // Usuario eliminado → limpiar sesión local y mostrar login
-        localStorage.removeItem('catalogo_session');
+        // Restaurar sesión de inmediato sin esperar la red
+        onLogin(session, true);
+        // Verificar en segundo plano: si el usuario fue eliminado, cerrar sesión
+        sb.from('usuarios').select('cedula').eq('cedula', session.cedula).maybeSingle()
+          .then(({ data }) => {
+            if (!data) {
+              localStorage.removeItem('catalogo_session');
+              doLogout();
+            }
+          })
+          .catch(() => { /* sin red → mantener sesión */ });
+        return;
       }
     } catch(e) {}
   }
@@ -1221,7 +1233,9 @@ async function onLogin(session, isRestore = false) {
 
   // Actualizar UI topbar
   const nombre = session.nombre;
-  document.getElementById('user-name').textContent = nombre;
+  const _nw = nombre.trim().split(/\s+/);
+  const _shortName = _nw.length >= 3 ? _nw[0] + ' ' + _nw[_nw.length - 2] : nombre;
+  document.getElementById('user-name').textContent = _shortName;
   document.getElementById('user-avatar').textContent = nombre.charAt(0).toUpperCase();
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('cart-toggle').style.display = 'flex';
@@ -1478,7 +1492,7 @@ function renderMyOrders(list) {
         <div class="mpc-date">${fecha}</div>
       </div>
       <span class="mpc-status" style="${sColor}">${sLabel}</span>
-      <div class="mpc-total">₡${total}</div>
+      <div class="mpc-total"><span class="col-sign">₡</span>${total}</div>
       <button class="mpc-del-btn" onclick="event.stopPropagation();pedidoDeleteConfirm(${idx})" title="Eliminar de mi historial">🗑</button>
       <span class="mpc-arrow">›</span>
     </div>`;
@@ -1556,9 +1570,9 @@ function openPedidoDet(idx) {
       ${imgHtml}
       <div class="mpd-line-info">
         <div class="mpd-line-name">${escHtml(l.producto_nombre || '')}</div>
-        <div class="mpd-line-qty">Cant: ${l.cantidad} &nbsp;·&nbsp; ₡${unitPrice.toLocaleString('es-CR')} c/u</div>
+        <div class="mpd-line-qty">Cant: ${l.cantidad} &nbsp;·&nbsp; <span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
       </div>
-      <div class="mpd-line-sub">₡${(l.subtotal || 0).toLocaleString('es-CR')}</div>
+      <div class="mpd-line-sub"><span class="col-sign">₡</span>${(l.subtotal || 0).toLocaleString('es-CR')}</div>
     </div>`;
   }).join('');
 
@@ -1569,9 +1583,9 @@ function openPedidoDet(idx) {
     </div>
     ${linesHtml}
     <div class="mpd-totals">
-      <div class="mpd-total-row"><span>Subtotal sin IVA</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span></div>
-      <div class="mpd-total-row"><span>IVA 13%</span><span>₡${iva.toLocaleString('es-CR')}</span></div>
-      <div class="mpd-total-final"><span>TOTAL</span><span>₡${total}</span></div>
+      <div class="mpd-total-row"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
+      <div class="mpd-total-row"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
+      <div class="mpd-total-final"><span>TOTAL</span><span><span class="col-sign">₡</span>${total}</span></div>
     </div>`;
 
   document.getElementById('modal-pedido-det').classList.add('open');
@@ -1804,10 +1818,14 @@ function closeCart() {
 var _qaddId = null;
 var _qaddWasNew = false; // true si el producto fue recién agregado en este popup
 
+var _qaddOrigQty = null;
+
 function openQadd(productId, wasNew) {
   closeCart();
   _qaddId = productId;
   _qaddWasNew = wasNew === true;
+  const _existingItem = cart.find(i => i.product.id === productId);
+  _qaddOrigQty = (_existingItem && !_qaddWasNew) ? _existingItem.qty : null;
   renderQadd();
   document.getElementById('qadd-overlay').classList.add('open');
 }
@@ -1819,15 +1837,22 @@ function closeQadd() {
     updateCartBadge();
     refreshAddButtons();
   }
+  // Si era un producto existente y no confirmó → restaurar cantidad original
+  if (_qaddOrigQty !== null && _qaddId) {
+    const item = cart.find(i => i.product.id === _qaddId);
+    if (item) { item.qty = _qaddOrigQty; updateCartBadge(); refreshAddButtons(); }
+  }
   document.getElementById('qadd-overlay').classList.remove('open');
   _qaddId = null;
   _qaddWasNew = false;
+  _qaddOrigQty = null;
 }
 
 function confirmQadd() {
+  _qaddOrigQty = null; // confirmar: no revertir al cerrar
   _qaddWasNew = false;
   saveCart();
-  refreshAddButtons(); // pintar verde solo al confirmar
+  refreshAddButtons();
   document.getElementById('qadd-overlay').classList.remove('open');
   _qaddId = null;
 }
@@ -1838,7 +1863,6 @@ function updateQaddQty(delta) {
   if (!item) return;
   item.qty = Math.max(1, item.qty + delta);
   updateCartBadge();
-  if (!_qaddWasNew) refreshAddButtons(); // actualizar badge si ya estaba confirmado
   renderQadd();
 }
 
@@ -1848,8 +1872,8 @@ function renderQadd() {
   if (!item) return;
   const p = item.product;
   const pIva       = priceIva(p);
-  const priceLabel = p.pr > 0 ? '&#x20A1;' + pIva.toLocaleString('es-CR') : 'Consultar';
-  const subtotal   = p.pr > 0 ? '&#x20A1;' + (pIva * item.qty).toLocaleString('es-CR') : '—';
+  const priceLabel = p.pr > 0 ? '<span class="col-sign">₡</span>' + pIva.toLocaleString('es-CR') : 'Consultar';
+  const subtotal   = p.pr > 0 ? (pIva * item.qty).toLocaleString('es-CR') : '—';
   const emoji = (p.b === 'SEED' || p.b === 'SODIET') ? '🍪' : '🧴';
   const totalItems = cart.reduce(function(s, i) { return s + i.qty; }, 0);
 
@@ -1866,16 +1890,16 @@ function renderQadd() {
     '<div class="qadd-body">' +
       (p.b ? '<div class="qadd-brand">' + escHtml(p.b) + '</div>' : '') +
       '<div class="qadd-name">' + escHtml(p.n) + '</div>' +
-      '<div class="qadd-price-unit">' + priceLabel + ' por unidad · ' + escHtml(p.id) + '</div>' +
+      '<div class="qadd-price-unit" style="text-align:right;">' + priceLabel + ' por unidad · ' + escHtml(p.id) + '</div>' +
       '<div class="qadd-qty-row">' +
         '<button class="qadd-qty-btn" onclick="updateQaddQty(-1)">−</button>' +
         '<span class="qadd-qty-val">' + item.qty + '</span>' +
         '<button class="qadd-qty-btn" onclick="updateQaddQty(1)">+</button>' +
       '</div>' +
-      '<div class="qadd-subtotal">Subtotal: <strong>' + subtotal + '</strong></div>' +
+      '<div class="qadd-subtotal" style="margin-bottom:4px;text-align:right;">Subtotal</div>' +
+      '<div style="font-size:26px;font-weight:800;color:#143c5a;margin-bottom:16px;text-align:right;">' + (subtotal === '—' ? '—' : '<span class="col-sign">₡</span>' + subtotal) + '</div>' +
       '<div class="qadd-btns">' +
-        '<button class="qadd-btn-sec" onclick="confirmQadd()" style="background:#16a34a;color:#fff;">Agregar</button>' +
-        '<button class="qadd-btn-pri" onclick="confirmQadd();openCart()">Ver pedido (' + totalItems + ')</button>' +
+        '<button class="qadd-btn-sec" onclick="confirmQadd()" style="background:#16a34a;color:#fff;">' + (_qaddOrigQty !== null && item.qty !== _qaddOrigQty ? 'Actualizar pedido' : 'Agregar al pedido') + '</button>' +
       '</div>' +
     '</div>';
 }
@@ -1890,7 +1914,7 @@ function renderCartItems() {
   footer.style.display = 'block';
   const activeItems = cart.filter(i => !i.product.agotado);
   const total = activeItems.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
-  document.getElementById('cart-total').textContent = '₡' + total.toLocaleString('es-CR');
+  document.getElementById('cart-total').innerHTML = '<span class="col-sign">₡</span>' + total.toLocaleString('es-CR');
 
   container.innerHTML = cart.map(item => {
     const p = item.product;
@@ -1909,7 +1933,7 @@ function renderCartItems() {
             <div class="cart-item-name">${escHtml(p.n)}
               <span style="display:inline-block;margin-left:6px;background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;vertical-align:middle;letter-spacing:.4px">AGOTADO</span>
             </div>
-            <div class="cart-item-price" style="text-decoration:line-through;color:#9ca3af">₡${unitPrice.toLocaleString('es-CR')} c/u</div>
+            <div class="cart-item-price" style="text-decoration:line-through;color:#9ca3af"><span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
           </div>
           <button class="cart-item-remove" onclick="removeFromCart('${p.id}')" title="Eliminar">✕</button>
         </div>`;
@@ -1920,13 +1944,13 @@ function renderCartItems() {
         <div class="cart-item-img">${imgHtml}</div>
         <div class="cart-item-info">
           <div class="cart-item-name">${escHtml(p.n)}</div>
-          <div class="cart-item-price">₡${unitPrice.toLocaleString('es-CR')} c/u</div>
+          <div class="cart-item-price"><span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
           <div class="cart-qty-row">
             <button class="qty-btn" onclick="updateQty('${p.id}',-1)">−</button>
             <span class="qty-val">${item.qty}</span>
             <button class="qty-btn" onclick="updateQty('${p.id}',1)">+</button>
             <span style="flex:1"></span>
-            <span class="cart-subtotal">₡${sub}</span>
+            <span class="cart-subtotal"><span class="col-sign">₡</span>${sub}</span>
           </div>
         </div>
         <button class="cart-item-remove" onclick="removeFromCart('${p.id}')" title="Eliminar">✕</button>
@@ -1959,7 +1983,7 @@ function showOrderForm() {
   const itemsHtml = activeCart.map(item => `
     <div class="modal-summary-item">
       <span>${escHtml(item.product.n)} × ${item.qty}</span>
-      <span>₡${(priceIva(item.product) * item.qty).toLocaleString('es-CR')}</span>
+      <span><span class="col-sign">₡</span>${(priceIva(item.product) * item.qty).toLocaleString('es-CR')}</span>
     </div>`).join('');
 
   document.getElementById('modal-card').innerHTML = `
@@ -1970,12 +1994,12 @@ function showOrderForm() {
     <div class="modal-items">${itemsHtml}</div>
     <div class="modal-ft">
       <div class="modal-summary-item" style="color:#6b7280;">
-        <span>Subtotal (sin IVA)</span><span>₡${subtotalSinIva.toLocaleString('es-CR')}</span>
+        <span>Subtotal (sin IVA)</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span>
       </div>
       <div class="modal-summary-item" style="color:#6b7280;">
-        <span>IVA 13%</span><span>₡${ivaAmt.toLocaleString('es-CR')}</span>
+        <span>IVA 13%</span><span><span class="col-sign">₡</span>${ivaAmt.toLocaleString('es-CR')}</span>
       </div>
-      <div class="modal-total"><span>TOTAL</span><span>₡${total.toLocaleString('es-CR')}</span></div>
+      <div class="modal-total"><span>TOTAL</span><span><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span></div>
       <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px 16px;margin-bottom:10px;text-align:center">
         <div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Método de pago</div>
         <div style="font-size:13px;font-weight:600;color:#1e3a8a">Transferencia Bancaria Martimac</div>
@@ -2142,7 +2166,7 @@ async function descargarCopiaRecibo(orderData) {
     const lh = 36, lw = lh * (logoEl.width / logoEl.height);
     ctx.drawImage(logoEl, PAD, (88 - lh) / 2, lw, lh);
   } else {
-    ctx.fillStyle = '#1f2937';
+    ctx.fillStyle = '#143c5a';
     ctx.font = 'bold 18px system-ui, sans-serif';
     ctx.textBaseline = 'middle';
     ctx.fillText('Martimac Distribuidora', PAD, 44);
@@ -2150,7 +2174,7 @@ async function descargarCopiaRecibo(orderData) {
 
   // Número pedido y fecha (derecha)
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#1f2937';
+  ctx.fillStyle = '#143c5a';
   ctx.font = 'bold 13px system-ui, sans-serif';
   ctx.fillText('#' + id.slice(0, 8).toUpperCase(), W - PAD, 26);
   ctx.fillStyle = '#9ca3af';
@@ -2184,7 +2208,7 @@ async function descargarCopiaRecibo(orderData) {
   let y = 104;
 
   // Info usuario
-  ctx.fillStyle = '#1f2937'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#143c5a'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
   ctx.fillText(usuario.nombre, PAD, y);
   ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui, sans-serif';
   ctx.fillText(usuario.departamento + (usuario.lugar ? '  ·  ' + usuario.lugar : ''), PAD, y + 18);
@@ -2225,7 +2249,7 @@ async function descargarCopiaRecibo(orderData) {
 
     const tx = PAD + IMG_S + 12;
     // Nombre (truncar si necesario)
-    ctx.fillStyle = '#1f2937'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#143c5a'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
     let name = p.n; const maxW = W - tx - PAD - 90;
     while (ctx.measureText(name).width > maxW && name.length > 6) name = name.slice(0, -1);
     if (name !== p.n) name += '…';
@@ -2235,7 +2259,7 @@ async function descargarCopiaRecibo(orderData) {
     ctx.fillText('Cant: ' + item.qty + '   ₡' + priceIva(p).toLocaleString('es-CR') + ' c/u', tx, y + 34);
 
     // Subtotal
-    ctx.textAlign = 'right'; ctx.fillStyle = '#1f2937';
+    ctx.textAlign = 'right'; ctx.fillStyle = '#143c5a';
     ctx.font = 'bold 14px system-ui, sans-serif';
     ctx.fillText('₡' + (priceIva(p) * item.qty).toLocaleString('es-CR'), W - PAD, y + 26);
     ctx.textAlign = 'left';
@@ -2267,7 +2291,7 @@ async function descargarCopiaRecibo(orderData) {
 
   // Caja TOTAL
   rr(PAD, y, W - PAD * 2, 46, 10);
-  ctx.fillStyle = '#1f2937'; ctx.fill();
+  ctx.fillStyle = '#143c5a'; ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = 'bold 15px system-ui, sans-serif'; ctx.textBaseline = 'middle';
   ctx.fillText('TOTAL', PAD + 16, y + 23);
   ctx.textAlign = 'right'; ctx.font = 'bold 18px system-ui, sans-serif';
@@ -2320,7 +2344,7 @@ async function descargarCopiaRecibo(orderData) {
 //  RENDERIZAR TARJETA DE PRODUCTO (función centralizada)
 // ============================================================
 function renderCard(p) {
-  const priceLabel = p.pr > 0 ? '₡' + priceIva(p).toLocaleString('es-CR') : 'Consultar';
+  const priceLabel = p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar';
   const emoji = p.b === 'SEED' || p.b === 'SODIET' ? '🍪' : '🧴';
   return `
     <div class="product-card">
@@ -2328,13 +2352,12 @@ function renderCard(p) {
         ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" onclick="event.stopPropagation();openLightbox('${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='block'">` : ''}
         <div class="product-img-placeholder" style="${p.img?'display:none':''}"> ${emoji}</div>
         ${p.b ? `<span class="product-brand-tag">${escHtml(p.b)}</span>` : ''}
-        <span class="product-price">${priceLabel}</span>
       </div>
       <div class="product-info">
         <div class="product-name">${escHtml(p.n)}</div>
         <div class="product-meta-row">
-          <div class="product-meta">${escHtml(p.c||'')}${p.s?' · '+escHtml(p.s):''}</div>
           <div class="product-code">${escHtml(p.id)}</div>
+          <div class="product-price">${priceLabel}</div>
         </div>
         <button class="add-btn" data-product-id="${escAttr(p.id)}" onclick="addToCart('${p.id.replace(/'/g,"\'")}')">
           Agregar

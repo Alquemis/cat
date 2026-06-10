@@ -11,23 +11,23 @@
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
 
   /* ── LOGIN ── */
-  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1f2937,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#143c5a,#374151);display:flex;align-items:center;justify-content:center; }
   .login-overlay.hidden { display:none; }
   .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:400px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
   .login-logo { height:52px;margin-bottom:10px; }
-  .login-title { font-size:20px;font-weight:700;color:#1f2937;margin-bottom:4px; }
+  .login-title { font-size:20px;font-weight:700;color:#143c5a;margin-bottom:4px; }
   .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
   .login-field { margin-bottom:16px;text-align:left; }
   .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
   .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
-  .login-field input:focus { border-color:#1f2937; }
-  .login-btn { width:100%;padding:13px;background:#1f2937;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s; }
+  .login-field input:focus { border-color:#143c5a; }
+  .login-btn { width:100%;padding:13px;background:#143c5a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s; }
   .login-btn:hover { background:#111827; }
   .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
   .login-error.show { display:block; }
 
   /* ── TOPBAR ── */
-  .topbar { background:#1f2937;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
+  .topbar { background:#143c5a;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
   .topbar-brand { font-size:17px;font-weight:700; }
   .topbar-brand span { font-size:11px;font-weight:400;color:#9ca3af;margin-left:10px; }
   .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s; }
@@ -36,8 +36,8 @@
   /* ── TABS ── */
   .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;align-items:center;gap:0; }
   .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s;display:flex;align-items:center;gap:8px; }
-  .page-tab:hover { color:#1f2937; }
-  .page-tab.active { color:#1f2937;border-bottom:3px solid #1f2937; }
+  .page-tab:hover { color:#143c5a; }
+  .page-tab.active { color:#143c5a;border-bottom:3px solid #143c5a; }
   .tab-badge { background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px; }
   .tab-badge.hidden { display:none; }
 
@@ -47,19 +47,19 @@
   /* ── TOOLBAR ── */
   .toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px; }
   .search-field { flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
-  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#1f2937; }
-  .filter-select { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#1f2937;cursor:pointer; }
-  .filter-date { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#1f2937; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#143c5a; }
+  .filter-select { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#143c5a;cursor:pointer; }
+  .filter-date { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#143c5a; }
 
   /* ── TABLE ── */
   .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
   table { width:100%;border-collapse:collapse; }
   thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;white-space:nowrap; }
   .th-sort { cursor:pointer;user-select:none; }
-  .th-sort:hover { background:#f3f4f6;color:#1f2937; }
+  .th-sort:hover { background:#f3f4f6;color:#143c5a; }
   .sort-icon { font-size:10px;color:#d1d5db;margin-left:3px; }
-  .sort-asc .sort-icon::after  { content:'↑';color:#1f2937; }
-  .sort-desc .sort-icon::after { content:'↓';color:#1f2937; }
+  .sort-asc .sort-icon::after  { content:'↑';color:#143c5a; }
+  .sort-desc .sort-icon::after { content:'↓';color:#143c5a; }
   .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
   tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
   tbody tr:last-child td { border-bottom:none; }
@@ -67,7 +67,7 @@
 
   /* ── BOTONES ── */
   .btn { padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;white-space:nowrap; }
-  .btn-dark { background:#1f2937;color:#fff; }
+  .btn-dark { background:#143c5a;color:#fff; }
   .btn-dark:hover { background:#111827; }
   .btn-ghost { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
   .btn-ghost:hover { background:#e5e7eb; }
@@ -88,7 +88,7 @@
   .modal-overlay.open { display:flex; }
   .modal-card { background:#fff;border-radius:20px;padding:32px;width:100%;max-width:860px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
   .modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px; }
-  .modal-title { font-size:18px;font-weight:700;color:#1f2937; }
+  .modal-title { font-size:18px;font-weight:700;color:#143c5a; }
   .modal-fecha { font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px; }
   .detail-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px; }
   .detail-grid div { background:#f9fafb;border-radius:8px;padding:6px 12px; }
@@ -97,12 +97,12 @@
   /* ── STAT ── */
   .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px; }
   .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
-  .stat-value { font-size:22px;font-weight:800;color:#1f2937; }
+  .stat-value { font-size:22px;font-weight:800;color:#143c5a; }
   .stat-label { font-size:12px;color:#6b7280;margin-top:2px; }
 
   /* ── TOAST ── */
   #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:#1f2937;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    background:#143c5a;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
     box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
     white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
   #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
@@ -121,6 +121,7 @@
     .table-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
     table { min-width:520px; }
   }
+  .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
 </style>
 </head>
 <body>
@@ -183,7 +184,7 @@
       <div class="stat-label" style="color:#dc2626">Cancelados</div>
     </div>
     <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;">
-      <div class="stat-value" style="color:#15803d" id="chip-total-facturado">₡0</div>
+      <div class="stat-value" style="color:#15803d" id="chip-total-facturado"><span class="col-sign">₡</span>0</div>
       <div class="stat-label" style="color:#15803d">Total facturado</div>
     </div>
   </div>
@@ -257,7 +258,7 @@
 <!-- ── CONFIGURACIÓN ── -->
 <div id="page-settings" class="container" style="display:none">
   <div style="max-width:480px;background:#fff;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.07)">
-    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:6px">Acceso a Facturación</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:6px">Acceso a Facturación</div>
     <div style="font-size:13px;color:#6b7280;margin-bottom:24px">Cambia el usuario y contraseña de este panel de facturación.</div>
     <div style="margin-bottom:14px">
       <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Usuario</label>
@@ -288,7 +289,7 @@
 <div class="modal-overlay" id="cancel-confirm-modal">
   <div class="modal-card" onclick="event.stopPropagation()" style="max-width:380px;padding:28px 28px 24px;text-align:center;">
     <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
-    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:8px;">¿Cancelar este pedido?</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:8px;">¿Cancelar este pedido?</div>
     <div style="font-size:14px;color:#6b7280;margin-bottom:24px;" id="cancel-confirm-msg"></div>
     <div style="display:flex;gap:10px;">
       <button class="btn btn-secondary" style="flex:1;padding:12px;" onclick="closeCancelConfirm()">No, volver</button>
@@ -497,11 +498,11 @@ function renderPendientes(list) {
       '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
       '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
       '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
-      '<td style="font-weight:700">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td style="font-weight:700"><span class="col-sign">₡</span>' + (o.total||0).toLocaleString('es-CR') + '</td>' +
       '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'pend\')">Ver detalle</button></td>' +
-      '<td style="display:flex;gap:6px;align-items:center">' +
+      '<td style="display:flex;gap:20px;align-items:center">' +
         '<button class="btn btn-green" id="listo-' + o.id + '" onclick="marcarListo(\'' + o.id + '\')">✓ Listo</button>' +
-        '<button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'pend\')">Cancelar</button>' +
+        '<button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'pend\')" style="width:36px;padding:8px 0;text-align:center;font-size:15px;flex-shrink:0;" title="Cancelar pedido">✕</button>' +
       '</td>' +
     '</tr>';
   }).join('');
@@ -586,14 +587,14 @@ function recalcStats() {
   const count    = allPendientes.length;
   const totalPend = allPendientes.reduce((s, o) => s + (o.total || 0), 0);
   document.getElementById('stat-count').textContent = count;
-  document.getElementById('stat-total').textContent = '₡' + totalPend.toLocaleString('es-CR');
+  document.getElementById('stat-total').innerHTML = '<span class="col-sign">₡</span>' + totalPend.toLocaleString('es-CR');
   const badge = document.getElementById('badge-pendientes');
   badge.textContent = count; badge.classList.toggle('hidden', count === 0);
 
   const facturados = allHistorial.filter(o => o.estado === 'facturado');
   const cancelados  = allHistorial.filter(o => o.estado === 'cancelado');
   const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
-  document.getElementById('chip-total-facturado').textContent = '₡' + totalFact.toLocaleString('es-CR');
+  document.getElementById('chip-total-facturado').innerHTML = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
   document.getElementById('chip-total-cancelados').textContent = cancelados.length;
   document.getElementById('chip-total-pedidos').textContent   = allPendientes.length + allHistorial.length;
 }
@@ -656,7 +657,7 @@ function renderHistorial(list) {
       '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
       '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
       '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
-      '<td style="font-weight:700;' + (cancelado ? 'color:#dc2626;text-decoration:line-through' : '') + '">₡' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td style="font-weight:700;' + (cancelado ? 'color:#dc2626;text-decoration:line-through' : '') + '"><span class="col-sign">₡</span>' + (o.total||0).toLocaleString('es-CR') + '</td>' +
       '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'hist\')">Ver detalle</button></td>' +
       accionBtn +
     '</tr>';
@@ -680,7 +681,7 @@ function openDetail(id, source) {
       '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
         '<div class="modal-title" style="margin-right:4px;">Pedido&nbsp;' + o.id.slice(0,8).toUpperCase() + '</div>' +
         '<button class="btn btn-sm btn-secondary" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-hd-' + o.id + '" style="padding:5px 14px;font-size:12px;">📋 Copiar pedido</button>' +
-        '<div style="font-size:16px;font-weight:800;color:#1f2937;white-space:nowrap;margin-left:auto;">₡' + total + '</div>' +
+        '<div style="font-size:16px;font-weight:800;color:#143c5a;white-space:nowrap;margin-left:auto;"><span class="col-sign">₡</span>' + total + '</div>' +
       '</div>' +
       '<div class="modal-fecha">' + fecha + '</div>' +
     '</div>' +
@@ -700,17 +701,17 @@ function openDetail(id, source) {
               '<td><code style="font-size:12px">' + esc(l.producto_codigo||'') + '</code></td>' +
               '<td style="text-align:center;font-weight:600">' + (l.cantidad||0) + '</td>' +
               '<td>' + esc(l.producto_nombre||'') + '</td>' +
-              '<td>₡' + (l.precio_unitario||0).toLocaleString('es-CR') + '</td>' +
-              '<td style="font-weight:700">₡' + (l.subtotal||0).toLocaleString('es-CR') + '</td>' +
+              '<td><span class="col-sign">₡</span>' + (l.precio_unitario||0).toLocaleString('es-CR') + '</td>' +
+              '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.subtotal||0).toLocaleString('es-CR') + '</td>' +
             '</tr>'
           ).join('') +
         '</tbody>' +
       '</table>' +
     '</div>' +
     '<div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px">' +
-      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span>₡' + subtotalSinIva + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span>₡' + iva + '</span></div>' +
-      '<div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span>₡' + total + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>' + subtotalSinIva + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>' + iva + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>' + total + '</span></div>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px">' +
       '<button class="btn btn-ghost" style="flex:1;padding:13px" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-' + o.id + '">📋 Copiar pedido</button>' +

@@ -50,6 +50,16 @@
   .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
   .stat-value { font-size:22px;font-weight:800;color:#143c5a; }
   .stat-label { font-size:12px;color:#6b7280;margin-top:3px; }
+  /* ── GRAN TOTAL CARD ── */
+  .stat-card-gran { grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:20px;padding:16px 22px; }
+  .stat-gran-main { display:flex;flex-direction:column;gap:2px;min-width:160px; }
+  .stat-gran-total { font-size:28px;font-weight:800;color:#143c5a;line-height:1.1; }
+  .stat-gran-label { font-size:12px;color:#6b7280;font-weight:500; }
+  .stat-gran-divider { width:1px;height:48px;background:#e5e7eb;flex-shrink:0; }
+  .stat-gran-breakdown { display:flex;flex-wrap:wrap;gap:12px 28px;flex:1; }
+  .stat-gran-item { display:flex;flex-direction:column;gap:2px; }
+  .stat-gran-item-val { font-size:16px;font-weight:700; }
+  .stat-gran-item-lbl { font-size:11px;color:#6b7280;font-weight:500; }
 
   /* ── TOOLBAR ── */
   .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
@@ -67,6 +77,14 @@
   .btn-success:hover { background:#a7f3d0; }
   .btn-purple { background:#ede9fe;color:#5b21b6; }
   .btn-purple:hover { background:#ddd6fe; }
+  tr.row-mora td { background:#fef2f2; }
+  tr.row-mora:hover td { background:#fee2e2; }
+  tr.row-cancelado td { background:#f9fafb; color:#d1d5db; }
+  tr.row-cancelado:hover td { background:#f3f4f6; color:#d1d5db; }
+  tr.row-pagado td { background:#f0fdf4; }
+  tr.row-pagado:hover td { background:#dcfce7; }
+  .chip-mora { background:#dc2626;color:#fff;border:none;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;white-space:nowrap; }
+  .chip-mora:hover { background:#b91c1c; }
 
   /* ── TABLE ── */
   .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
@@ -408,20 +426,48 @@
   <!-- ── PAGE: ORDERS ── -->
   <div id="page-orders" style="display:none">
     <div class="stat-grid" style="margin-bottom:20px">
-      <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Nuevos pedidos</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
       <div class="stat-card" style="border-color:#fca5a5"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
-      <div class="stat-card" style="border-color:#fde68a;background:#fffbeb;"><div class="stat-value" style="color:#b45309" id="stat-orders-porfacturar"><span class="col-sign">₡</span>0</div><div class="stat-label" style="color:#b45309">Por facturar</div></div>
-      <div class="stat-card" style="border-color:#6ee7b7"><div class="stat-value" style="color:#059669" id="stat-orders-facturado">—</div><div class="stat-label">Total facturado (₡)</div></div>
+      <!-- Gran total -->
+      <div class="stat-card stat-card-gran" style="border-color:#bfdbfe;background:#eff6ff;">
+        <div class="stat-gran-main">
+          <div class="stat-gran-label">Gran total</div>
+          <div class="stat-gran-total"><span class="col-sign">₡</span><span id="stat-gran-total">0</span></div>
+        </div>
+        <div class="stat-gran-divider"></div>
+        <div class="stat-gran-breakdown">
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Nuevos pedidos</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="stat-gt-nuevos">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Por pagar</div>
+            <div class="stat-gran-item-val" style="color:#b45309" id="stat-gt-facturados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Pagados</div>
+            <div class="stat-gran-item-val" style="color:#047857" id="stat-gt-pagados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">En mora</div>
+            <div class="stat-gran-item-val" style="color:#dc2626" id="stat-gt-mora">—</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
       <button id="otab-pend" onclick="showOrdersTab('pend')"
-        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #7c3aed;color:#7c3aed;">
-        Pendientes <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #7c3aed;color:#7c3aed;">
+        Nuevos pedidos <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
       </button>
       <button id="otab-hist" onclick="showOrdersTab('hist')"
-        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Historial
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Por pagar <span id="obadge-fact" style="background:#f59e0b;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+      </button>
+      <button id="otab-pagados" onclick="showOrdersTab('pagados')"
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Pagados
       </button>
     </div>
     <div id="opage-pend">
@@ -450,6 +496,7 @@
         </table>
       </div>
     </div>
+    <!-- Por pagar (facturados) -->
     <div id="opage-hist" style="display:none">
       <div class="toolbar">
         <div class="search-field"><span>🔍</span>
@@ -478,6 +525,36 @@
         </table>
       </div>
     </div>
+
+    <!-- Pagados -->
+    <div id="opage-pagados" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="pagados-search" placeholder="Buscar por nombre…" oninput="filterAdminPagados()">
+        </div>
+        <select id="pagados-lugar" onchange="filterAdminPagados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="pagados-desde" onchange="filterAdminPagados()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortPagados('fecha')"               id="spgth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortPagados('usuario_nombre')"      id="spgth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('usuario_departamento')" id="spgth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('usuario_lugar')"       id="spgth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('total')"               id="spgth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="pagados-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ── PAGE: USERS ── -->
@@ -486,20 +563,27 @@
       <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
     </div>
     <div class="toolbar">
-      <div class="search-field">
+      <div class="search-field" style="flex:1;min-width:180px;">
         <span>🔍</span>
-        <input type="text" id="user-search" placeholder="Buscar colaborador…" oninput="filterUsers()">
+        <input type="text" id="user-search" placeholder="Buscar nombre o cédula…" oninput="filterUsers()">
       </div>
+      <select id="user-depto" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <option value="">Todos los departamentos</option>
+      </select>
+      <select id="user-lugar" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <option value="">Todos los lugares</option>
+        <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+      </select>
       <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th class="th-sort" onclick="sortSuUsers('nombre')"      id="suth-nombre">Nombre <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortSuUsers('cedula')"      id="suth-cedula">Cédula <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortSuUsers('departamento')" id="suth-departamento">Departamento <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortSuUsers('lugar')"       id="suth-lugar">Lugar <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortSuUsers('created_at')"  id="suth-created_at">Registro <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('nombre')"       id="uth-nombre">Nombre <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('cedula')"       id="uth-cedula">Cédula <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('departamento')" id="uth-departamento">Departamento <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('lugar')"        id="uth-lugar">Lugar <span class="sort-icon">↕</span></th>
+          <th class="th-sort" onclick="sortUsers('created_at')"   id="uth-created_at">Registro <span class="sort-icon">↕</span></th>
         </tr></thead>
         <tbody id="users-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
       </table>
@@ -534,7 +618,31 @@
   <!-- ── PAGE: DASHBOARD ── -->
   <div id="page-dashboard" style="display:none">
     <div class="dash-grid">
-      <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-total-fact"><span class="col-sign">₡</span>—</div><div class="dash-kpi-lbl">Total facturado</div></div>
+      <div class="dash-kpi stat-card-gran" style="grid-column:1/-1;border-color:#ddd6fe;background:#f5f3ff;">
+        <div class="stat-gran-main">
+          <div class="stat-gran-label">Gran total</div>
+          <div class="stat-gran-total" style="color:#7c3aed;"><span class="col-sign">₡</span><span id="sdk-total-fact">—</span></div>
+        </div>
+        <div class="stat-gran-divider"></div>
+        <div class="stat-gran-breakdown">
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Nuevos pedidos</div>
+            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-nuevos">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Por pagar</div>
+            <div class="stat-gran-item-val" style="color:#b45309" id="sdk-gt-facturados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Pagados</div>
+            <div class="stat-gran-item-val" style="color:#047857" id="sdk-gt-pagados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">En mora</div>
+            <div class="stat-gran-item-val" style="color:#dc2626" id="sdk-gt-mora">—</div>
+          </div>
+        </div>
+      </div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
       <div class="dash-kpi" style="border-color:#fde68a;background:#fffbeb;"><div class="dash-kpi-val" style="color:#b45309;" id="sdk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#b45309;">Pedidos pendientes</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-promedio"><span class="col-sign">₡</span>—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
@@ -1131,7 +1239,10 @@ function showPage(page) {
     t.classList.toggle('active', ALL_PAGES[i] === page);
   });
   if (page==='orders' && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
-  if (page==='users'  && allUsers.length===0) loadUsers();
+  if (page==='users') {
+    if (allUsers.length===0) loadUsers();
+    if (allAdminHist.length===0) loadOrders();
+  }
   if (page==='dashboard') loadSuDashboard();
   if (page==='su')    loadSuPage();
 }
@@ -1440,29 +1551,68 @@ async function deleteProduct(codigo, nombre) {
 }
 
 // ── PEDIDOS ──────────────────────────────────────────────
+// ── MORA THRESHOLD ────────────────────────────────────────────
+// Orders are invoiced every Monday at 11:00 AM CR time (UTC-6).
+// Delivery window: Fri–Mon of the invoice week.
+// Mora starts: the Monday AFTER invoice Monday at 11:00 AM CR.
+function getMoraThreshold(fecha) {
+  const CR_OFFSET_MS = 6 * 3600000; // UTC-6, no DST
+  const d  = new Date(fecha);
+  const cr = new Date(d.getTime() - CR_OFFSET_MS); // shift to CR time
+  const dow  = cr.getUTCDay();
+  const hour = cr.getUTCHours();
+  const min  = cr.getUTCMinutes();
+  let daysToInvoice;
+  if (dow === 1 && (hour < 11 || (hour === 11 && min === 0))) {
+    daysToInvoice = 0;
+  } else if (dow === 1) {
+    daysToInvoice = 7;
+  } else {
+    daysToInvoice = (8 - dow) % 7;
+  }
+  const inv = new Date(cr);
+  inv.setUTCDate(cr.getUTCDate() + daysToInvoice);
+  inv.setUTCHours(17, 0, 0, 0); // 11:00 CR = 17:00 UTC
+  return inv.getTime() + 7 * 24 * 3600000;
+}
+
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*)').in('estado',['facturado','cancelado']).order('fecha', {ascending:false})
+    sb.from('pedidos').select('*, lineas_pedido(*)').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:false})
   ]);
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
-  const cancelados   = allAdminHist.filter(o => o.estado === 'cancelado');
-  const facturados   = allAdminHist.filter(o => o.estado === 'facturado');
-  const totalFact    = facturados.reduce((s, o) => s + (o.total || 0), 0);
-  const totalPorFact = allAdminPend.reduce((s, o) => s + (o.total || 0), 0);
+  const now        = Date.now();
+  const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
+  const facturados = allAdminHist.filter(o => o.estado === 'facturado');
+  const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
+  const enMora     = facturados.filter(o => now > getMoraThreshold(o.fecha));
+  const totalNuevos = allAdminPend.reduce((s,o) => s + (o.total||0), 0);
+  const totalFact   = facturados.reduce((s,o) => s + (o.total||0), 0);
+  const totalPag    = pagados.reduce((s,o) => s + (o.total||0), 0);
+  const totalMora   = enMora.reduce((s,o) => s + (o.total||0), 0);
+  const granTotal   = totalNuevos + totalFact + totalPag;
+  const fmt = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   document.getElementById('stat-orders').textContent            = allAdminPend.length;
   document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
   document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
-  document.getElementById('stat-orders-porfacturar').innerHTML = '<span class="col-sign">₡</span>' + totalPorFact.toLocaleString('es-CR');
-  document.getElementById('stat-orders-facturado').innerHTML  = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
-  const badge = document.getElementById('obadge-pend');
-  if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
-  filterAdminPend(); filterAdminHist();
+  document.getElementById('stat-gran-total').textContent        = granTotal.toLocaleString('es-CR');
+  document.getElementById('stat-gt-nuevos').innerHTML           = fmt(totalNuevos);
+  document.getElementById('stat-gt-facturados').innerHTML       = fmt(totalFact);
+  document.getElementById('stat-gt-pagados').innerHTML          = fmt(totalPag);
+  document.getElementById('stat-gt-mora').innerHTML             = fmt(totalMora);
+  const badgePend = document.getElementById('obadge-pend');
+  if (badgePend) { badgePend.textContent = allAdminPend.length; badgePend.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
+  const badgeFact = document.getElementById('obadge-fact');
+  if (badgeFact) { badgeFact.textContent = facturados.length; badgeFact.style.display = facturados.length ? 'inline-flex' : 'none'; }
+  filterAdminPend(); filterAdminHist(); filterAdminPagados();
+  // Re-render collab list if visible so mora chips appear
+  if (document.getElementById('page-users')?.style.display !== 'none' && allUsers.length > 0) filterUsers();
 }
 
 function showOrdersTab(tab) {
-  ['pend','hist'].forEach(t => {
+  ['pend','hist','pagados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('otab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
@@ -1521,6 +1671,7 @@ function filterAdminHist() {
   const lugar = document.getElementById('hist-lugar').value;
   const desde = document.getElementById('hist-desde').value;
   let list = allAdminHist.filter(o =>
+    o.estado === 'facturado' &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
@@ -1528,28 +1679,92 @@ function filterAdminHist() {
   renderAdminOrders('hist-tbody', _sortOrderList(list, _suHistSort.col, _suHistSort.dir));
 }
 
+let _suPagadosSort = { col: 'fecha', dir: 'desc' };
+
+function sortPagados(col) {
+  if (_suPagadosSort.col===col) { _suPagadosSort.dir=_suPagadosSort.dir==='asc'?'desc':'asc'; }
+  else { _suPagadosSort.col=col; _suPagadosSort.dir=col==='total'?'desc':'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c=>{
+    const th=document.getElementById('spgth-'+c); if(!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if(c===_suPagadosSort.col) th.classList.add(_suPagadosSort.dir==='asc'?'sort-asc':'sort-desc');
+  });
+  filterAdminPagados();
+}
+
+function filterAdminPagados() {
+  const q = (document.getElementById('pagados-search').value || '').toLowerCase();
+  const lugar = document.getElementById('pagados-lugar').value;
+  const desde = document.getElementById('pagados-desde').value;
+  let list = allAdminHist.filter(o =>
+    (o.estado === 'pagado' || o.estado === 'cancelado') &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  renderAdminOrders('pagados-tbody', _sortOrderList(list, _suPagadosSort.col, _suPagadosSort.dir));
+}
+
 function renderAdminOrders(tbodyId, list) {
   _rebuildAdminDupMap();
   const tbody = document.getElementById(tbodyId);
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return; }
+  const now = Date.now();
+
+  // Pre-calcular usuarios en mora (para el chip)
+  const usuariosMora = {};
+  if (tbodyId === 'hist-tbody') {
+    list.forEach(o => {
+      if (o.estado === 'facturado' && now > getMoraThreshold(o.fecha)) {
+        const key = o.usuario_email || o.usuario_nombre;
+        if (!usuariosMora[key]) usuariosMora[key] = [];
+        usuariosMora[key].push(o);
+      }
+    });
+  }
+
   tbody.innerHTML = list.map(o => {
     const cancelado  = o.estado === 'cancelado';
+    const pagado     = o.estado === 'pagado';
+    const facturado  = o.estado === 'facturado';
+    const mora       = facturado && now > getMoraThreshold(o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num        = o.id.slice(0,8).toUpperCase();
-    const dupColor   = !cancelado ? (_adminDupMap[o.id] || '') : '';
-    const dupChip    = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
-    const rowStyle   = cancelado ? 'background:#fef2f2;' : (dupColor ? `background:${dupColor};` : '');
-    const badgeIgn   = cancelado ? ' <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;background:#fee2e2;color:#dc2626;margin-left:4px">CANCELADO</span>' : '';
-    const totalStyle = cancelado ? 'font-weight:700;color:#dc2626;text-decoration:line-through' : 'font-weight:700';
-    return `<tr style="${rowStyle}">
+
+    const dupColor  = !cancelado ? (_adminDupMap[o.id] || '') : '';
+    const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+
+    const rowClass  = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+    const rowStyle  = dupColor && !mora && !cancelado && !pagado ? `background:${dupColor};` : '';
+
+    let badgeHtml = '';
+    if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>';
+    if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">PAGADO</span>';
+    if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">EN MORA</span>';
+
+    const userKey = o.usuario_email || o.usuario_nombre;
+    const tieneChipMora = mora && usuariosMora[userKey] && usuariosMora[userKey][0]?.id === o.id;
+    const chipMora = tieneChipMora
+      ? `<button class="chip-mora" onclick="openMoraModal(${JSON.stringify(userKey)},${JSON.stringify(o.usuario_nombre||'—')})">⚠ En mora</button>`
+      : '';
+
+    const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       mora      ? 'font-weight:700;color:#dc2626' :
+                       pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
+
+    const btnPagado = facturado && !mora
+      ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
+      : '';
+
+    return `<tr class="${rowClass}" style="${rowStyle}">
       <td>${fecha}${dupChip}</td>
-      <td><code style="font-size:12px">${num}</code>${badgeIgn}</td>
-      <td style="font-weight:600">${esc(o.usuario_nombre||'—')}</td>
+      <td><code style="font-size:12px">${num}</code>${badgeHtml}</td>
+      <td style="font-weight:600">${esc(o.usuario_nombre||'—')}${chipMora}</td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}
         <button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>
       </td>
     </tr>`;
@@ -1568,21 +1783,55 @@ function confirmDeleteOrder(id, num) {
       allAdminPend = allAdminPend.filter(o => o.id !== id);
       allAdminHist = allAdminHist.filter(o => o.id !== id);
       // Actualizar stats
-      document.getElementById('stat-orders').textContent = allAdminPend.length;
-      document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
+      const now2       = Date.now();
       const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
       const facturados = allAdminHist.filter(o => o.estado === 'facturado');
-      const totalFact  = facturados.reduce((s,o)=>s+(o.total||0),0);
-      const totalPorFact = allAdminPend.reduce((s,o)=>s+(o.total||0),0);
+      const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
+      const enMora     = facturados.filter(o => now2 > getMoraThreshold(o.fecha));
+      const tNuevos = allAdminPend.reduce((s,o)=>s+(o.total||0),0);
+      const tFact   = facturados.reduce((s,o)=>s+(o.total||0),0);
+      const tPag    = pagados.reduce((s,o)=>s+(o.total||0),0);
+      const tMora   = enMora.reduce((s,o)=>s+(o.total||0),0);
+      const fmt2 = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
+      document.getElementById('stat-orders').textContent       = allAdminPend.length;
+      document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
       document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
-      document.getElementById('stat-orders-porfacturar').innerHTML = '<span class="col-sign">₡</span>' + totalPorFact.toLocaleString('es-CR');
-      document.getElementById('stat-orders-facturado').innerHTML = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
+      document.getElementById('stat-gran-total').textContent   = (tNuevos+tFact+tPag).toLocaleString('es-CR');
+      document.getElementById('stat-gt-nuevos').innerHTML      = fmt2(tNuevos);
+      document.getElementById('stat-gt-facturados').innerHTML  = fmt2(tFact);
+      document.getElementById('stat-gt-pagados').innerHTML     = fmt2(tPag);
+      document.getElementById('stat-gt-mora').innerHTML        = fmt2(tMora);
       filterAdminPend();
       filterAdminHist();
+      filterAdminPagados();
       showToast('Pedido eliminado.', true);
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
   );
+}
+
+function markAsPagado(id) {
+  showConfirm(
+    '¿Marcar como pagado?',
+    'El pedido pasará al estado "Pagado" y se sumará al total pagado.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'pagado' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      showToast('Pedido marcado como pagado.', true);
+      await loadOrders();
+    },
+    { icon: '💳', okLabel: 'Confirmar pago', okColor: '#047857' }
+  );
+}
+
+function openMoraModal(userKey, nombre) {
+  const now = Date.now();
+  const pedidosMora = allAdminHist.filter(o =>
+    o.estado === 'facturado' &&
+    now > getMoraThreshold(o.fecha) &&
+    (o.usuario_email === userKey || o.usuario_nombre === userKey)
+  );
+  showToast(`${nombre} — ${pedidosMora.length} pedido(s) en mora`, 'warn');
 }
 
 function openOrderDetail(id) {
@@ -1633,37 +1882,58 @@ async function loadUsers() {
   if (error) { console.error(error); return; }
   allUsers = data || [];
   document.getElementById('stat-users').textContent = allUsers.length;
-  renderUsers(allUsers);
+
+  // Poblar departamentos dinámicamente
+  const deptos = [...new Set(allUsers.map(u => u.departamento).filter(Boolean))].sort();
+  const sel = document.getElementById('user-depto');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos los departamentos</option>' +
+    deptos.map(d => `<option${d === cur ? ' selected' : ''}>${esc(d)}</option>`).join('');
+
+  filterUsers();
 }
 
-let _suUsersSort = { col: 'nombre', dir: 'asc' };
+let _userSort = { col: 'nombre', dir: 'asc' };
 
-function sortSuUsers(col) {
-  if (_suUsersSort.col === col) { _suUsersSort.dir = _suUsersSort.dir === 'asc' ? 'desc' : 'asc'; }
-  else { _suUsersSort.col = col; _suUsersSort.dir = 'asc'; }
+function sortUsers(col) {
+  if (_userSort.col === col) {
+    _userSort.dir = _userSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _userSort.col = col;
+    _userSort.dir = 'asc';
+  }
   ['nombre','cedula','departamento','lugar','created_at'].forEach(c => {
-    const th = document.getElementById('suth-' + c); if (!th) return;
+    const th = document.getElementById('uth-' + c);
+    if (!th) return;
     th.classList.remove('sort-asc','sort-desc');
-    if (c === _suUsersSort.col) th.classList.add(_suUsersSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    if (c === _userSort.col) th.classList.add(_userSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
   });
   filterUsers();
 }
 
-function filterUsers() {
-  const q = document.getElementById('user-search').value.toLowerCase();
-  let list = allUsers.filter(u =>
-    (u.nombre || '').toLowerCase().includes(q) ||
-    (u.cedula || '').toLowerCase().includes(q)
-  );
-  const { col, dir } = _suUsersSort;
-  list = [...list].sort((a, b) => {
-    let va = a[col] ?? '', vb = b[col] ?? '';
+function sortUsersList(list, col, dir) {
+  return [...list].sort((a, b) => {
+    let va = (a[col] || ''), vb = (b[col] || '');
     if (col === 'created_at') { va = new Date(va||0); vb = new Date(vb||0); }
-    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    else { va = va.toString().toLowerCase(); vb = vb.toString().toLowerCase(); }
     if (va < vb) return dir === 'asc' ? -1 : 1;
     if (va > vb) return dir === 'asc' ?  1 : -1;
     return 0;
   });
+}
+
+function filterUsers() {
+  const q     = (document.getElementById('user-search').value || '').toLowerCase();
+  const depto = document.getElementById('user-depto').value;
+  const lugar = document.getElementById('user-lugar').value;
+
+  let list = allUsers.filter(u =>
+    (!q     || (u.nombre||'').toLowerCase().includes(q) || (u.cedula||'').toLowerCase().includes(q)) &&
+    (!depto || (u.departamento||'') === depto) &&
+    (!lugar || (u.lugar||'') === lugar)
+  );
+
+  list = sortUsersList(list, _userSort.col, _userSort.dir);
   renderUsers(list);
 }
 
@@ -1690,11 +1960,20 @@ function _renderSuUsersPage() {
   _suUsersPage = Math.min(_suUsersPage, pages);
   const slice = list.slice((_suUsersPage-1)*size, _suUsersPage*size);
 
+  const now = Date.now();
   tbody.innerHTML = slice.map(u => {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
+    const pedidosMora = (allAdminHist || []).filter(o =>
+      o.estado === 'facturado' &&
+      now > getMoraThreshold(o.fecha) &&
+      (o.usuario_email === u.cedula || o.usuario_nombre === u.nombre)
+    );
+    const chipMora = pedidosMora.length
+      ? `<button class="chip-mora" onclick="openMoraModal('${esc(u.cedula||u.nombre)}','${esc(u.nombre||'—')}')">⚠ En mora (${pedidosMora.length})</button>`
+      : '';
     return `<tr>
-      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-weight:600">${esc(u.nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
@@ -2027,11 +2306,24 @@ function _suFilterByYearMonth(data, yearSelId, monthSelId) {
 function renderSuDashboard() {
   const data     = _suDashData;
   const activos  = data.filter(o => o.estado !== 'cancelado');
-  const facturados = data.filter(o => o.estado === 'facturado' || o.estado === 'pagado');
-  const totalFact = facturados.reduce((s,o) => s+(o.total||0), 0);
+  const now_sdk  = Date.now();
+  const sdkNuevos = data.filter(o => o.estado === 'pendiente');
+  const sdkFact   = data.filter(o => o.estado === 'facturado');
+  const sdkPag    = data.filter(o => o.estado === 'pagado');
+  const sdkMora   = sdkFact.filter(o => now_sdk > getMoraThreshold(o.fecha));
+  const sdkTotNuevos = sdkNuevos.reduce((s,o) => s+(o.total||0), 0);
+  const sdkTotFact   = sdkFact.reduce((s,o) => s+(o.total||0), 0);
+  const sdkTotPag    = sdkPag.reduce((s,o) => s+(o.total||0), 0);
+  const sdkTotMora   = sdkMora.reduce((s,o) => s+(o.total||0), 0);
+  const granTotalDash = sdkTotNuevos + sdkTotFact + sdkTotPag;
+  const fmt_sdk  = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   const totalUnid = activos.reduce((s,o) => s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0), 0);
   const colab = new Set(activos.map(o => o.usuario_email)).size;
-  document.getElementById('sdk-total-fact').innerHTML    = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
+  document.getElementById('sdk-total-fact').textContent = granTotalDash.toLocaleString('es-CR');
+  document.getElementById('sdk-gt-nuevos').innerHTML    = fmt_sdk(sdkTotNuevos);
+  document.getElementById('sdk-gt-facturados').innerHTML = fmt_sdk(sdkTotFact);
+  document.getElementById('sdk-gt-pagados').innerHTML   = fmt_sdk(sdkTotPag);
+  document.getElementById('sdk-gt-mora').innerHTML      = fmt_sdk(sdkTotMora);
   document.getElementById('sdk-pedidos').textContent       = activos.length;
   document.getElementById('sdk-pendientes').textContent    = data.filter(o => o.estado === 'pendiente').length;
   document.getElementById('sdk-promedio').innerHTML      = activos.length ? '<span class="col-sign">₡</span>' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0)/activos.length).toLocaleString('es-CR') : '<span class="col-sign">₡</span>0';

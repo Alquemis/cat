@@ -50,6 +50,16 @@
   .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
   .stat-value { font-size:22px;font-weight:800;color:#143c5a; }
   .stat-label { font-size:12px;color:#6b7280;margin-top:3px; }
+  /* ── GRAN TOTAL CARD ── */
+  .stat-card-gran { grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:20px;padding:16px 22px; }
+  .stat-gran-main { display:flex;flex-direction:column;gap:2px;min-width:160px; }
+  .stat-gran-total { font-size:28px;font-weight:800;color:#143c5a;line-height:1.1; }
+  .stat-gran-label { font-size:12px;color:#6b7280;font-weight:500; }
+  .stat-gran-divider { width:1px;height:48px;background:#e5e7eb;flex-shrink:0; }
+  .stat-gran-breakdown { display:flex;flex-wrap:wrap;gap:12px 28px;flex:1; }
+  .stat-gran-item { display:flex;flex-direction:column;gap:2px; }
+  .stat-gran-item-val { font-size:16px;font-weight:700; }
+  .stat-gran-item-lbl { font-size:11px;color:#6b7280;font-weight:500; }
 
   /* ── TOOLBAR ── */
   .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
@@ -485,21 +495,49 @@
   <!-- ── PAGE: ORDERS ── -->
   <div id="page-orders" style="display:none">
     <div class="stat-grid" style="margin-bottom:20px">
-      <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Pedidos pendientes</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Nuevos pedidos</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
       <div class="stat-card" style="border-color:#d1d5db;background:#f9fafb;"><div class="stat-value" style="color:#6b7280" id="stat-orders-cancelados">0</div><div class="stat-label" style="color:#6b7280">Cancelados</div></div>
-      <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;"><div class="stat-value" style="color:#15803d" id="stat-orders-facturado"><span class="col-sign">₡</span>0</div><div class="stat-label" style="color:#15803d">Total facturado</div></div>
-      <div class="stat-card" style="border-color:#6ee7b7;background:#ecfdf5;"><div class="stat-value" style="color:#047857" id="stat-orders-pagado"><span class="col-sign">₡</span>0</div><div class="stat-label" style="color:#047857">Pagado</div></div>
+      <!-- Gran total -->
+      <div class="stat-card stat-card-gran" style="border-color:#bfdbfe;background:#eff6ff;">
+        <div class="stat-gran-main">
+          <div class="stat-gran-label">Gran total</div>
+          <div class="stat-gran-total"><span class="col-sign">₡</span><span id="stat-gran-total">0</span></div>
+        </div>
+        <div class="stat-gran-divider"></div>
+        <div class="stat-gran-breakdown">
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Nuevos pedidos</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="stat-gt-nuevos">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Por pagar</div>
+            <div class="stat-gran-item-val" style="color:#b45309" id="stat-gt-facturados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Pagados</div>
+            <div class="stat-gran-item-val" style="color:#047857" id="stat-gt-pagados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">En mora</div>
+            <div class="stat-gran-item-val" style="color:#dc2626" id="stat-gt-mora">—</div>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- Sub-tabs -->
     <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
       <button id="otab-pend" onclick="showOrdersTab('pend')"
-        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #143c5a;color:#143c5a;">
-        Pendientes <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #143c5a;color:#143c5a;">
+        Nuevos pedidos <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
       </button>
       <button id="otab-hist" onclick="showOrdersTab('hist')"
-        style="flex:1;padding:13px 20px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Historial
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Por pagar <span id="obadge-fact" style="background:#f59e0b;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+      </button>
+      <button id="otab-pagados" onclick="showOrdersTab('pagados')"
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Pagados
       </button>
     </div>
 
@@ -531,7 +569,7 @@
       </div>
     </div>
 
-    <!-- Historial -->
+    <!-- Por pagar (facturados) -->
     <div id="opage-hist" style="display:none">
       <div class="toolbar">
         <div class="search-field"><span>🔍</span>
@@ -557,6 +595,36 @@
             <th>Acciones</th>
           </tr></thead>
           <tbody id="hist-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagados -->
+    <div id="opage-pagados" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="pagados-search" placeholder="Buscar por nombre…" oninput="filterAdminPagados()">
+        </div>
+        <select id="pagados-lugar" onchange="filterAdminPagados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="pagados-desde" onchange="filterAdminPagados()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortPagados('fecha')"               id="pgth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortPagados('usuario_nombre')"      id="pgth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('usuario_departamento')" id="pgth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('usuario_lugar')"       id="pgth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('total')"               id="pgth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="pagados-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -603,7 +671,31 @@
 
     <!-- KPIs -->
     <div class="dash-grid" id="dash-kpis">
-      <div class="dash-kpi"><div class="dash-kpi-val" id="dk-total-fact"><span class="col-sign">₡</span>—</div><div class="dash-kpi-lbl">Total facturado</div></div>
+      <div class="dash-kpi stat-card-gran" style="grid-column:1/-1;border-color:#bfdbfe;background:#eff6ff;">
+        <div class="stat-gran-main">
+          <div class="stat-gran-label">Gran total</div>
+          <div class="stat-gran-total"><span class="col-sign">₡</span><span id="dk-total-fact">—</span></div>
+        </div>
+        <div class="stat-gran-divider"></div>
+        <div class="stat-gran-breakdown">
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Nuevos pedidos</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="dk-gt-nuevos">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Por pagar</div>
+            <div class="stat-gran-item-val" style="color:#b45309" id="dk-gt-facturados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Pagados</div>
+            <div class="stat-gran-item-val" style="color:#047857" id="dk-gt-pagados">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">En mora</div>
+            <div class="stat-gran-item-val" style="color:#dc2626" id="dk-gt-mora">—</div>
+          </div>
+        </div>
+      </div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="dk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
       <div class="dash-kpi" style="border-color:#fde68a;background:#fffbeb;"><div class="dash-kpi-val" style="color:#b45309;" id="dk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#b45309;">Pedidos pendientes</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="dk-promedio"><span class="col-sign">₡</span>—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
@@ -1527,6 +1619,34 @@ async function deleteProduct(codigo, nombre) {
 
 // ── PEDIDOS ──────────────────────────────────────────────
 
+// ── MORA THRESHOLD ────────────────────────────────────────────
+// Orders are invoiced every Monday at 11:00 AM CR time (UTC-6).
+// Delivery window: Fri–Mon of the invoice week.
+// Mora starts: the Monday AFTER invoice Monday at 11:00 AM CR.
+function getMoraThreshold(fecha) {
+  const CR_OFFSET_MS = 6 * 3600000; // UTC-6, no DST
+  const d  = new Date(fecha);
+  const cr = new Date(d.getTime() - CR_OFFSET_MS); // shift to CR time
+  const dow  = cr.getUTCDay();   // 0=Sun … 6=Sat in CR local
+  const hour = cr.getUTCHours();
+  const min  = cr.getUTCMinutes();
+  // Days until the invoice Monday
+  let daysToInvoice;
+  if (dow === 1 && (hour < 11 || (hour === 11 && min === 0))) {
+    daysToInvoice = 0;   // Monday ≤ 11:00 CR → invoice is TODAY
+  } else if (dow === 1) {
+    daysToInvoice = 7;   // Monday > 11:00 CR → invoice is NEXT Monday
+  } else {
+    daysToInvoice = (8 - dow) % 7; // days until next Monday (1=Sun→1,Tue→6,…)
+  }
+  // Invoice Monday at 11:00 CR = 17:00 UTC
+  const inv = new Date(cr);
+  inv.setUTCDate(cr.getUTCDate() + daysToInvoice);
+  inv.setUTCHours(17, 0, 0, 0);
+  // Mora = invoice + 7 days (next Monday at 11:00 CR)
+  return inv.getTime() + 7 * 24 * 3600000;
+}
+
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
@@ -1534,26 +1654,39 @@ async function loadOrders() {
   ]);
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
-  // stats
+  const now      = Date.now();
   const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
   const facturados = allAdminHist.filter(o => o.estado === 'facturado');
   const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
-  const totalFact  = facturados.reduce((s,o) => s + (o.total||0), 0);
-  const totalPag   = pagados.reduce((s,o) => s + (o.total||0), 0);
+  const enMora     = facturados.filter(o => now > getMoraThreshold(o.fecha));
+  const totalNuevos = allAdminPend.reduce((s,o) => s + (o.total||0), 0);
+  const totalFact   = facturados.reduce((s,o) => s + (o.total||0), 0);
+  const totalPag    = pagados.reduce((s,o) => s + (o.total||0), 0);
+  const totalMora   = enMora.reduce((s,o) => s + (o.total||0), 0);
+  const granTotal   = totalNuevos + totalFact + totalPag;
+  const fmt = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
+  // stats principales
   document.getElementById('stat-orders').textContent            = allAdminPend.length;
   document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
   document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
-  document.getElementById('stat-orders-facturado').innerHTML  = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
-  document.getElementById('stat-orders-pagado').innerHTML     = '<span class="col-sign">₡</span>' + totalPag.toLocaleString('es-CR');
-  // badge sub-tab
-  const badge = document.getElementById('obadge-pend');
-  if (badge) { badge.textContent = allAdminPend.length; badge.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
+  // gran total
+  document.getElementById('stat-gran-total').textContent    = granTotal.toLocaleString('es-CR');
+  document.getElementById('stat-gt-nuevos').innerHTML       = fmt(totalNuevos);
+  document.getElementById('stat-gt-facturados').innerHTML   = fmt(totalFact);
+  document.getElementById('stat-gt-pagados').innerHTML      = fmt(totalPag);
+  document.getElementById('stat-gt-mora').innerHTML         = fmt(totalMora);
+  // badges sub-tabs
+  const badgePend = document.getElementById('obadge-pend');
+  if (badgePend) { badgePend.textContent = allAdminPend.length; badgePend.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
+  const badgeFact = document.getElementById('obadge-fact');
+  if (badgeFact) { badgeFact.textContent = facturados.length; badgeFact.style.display = facturados.length ? 'inline-flex' : 'none'; }
   filterAdminPend();
   filterAdminHist();
+  filterAdminPagados();
 }
 
 function showOrdersTab(tab) {
-  ['pend','hist'].forEach(t => {
+  ['pend','hist','pagados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('otab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #143c5a' : '3px solid transparent';
@@ -1611,11 +1744,11 @@ function filterAdminHist() {
   const lugar = document.getElementById('hist-lugar').value;
   const desde = document.getElementById('hist-desde').value;
   let list = allAdminHist.filter(o =>
+    o.estado === 'facturado' &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
   );
-  // Ordenar
   const { col, dir } = _histSort;
   list = [...list].sort((a, b) => {
     let va = a[col] ?? '', vb = b[col] ?? '';
@@ -1628,6 +1761,41 @@ function filterAdminHist() {
   renderAdminOrders('hist-tbody', list);
 }
 
+let _pagadosSort = { col: 'fecha', dir: 'desc' };
+
+function sortPagados(col) {
+  if (_pagadosSort.col === col) { _pagadosSort.dir = _pagadosSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _pagadosSort.col = col; _pagadosSort.dir = col === 'total' ? 'desc' : 'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c => {
+    const th = document.getElementById('pgth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _pagadosSort.col) th.classList.add(_pagadosSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterAdminPagados();
+}
+
+function filterAdminPagados() {
+  const q     = (document.getElementById('pagados-search').value || '').toLowerCase();
+  const lugar = document.getElementById('pagados-lugar').value;
+  const desde = document.getElementById('pagados-desde').value;
+  let list = allAdminHist.filter(o =>
+    (o.estado === 'pagado' || o.estado === 'cancelado') &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  const { col, dir } = _pagadosSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderAdminOrders('pagados-tbody', list);
+}
+
 function renderAdminOrders(tbodyId, list) {
   _rebuildAdminDupMap();
   const tbody = document.getElementById(tbodyId);
@@ -1635,13 +1803,12 @@ function renderAdminOrders(tbodyId, list) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return;
   }
   const now = Date.now();
-  const MS7 = 7 * 24 * 60 * 60 * 1000;
 
   // Pre-calcular usuarios en mora (para el chip)
   const usuariosMora = {};
   if (tbodyId === 'hist-tbody') {
     list.forEach(o => {
-      if (o.estado === 'facturado' && o.facturado_at && (now - new Date(o.facturado_at).getTime()) >= MS7) {
+      if (o.estado === 'facturado' && now > getMoraThreshold(o.fecha)) {
         const key = o.usuario_email || o.usuario_nombre;
         if (!usuariosMora[key]) usuariosMora[key] = [];
         usuariosMora[key].push(o);
@@ -1653,7 +1820,7 @@ function renderAdminOrders(tbodyId, list) {
     const cancelado  = o.estado === 'cancelado';
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
-    const mora       = facturado && (now - new Date(o.fecha).getTime()) > MS7;
+    const mora       = facturado && now > getMoraThreshold(o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num        = o.id.slice(0,8).toUpperCase();
 
@@ -1718,10 +1885,9 @@ function markAsPagado(id) {
 
 function openMoraModal(userKey, nombre) {
   const now = Date.now();
-  const MS7 = 7 * 24 * 60 * 60 * 1000;
   const pedidosMora = allAdminHist.filter(o =>
     o.estado === 'facturado' &&
-    (now - new Date(o.fecha).getTime()) > MS7 &&
+    now > getMoraThreshold(o.fecha) &&
     (o.usuario_email === userKey || o.usuario_nombre === userKey)
   );
   document.getElementById('mora-modal-title').textContent = `Pedidos en mora — ${nombre}`;
@@ -1877,13 +2043,12 @@ function _renderUsersPage() {
   const slice = list.slice((_usersPage-1)*size, _usersPage*size);
 
   const now = Date.now();
-  const MS7 = 7 * 24 * 60 * 60 * 1000;
   tbody.innerHTML = slice.map(u => {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
     const pedidosMora = allAdminHist.filter(o =>
-      o.estado === 'facturado' && o.facturado_at &&
-      (now - new Date(o.facturado_at).getTime()) >= MS7 &&
+      o.estado === 'facturado' &&
+      now > getMoraThreshold(o.fecha) &&
       (o.usuario_email === u.cedula || o.usuario_nombre === u.nombre)
     );
     const chipMora = pedidosMora.length
@@ -2259,10 +2424,24 @@ function renderDashboard() {
   }
 
   // ── KPIs (siempre globales) ──
-  const totalFact = facturados.reduce((s,o) => s+(o.total||0), 0);
+  const now_dk    = Date.now();
+  const dkNuevos  = data.filter(o => o.estado === 'pendiente');
+  const dkFact    = data.filter(o => o.estado === 'facturado');
+  const dkPag     = data.filter(o => o.estado === 'pagado');
+  const dkMora    = dkFact.filter(o => now_dk > getMoraThreshold(o.fecha));
+  const dkTotNuevos = dkNuevos.reduce((s,o) => s+(o.total||0), 0);
+  const dkTotFact   = dkFact.reduce((s,o) => s+(o.total||0), 0);
+  const dkTotPag    = dkPag.reduce((s,o) => s+(o.total||0), 0);
+  const dkTotMora   = dkMora.reduce((s,o) => s+(o.total||0), 0);
+  const granTotalDash = dkTotNuevos + dkTotFact + dkTotPag;
+  const fmt_dk    = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   const totalUnid = activos.reduce((s,o) => s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0), 0);
   const colab     = new Set(activos.map(o => o.usuario_email)).size;
-  document.getElementById('dk-total-fact').innerHTML    = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
+  document.getElementById('dk-total-fact').textContent = granTotalDash.toLocaleString('es-CR');
+  document.getElementById('dk-gt-nuevos').innerHTML    = fmt_dk(dkTotNuevos);
+  document.getElementById('dk-gt-facturados').innerHTML = fmt_dk(dkTotFact);
+  document.getElementById('dk-gt-pagados').innerHTML   = fmt_dk(dkTotPag);
+  document.getElementById('dk-gt-mora').innerHTML      = fmt_dk(dkTotMora);
   document.getElementById('dk-pedidos').textContent       = activos.length;
   document.getElementById('dk-pendientes').textContent    = data.filter(o => o.estado === 'pendiente').length;
   document.getElementById('dk-promedio').innerHTML      = activos.length ? '<span class="col-sign">₡</span>' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0)/activos.length).toLocaleString('es-CR') : '<span class="col-sign">₡</span>0';
@@ -2298,7 +2477,7 @@ function renderChartDias() {
     const mx = Math.max(...vals)||1;
     _chartDias = new Chart(ctxDias, {
       type:'bar',
-      data:{ labels, datasets:[{ data:vals, backgroundColor:vals.map(v=>v===mx?'#143c5a':v>=mx*0.7?'#4b5563':'#e5e7eb'), borderRadius:3 }] },
+      data:{ labels, datasets:[{ data:vals, backgroundColor:vals.map(v=>v===mx?'#143c5a':v>=mx*0.7?'#5b8db8':'#e5e7eb'), borderRadius:3 }] },
       options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`Día ${c[0].label}`,label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}}, scales:{y:{ticks:{callback:v=>'₡'+(v/1000).toFixed(0)+'k',font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10}},grid:{display:false}}} }
     });
   } else {
@@ -2935,7 +3114,7 @@ function renderChartDiasMes() {
   if (_chartDiasMes) _chartDiasMes.destroy();
   _chartDiasMes = new Chart(ctxDM, {
     type:'bar',
-    data:{ labels:Array.from({length:31},(_,i)=>i+1), datasets:[{ data:porDiaMes, backgroundColor:porDiaMes.map(v=>v===mx?'#143c5a':v>=mx*0.7?'#4b5563':'#e5e7eb'), borderRadius:4 }] },
+    data:{ labels:Array.from({length:31},(_,i)=>i+1), datasets:[{ data:porDiaMes, backgroundColor:porDiaMes.map(v=>v===mx?'#143c5a':v>=mx*0.7?'#5b8db8':'#e5e7eb'), borderRadius:4 }] },
     options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`Día ${c[0].label} del mes`,label:c=>`${c.raw} pedido${c.raw!==1?'s':''}`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10}},grid:{display:false}}} }
   });
 }

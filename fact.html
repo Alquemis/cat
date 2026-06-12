@@ -169,19 +169,15 @@
   <div class="stat-grid">
     <div class="stat-card">
       <div class="stat-value" id="stat-count">—</div>
-      <div class="stat-label">Pedidos pendientes</div>
+      <div class="stat-label">Pedidos nuevos</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-total">—</div>
       <div class="stat-label">Total a facturar</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-value" id="chip-total-pedidos">—</div>
-      <div class="stat-label">Total pedidos</div>
-    </div>
-    <div class="stat-card" style="border-color:#fca5a5;background:#fef2f2;">
-      <div class="stat-value" style="color:#dc2626" id="chip-total-cancelados">0</div>
-      <div class="stat-label" style="color:#dc2626">Cancelados</div>
+    <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;">
+      <div class="stat-value" style="color:#15803d" id="chip-total-mes"><span class="col-sign">₡</span>0</div>
+      <div class="stat-label" style="color:#15803d">Facturado este mes</div>
     </div>
     <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;">
       <div class="stat-value" style="color:#15803d" id="chip-total-facturado"><span class="col-sign">₡</span>0</div>
@@ -222,6 +218,16 @@
 
 <!-- ── HISTORIAL ── -->
 <div id="page-historial" class="container" style="display:none">
+  <div class="stat-grid" style="margin-bottom:20px">
+    <div class="stat-card">
+      <div class="stat-value" id="chip-total-pedidos">—</div>
+      <div class="stat-label">Total pedidos</div>
+    </div>
+    <div class="stat-card" style="border-color:#fca5a5;background:#fef2f2;">
+      <div class="stat-value" style="color:#dc2626" id="chip-total-cancelados">0</div>
+      <div class="stat-label" style="color:#dc2626">Cancelados</div>
+    </div>
+  </div>
   <div class="toolbar">
     <div class="search-field">
       <span>🔍</span>
@@ -617,9 +623,19 @@ function recalcStats() {
   badge.textContent = count; badge.classList.toggle('hidden', count === 0);
 
   const facturados = allHistorial.filter(o => o.estado === 'facturado');
+  const pagados    = allHistorial.filter(o => o.estado === 'pagado');
   const cancelados  = allHistorial.filter(o => o.estado === 'cancelado');
-  const totalFact  = facturados.reduce((s, o) => s + (o.total || 0), 0);
-  document.getElementById('chip-total-facturado').innerHTML = '<span class="col-sign">₡</span>' + totalFact.toLocaleString('es-CR');
+  const granTotal  = allPendientes.reduce((s, o) => s + (o.total || 0), 0)
+                   + facturados.reduce((s, o) => s + (o.total || 0), 0)
+                   + pagados.reduce((s, o) => s + (o.total || 0), 0);
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth();
+  const inMes = o => { const d = new Date(o.fecha); return d.getFullYear() === curY && d.getMonth() === curM; };
+  const granTotalMes = allPendientes.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
+                     + facturados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
+                     + pagados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('chip-total-facturado').innerHTML = '<span class="col-sign">₡</span>' + granTotal.toLocaleString('es-CR');
+  document.getElementById('chip-total-mes').innerHTML      = '<span class="col-sign">₡</span>' + granTotalMes.toLocaleString('es-CR');
   document.getElementById('chip-total-cancelados').textContent = cancelados.length;
   document.getElementById('chip-total-pedidos').textContent   = allPendientes.length + allHistorial.length;
 }
@@ -631,7 +647,7 @@ async function loadHistorial() {
 
   const { data, error } = await sb.from('pedidos')
     .select('*, lineas_pedido(*)')
-    .in('estado', ['facturado', 'cancelado'])
+    .in('estado', ['facturado', 'cancelado', 'pagado'])
     .order('fecha', { ascending: false });
 
   if (error) { console.error(error); return; }
@@ -667,13 +683,16 @@ function renderHistorial(list) {
   }
   tbody.innerHTML = list.map(o => {
     const cancelado = o.estado === 'cancelado';
+    const pagado    = o.estado === 'pagado';
     const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
     const num       = o.id.slice(0,8).toUpperCase();
     const dupColor  = !cancelado ? (_factDupMap[o.id] || '') : '';
-    const rowStyle  = cancelado ? 'background:#fef2f2;' : (dupColor ? `background:${dupColor};` : '');
+    const rowStyle  = cancelado ? 'background:#fef2f2;' : pagado ? 'background:#f0fdf4;' : (dupColor ? `background:${dupColor};` : '');
     const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
-    const badgeIgn  = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>' : '';
-    const accionBtn = cancelado
+    const badgeIgn  = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>'
+                    : pagado    ? ' <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">PAGADO</span>'
+                    : '';
+    const accionBtn = (cancelado || pagado)
       ? '<td></td>'
       : '<td><button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'hist\')">Cancelar</button></td>';
     return '<tr style="' + rowStyle + '">' +

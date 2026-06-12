@@ -323,6 +323,8 @@
   .collab-list-row:hover { background:#f9fafb; }
   .collab-list-row:last-child { border-bottom:none; }
   .collab-avatar { width:34px;height:34px;border-radius:50%;background:#143c5a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0; }
+  .user-avatar { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#143c5a;color:#fff;font-size:8px;font-weight:700;flex-shrink:0;cursor:pointer;user-select:none;vertical-align:middle;transition:opacity .15s; }
+  .user-avatar:hover { opacity:.75; }
   .profile-kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px; }
   .profile-kpi { background:#f9fafb;border-radius:10px;padding:10px 12px; }
   .profile-kpi-val { font-size:18px;font-weight:800;color:#143c5a; }
@@ -1858,7 +1860,7 @@ function renderAdminOrders(tbodyId, list) {
     return `<tr class="${rowClass}" style="${rowStyle}">
       <td>${fecha}${dupChip}</td>
       <td><code style="font-size:12px">${num}</code>${badgeHtml}</td>
-      <td style="font-weight:600">${esc(o.usuario_nombre||'—')}${chipMora}</td>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
@@ -2055,7 +2057,7 @@ function _renderUsersPage() {
       ? `<button class="chip-mora" onclick="openMoraModal('${esc(u.cedula||u.nombre)}','${esc(u.nombre||'—')}')">⚠ En mora (${pedidosMora.length})</button>`
       : '';
     return `<tr>
-      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-weight:600">${esc(u.nombre||'—')}</span>${chipMora}</div></td>
+      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span></div>${chipMora}</div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
@@ -2680,6 +2682,12 @@ let _collabListData = [];
 let _collabProfileChart1 = null;
 let _collabProfileChart2 = null;
 
+function userAvatar(nombre, key) {
+  const ini = (nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  const k   = (key||nombre||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `<span class="user-avatar" onclick="event.stopPropagation();openCollabProfile('${k}')" title="${esc(nombre||'—')}">${ini}</span>`;
+}
+
 async function openCollabList() {
   if (!allUsers.length) await loadUsers();
   _collabListData = allUsers.map(u => ({
@@ -2719,11 +2727,16 @@ function filterCollabList() {
   }).join('');
 }
 
-function openCollabProfile(cedulaOrNombre) {
+async function openCollabProfile(cedulaOrNombre) {
+  if (!_collabListData.length) {
+    if (!allUsers.length) await loadUsers();
+    _collabListData = allUsers.map(u => ({ nombre:u.nombre, cedula:u.cedula, departamento:u.departamento, lugar:u.lugar, created_at:u.created_at }));
+  }
   const user = _collabListData.find(u => u.cedula === cedulaOrNombre || u.nombre === cedulaOrNombre);
   if (!user) return;
 
-  const pedidos = (_dashData||[]).filter(o =>
+  const _ordersSource = _dashData && _dashData.length ? _dashData : [...(allAdminPend||[]), ...(allAdminHist||[])];
+  const pedidos = _ordersSource.filter(o =>
     o.usuario_email === user.cedula || o.usuario_nombre === user.nombre
   ).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 

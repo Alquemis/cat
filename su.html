@@ -86,6 +86,24 @@
   .chip-mora { background:#dc2626;color:#fff;border:none;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;white-space:nowrap; }
   .chip-mora:hover { background:#b91c1c; }
 
+  /* ── MODAL EN MORA ── */
+  #mora-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;display:none;align-items:center;justify-content:center;padding:20px; }
+  #mora-modal.open { display:flex; }
+  #mora-modal-card {
+    background:#fff;border-radius:20px;padding:28px;width:100%;max-width:500px;
+    max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2);
+  }
+  .mora-card {
+    border:1.5px solid #fca5a5;background:#fef2f2;border-radius:12px;
+    padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:background .15s,border-color .15s;
+  }
+  .mora-card:last-child { margin-bottom:0; }
+  .mora-card:hover { background:#fecaca;border-color:#f87171; }
+  .mora-card-num  { font-size:12px;font-weight:700;color:#dc2626;margin-bottom:4px; }
+  .mora-card-row  { display:flex;justify-content:space-between;font-size:14px;color:#374151;margin-top:4px; }
+  .mora-card-total{ font-weight:800;color:#dc2626; }
+  .mora-card-hint { font-size:11px;color:#9ca3af;margin-top:8px;text-align:right; }
+
   /* ── TABLE ── */
   .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
   table { width:100%;border-collapse:collapse; }
@@ -823,6 +841,57 @@
             <button class="btn btn-sm" onclick="saveSuCred('su')" id="su-btn-su" style="width:100%;padding:10px;background:#7c3aed;color:#fff;">Guardar</button>
           </div>
 
+          <!-- Grecia -->
+          <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Grecia</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-gr-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-gr-pass" placeholder="admin">
+              </div>
+            </div>
+            <div class="su-msg" id="su-msg-gr"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('gr')" id="su-btn-gr" style="width:100%;padding:10px;">Guardar</button>
+          </div>
+
+          <!-- Tres Ríos -->
+          <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Tres Ríos</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-3r-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-3r-pass" placeholder="admin">
+              </div>
+            </div>
+            <div class="su-msg" id="su-msg-3r"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('3r')" id="su-btn-3r" style="width:100%;padding:10px;">Guardar</button>
+          </div>
+
+          <!-- Heredia -->
+          <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Heredia</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-he-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-he-pass" placeholder="admin">
+              </div>
+            </div>
+            <div class="su-msg" id="su-msg-he"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('he')" id="su-btn-he" style="width:100%;padding:10px;">Guardar</button>
+          </div>
+
         </div><!-- /su-panels-grid -->
       </div>
 
@@ -1068,6 +1137,27 @@
   <div class="modal-card" id="order-detail-card"></div>
 </div>
 
+<!-- MORA MODAL -->
+<div id="mora-modal" onclick="closeMoraModal()">
+  <div id="mora-modal-card" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;">Pedidos en mora</div>
+        <div style="font-size:17px;font-weight:700;color:#111827;margin-top:4px;line-height:1.2;" id="mora-modal-name"></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:3px;" id="mora-modal-sub"></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;flex-shrink:0;">
+        <div style="text-align:right;">
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;">Total mora</div>
+          <div style="font-size:18px;font-weight:800;color:#dc2626;white-space:nowrap;" id="mora-modal-total"><span style="font-size:13px;">₡</span>0</div>
+        </div>
+        <button onclick="closeMoraModal()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+      </div>
+    </div>
+    <div id="mora-modal-body"></div>
+  </div>
+</div>
+
 <script>
 // ── TOAST ────────────────────────────────────────────────
 let _toastTimer = null;
@@ -1107,6 +1197,41 @@ let currentUser    = null;
 let allProducts    = [];
 let allAdminPend   = [];
 let allAdminHist   = [];
+let _moraUsersMap  = {};  // key (email||nombre) → mora orders[]
+let _moraNombreMap = {};  // nombre → key in _moraUsersMap
+
+function _rebuildMoraMap() {
+  const now = Date.now();
+  _moraUsersMap  = {};
+  _moraNombreMap = {};
+  allAdminHist.forEach(o => {
+    if (o.estado === 'facturado' && now > getMoraThreshold(o.fecha)) {
+      const key = o.usuario_email || o.usuario_nombre;
+      if (!_moraUsersMap[key]) _moraUsersMap[key] = [];
+      _moraUsersMap[key].push(o);
+      if (o.usuario_nombre) _moraNombreMap[o.usuario_nombre] = key;
+    }
+  });
+}
+
+function _getMoraKey(nombre, email) {
+  if (email && _moraUsersMap[email]?.length > 0) return email;
+  if (nombre && _moraUsersMap[nombre]?.length > 0) return nombre;
+  if (nombre && _moraNombreMap[nombre] && _moraUsersMap[_moraNombreMap[nombre]]?.length > 0) return _moraNombreMap[nombre];
+  return null;
+}
+
+function moraUserChip(nombre, email) {
+  const key = _getMoraKey(nombre, email);
+  if (!key) return '';
+  return `<button class="chip-mora" onclick="event.stopPropagation();openMoraModal('${esc(key)}','${esc(nombre||'—')}')">⚠ En mora</button>`;
+}
+
+function moraOrderBadge(o) {
+  if (!o || o.estado !== 'facturado') return '';
+  if (Date.now() <= getMoraThreshold(o.fecha)) return '';
+  return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
+}
 
 /* ── Mapa de duplicados para tabla de pedidos ── */
 const _ADMIN_DUP_COLORS = ['#ffe0b255','#c8e6c955','#bbdefb55','#f8bbd055','#e1bee755','#fff9c455','#b2ebf255','#ffccbc55','#dcedc855','#d7ccc855'];
@@ -1554,9 +1679,9 @@ async function deleteProduct(codigo, nombre) {
 
 // ── PEDIDOS ──────────────────────────────────────────────
 // ── MORA THRESHOLD ────────────────────────────────────────────
-// Orders are invoiced every Monday at 11:00 AM CR time (UTC-6).
+// Orders are invoiced every Monday at 9:00 AM CR time (UTC-6).
 // Delivery window: Fri–Mon of the invoice week.
-// Mora starts: the Monday AFTER invoice Monday at 11:00 AM CR.
+// Mora starts: 10 days after invoice Monday at 9:00 AM CR.
 function getMoraThreshold(fecha) {
   const CR_OFFSET_MS = 6 * 3600000; // UTC-6, no DST
   const d  = new Date(fecha);
@@ -1565,7 +1690,7 @@ function getMoraThreshold(fecha) {
   const hour = cr.getUTCHours();
   const min  = cr.getUTCMinutes();
   let daysToInvoice;
-  if (dow === 1 && (hour < 11 || (hour === 11 && min === 0))) {
+  if (dow === 1 && (hour < 9 || (hour === 9 && min === 0))) {
     daysToInvoice = 0;
   } else if (dow === 1) {
     daysToInvoice = 7;
@@ -1574,8 +1699,8 @@ function getMoraThreshold(fecha) {
   }
   const inv = new Date(cr);
   inv.setUTCDate(cr.getUTCDate() + daysToInvoice);
-  inv.setUTCHours(17, 0, 0, 0); // 11:00 CR = 17:00 UTC
-  return inv.getTime() + 7 * 24 * 3600000;
+  inv.setUTCHours(15, 0, 0, 0); // 9:00 CR = 15:00 UTC
+  return inv.getTime() + 10 * 24 * 3600000;
 }
 
 // Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
@@ -1624,6 +1749,7 @@ async function loadOrders() {
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
   await _autoDeleteExactDups();
+  _rebuildMoraMap();
   const now        = Date.now();
   const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
   const facturados = allAdminHist.filter(o => o.estado === 'facturado');
@@ -1752,17 +1878,8 @@ function renderAdminOrders(tbodyId, list) {
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return; }
   const now = Date.now();
 
-  // Pre-calcular usuarios en mora (para el chip)
-  const usuariosMora = {};
-  if (tbodyId === 'hist-tbody') {
-    list.forEach(o => {
-      if (o.estado === 'facturado' && now > getMoraThreshold(o.fecha)) {
-        const key = o.usuario_email || o.usuario_nombre;
-        if (!usuariosMora[key]) usuariosMora[key] = [];
-        usuariosMora[key].push(o);
-      }
-    });
-  }
+  // Usar mapa global de mora (reconstruido en loadOrders)
+  const usuariosMora = _moraUsersMap;
 
   tbody.innerHTML = list.map(o => {
     const cancelado  = o.estado === 'cancelado';
@@ -1779,15 +1896,12 @@ function renderAdminOrders(tbodyId, list) {
     const rowStyle  = dupColor && !mora && !cancelado && !pagado ? `background:${dupColor};` : '';
 
     let badgeHtml = '';
-    if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>';
-    if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">PAGADO</span>';
-    if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">EN MORA</span>';
+    if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
+    if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
+    if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
 
-    const userKey = o.usuario_email || o.usuario_nombre;
-    const tieneChipMora = mora && usuariosMora[userKey] && usuariosMora[userKey][0]?.id === o.id;
-    const chipMora = tieneChipMora
-      ? `<button class="chip-mora" onclick="openMoraModal(${JSON.stringify(userKey)},${JSON.stringify(o.usuario_nombre||'—')})">⚠ En mora</button>`
-      : '';
+    // Chip mora — aparece en cualquier fila donde el usuario tenga pedidos en mora
+    const chipMora = moraUserChip(o.usuario_nombre, o.usuario_email || o.usuario_nombre);
 
     const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        mora      ? 'font-weight:700;color:#dc2626' :
@@ -1799,7 +1913,7 @@ function renderAdminOrders(tbodyId, list) {
 
     return `<tr class="${rowClass}" style="${rowStyle}">
       <td>${fecha}${dupChip}</td>
-      <td><code style="font-size:12px">${num}</code>${badgeHtml}</td>
+      <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
@@ -1872,7 +1986,28 @@ function openMoraModal(userKey, nombre) {
     now > getMoraThreshold(o.fecha) &&
     (o.usuario_email === userKey || o.usuario_nombre === userKey)
   );
-  showToast(`${nombre} — ${pedidosMora.length} pedido(s) en mora`, 'warn');
+  const totalMora = pedidosMora.reduce((s, o) => s + (o.total || 0), 0);
+  const maxDias   = pedidosMora.length ? Math.max(...pedidosMora.map(o => Math.max(0, Math.floor((now - getMoraThreshold(o.fecha)) / 86400000)))) : 0;
+  document.getElementById('mora-modal-name').textContent  = nombre;
+  document.getElementById('mora-modal-sub').textContent   = `${pedidosMora.length} pedido${pedidosMora.length !== 1 ? 's' : ''} · ${maxDias} día${maxDias !== 1 ? 's' : ''} sin pago`;
+  document.getElementById('mora-modal-total').innerHTML   = `<span style="font-size:13px;">₡</span>${totalMora.toLocaleString('es-CR')}`;
+  document.getElementById('mora-modal-body').innerHTML = pedidosMora.map(o => {
+    const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const threshold = getMoraThreshold(o.fecha);
+    const diasRetr  = Math.max(0, Math.floor((now - threshold) / (1000*60*60*24)));
+    return `<div class="mora-card" onclick="closeMoraModal();openOrderDetail('${o.id}')">
+      <div class="mora-card-num">Pedido #${o.id.slice(0,8).toUpperCase()}</div>
+      <div class="mora-card-row"><span>Fecha del pedido</span><span>${fecha}</span></div>
+      <div class="mora-card-row"><span>Días en retraso</span><span style="color:#dc2626;font-weight:700">${diasRetr} día${diasRetr !== 1 ? 's' : ''}</span></div>
+      <div class="mora-card-row"><span>Total</span><span class="mora-card-total"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</span></div>
+      <div class="mora-card-hint">Toca para ver detalle →</div>
+    </div>`;
+  }).join('');
+  document.getElementById('mora-modal').classList.add('open');
+}
+
+function closeMoraModal() {
+  document.getElementById('mora-modal').classList.remove('open');
 }
 
 function openOrderDetail(id) {
@@ -1885,11 +2020,11 @@ function openOrderDetail(id) {
   const iva = total - subtotalSinIva;
   document.getElementById('order-detail-card').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px">
-      <div class="modal-title">Pedido ${o.id.slice(0,8).toUpperCase()}</div>
+      <div class="modal-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Pedido ${o.id.slice(0,8).toUpperCase()}${moraOrderBadge(o)}</div>
       <div style="font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px">${fecha}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px">
-      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong>${esc(o.usuario_nombre||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(o.usuario_nombre||'—')}${moraUserChip(o.usuario_nombre,o.usuario_email||o.usuario_nombre)}</span></div>
       <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cédula</strong>${esc(o.usuario_email||'—')}</div>
       <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Departamento</strong>${esc(o.usuario_departamento||'—')}</div>
       <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Lugar</strong>${esc(o.usuario_lugar||'—')}</div>
@@ -2079,7 +2214,8 @@ async function saveConfig() {
 // ── SUPERUSUARIO — PANEL ──────────────────────────────────────
 async function loadSuPage() {
   const { data } = await sb.from('app_config').select('key, value')
-    .in('key', ['admin_user','admin_pass','fact_user','fact_pass','su_user','su_pass']);
+    .in('key', ['admin_user','admin_pass','fact_user','fact_pass','su_user','su_pass',
+                'gr_user','gr_pass','3r_user','3r_pass','he_user','he_pass']);
   const cfg = {};
   (data || []).forEach(r => { cfg[r.key] = r.value; });
   document.getElementById('su-admin-user').value = cfg.admin_user || 'admin';
@@ -2088,8 +2224,14 @@ async function loadSuPage() {
   document.getElementById('su-fact-pass').value  = cfg.fact_pass  || 'admin';
   document.getElementById('su-su-user').value    = cfg.su_user    || 'admin';
   document.getElementById('su-su-pass').value    = cfg.su_pass    || 'admin';
+  document.getElementById('su-gr-user').value    = cfg.gr_user    || 'admin';
+  document.getElementById('su-gr-pass').value    = cfg.gr_pass    || 'admin';
+  document.getElementById('su-3r-user').value    = cfg['3r_user'] || 'admin';
+  document.getElementById('su-3r-pass').value    = cfg['3r_pass'] || 'admin';
+  document.getElementById('su-he-user').value    = cfg.he_user    || 'admin';
+  document.getElementById('su-he-pass').value    = cfg.he_pass    || 'admin';
   // Ocultar mensajes
-  ['admin','fact','su'].forEach(t => {
+  ['admin','fact','su','gr','3r','he'].forEach(t => {
     document.getElementById('su-msg-' + t).style.display = 'none';
   });
   await loadSuUsers();
@@ -2487,12 +2629,13 @@ function renderSuProdDetail() {
     const pedidos = data.filter(o=>(o.usuario_nombre===n||o.usuario_email===n)).map(o=>({
       num: o.id.slice(0,8).toUpperCase(),
       fecha: new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'}),
-      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_nombre||l.producto_codigo)===_suProdDetailName).reduce((s,l)=>s+(l.cantidad||0),0)
+      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_nombre||l.producto_codigo)===_suProdDetailName).reduce((s,l)=>s+(l.cantidad||0),0),
+      mora: o.estado==='facturado' && Date.now()>getMoraThreshold(o.fecha)
     })).filter(p=>p.qty>0);
     _suProdDetailRowData[idx] = pedidos;
     return `<div style="border-bottom:1px solid #f3f4f6;">
       <div onclick="toggleProdDetailOrders(this,${idx})" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-        <span style="flex:1;font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;">${esc(n)}${moraUserChip(n,null)}</span>
         <span style="width:44px;text-align:right;font-size:13px;font-weight:700;color:#143c5a;white-space:nowrap;">${v.total} u.</span>
         <span style="width:56px;text-align:right;font-size:11px;color:#9ca3af;white-space:nowrap;">${fecha}</span>
         <span style="width:14px;font-size:11px;color:#9ca3af;text-align:right;">›</span>
@@ -2510,7 +2653,7 @@ function toggleProdDetailOrders(row, idx) {
     const pedidos = _suProdDetailRowData[idx] || [];
     wrap.innerHTML = pedidos.map(p=>`
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
-        <span style="font-family:monospace;font-weight:700;color:#143c5a;">#${p.num}</span>
+        <span style="font-family:monospace;font-weight:700;color:#143c5a;">#${p.num}${p.mora?'<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>':''}</span>
         <span style="color:#9ca3af;">${p.fecha}</span>
         <span style="font-weight:700;color:#143c5a;white-space:nowrap;">${p.qty} u.</span>
       </div>`).join('');
@@ -2577,7 +2720,7 @@ function renderSuRankUnidades() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 // ── LISTA Y FICHA COLABORADORES SU ───────────────────────
@@ -2644,7 +2787,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
       <div style="width:52px;height:52px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">${ini}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:18px;font-weight:800;color:#143c5a;">${esc(user.nombre||'—')}</div>
+        <div style="font-size:18px;font-weight:800;color:#143c5a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
         <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg}</div>
       </div>
@@ -2669,7 +2812,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
       const num=o.id.slice(0,8).toUpperCase();
       const fecha=new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
       const unid=(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
-      const estadoBadge=o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>':'';
+      const estadoBadge=o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>'+moraOrderBadge(o):'';
       const lines=(o.lineas_pedido||[]).map(l=>`<div class="ud-line"><span class="ud-line-name">${esc(l.producto_nombre||l.producto_codigo)}</span><span class="ud-line-qty">${l.cantidad} u.</span></div>`).join('');
       return `<div class="ud-order"><div class="ud-order-hd" onclick="toggleUdOrder(this)"><div><div class="ud-order-num">#${num}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div></div><span class="ud-order-units">${unid} u. · <span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</span><span class="ud-order-arrow">›</span></div><div class="ud-order-body">${lines}</div></div>`;
     }).join('')}`;
@@ -2752,7 +2895,7 @@ function renderSuMontoDetail() {
       </div>`).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
-        <div><div class="ud-order-num">#${num}</div><div class="ud-order-meta">${fecha}</div></div>
+        <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}</div><div class="ud-order-meta">${fecha}</div></div>
         <span class="ud-order-units"><span class="col-sign">₡</span>${monto}</span>
         <span class="ud-order-arrow">›</span>
       </div>
@@ -2832,7 +2975,7 @@ function renderSuUserDetail() {
       </div>`).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
-        <div><div class="ud-order-num">#${num}</div><div class="ud-order-meta">${fecha}</div></div>
+        <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}</div><div class="ud-order-meta">${fecha}</div></div>
         <span class="ud-order-units">${unid} u.</span>
         <span class="ud-order-arrow">›</span>
       </div>
@@ -2895,7 +3038,7 @@ function renderSuRankMonto() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.total||0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 function setSuUnidPeriod(p) {

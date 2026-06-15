@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Tres Ríos – Catálogo Colaboradores</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
+
+  /* ── LOGIN ── */
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#143c5a,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
+  .login-logo { height:52px;margin-bottom:10px; }
+  .login-title { font-size:20px;font-weight:700;color:#143c5a;margin-bottom:4px; }
+  .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
+  .login-field { margin-bottom:16px;text-align:left; }
+  .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
+  .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
+  .login-field input:focus { border-color:#143c5a; }
+  .login-btn { width:100%;padding:13px;background:#143c5a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px; }
+  .login-btn:hover { background:#111827; }
+  .login-btn:disabled { background:#d1d5db;cursor:not-allowed; }
+  .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
+  .login-error.show { display:block; }
+
+  /* ── LAYOUT ── */
+  .topbar { background:#143c5a;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#d1d5db;margin-left:10px; }
+  .topbar-right { display:flex;align-items:center;gap:16px;flex-shrink:0; }
+  .topbar-user { font-size:13px;color:#d1d5db;white-space:nowrap; }
+  .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer; }
+  .topbar-logout:hover { background:#4b5563; }
+
+  .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;gap:0; }
+  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s; }
+  .page-tab:hover { color:#143c5a; }
+  .page-tab.active { color:#143c5a;border-bottom:3px solid #143c5a; }
+
+  .container { max-width:1200px;margin:0 auto;padding:32px; }
+
+  /* ── CARDS ── */
+  .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px; }
+  .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:22px;font-weight:800;color:#143c5a; }
+  .stat-label { font-size:12px;color:#6b7280;margin-top:3px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
+  .search-field { flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#143c5a; }
+  .btn { padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s; }
+  .btn-primary { background:#143c5a;color:#fff; }
+  .btn-primary:hover { background:#111827; }
+  .btn-secondary { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
+  .btn-secondary:hover { background:#e5e7eb; }
+  .btn-danger { background:#fee2e2;color:#dc2626; }
+  .btn-danger:hover { background:#fecaca; }
+  .btn-sm { padding:6px 12px;font-size:12px;border-radius:7px; }
+  .btn-success { background:#d1fae5;color:#065f46; }
+  .btn-success:hover { background:#a7f3d0; }
+
+  /* ── TABLE ── */
+  .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  table { width:100%;border-collapse:collapse; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb; }
+  tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:#fafafa; }
+  .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+  .badge-green { background:#d1fae5;color:#065f46; }
+  .badge-gray  { background:#f3f4f6;color:#6b7280; }
+  .badge-yellow { background:#fef3c7;color:#92400e; }
+  .badge-red   { background:#fee2e2;color:#dc2626; }
+  .badge-blue  { background:#dbeafe;color:#1e40af; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:50px; }
+  .modal-overlay.open { display:flex; }
+  .modal-card { background:#fff;border-radius:20px;padding:36px;width:100%;max-width:780px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .modal-title { font-size:19px;font-weight:700;color:#143c5a;margin-bottom:20px; }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  .form-field { display:flex;flex-direction:column;gap:5px; }
+  .form-field.full { grid-column:1/-1; }
+  .form-field label { font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px; }
+  .form-field input,.form-field select,.form-field textarea {
+    padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;
+    font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;
+  }
+  .form-field input:focus,.form-field select:focus,.form-field textarea:focus { border-color:#143c5a; }
+  .form-field textarea { resize:vertical;min-height:60px; }
+  .modal-btns { display:flex;gap:12px;margin-top:24px; }
+  .modal-btns .btn { flex:1;padding:13px; }
+
+  /* ── ORDERS ── */
+  .th-sort { cursor:pointer;user-select:none;white-space:nowrap; }
+  .th-sort:hover { background:#f3f4f6;color:#143c5a; }
+  .sort-icon { font-size:10px;color:#d1d5db;margin-left:3px; }
+  .sort-asc .sort-icon::after  { content:'↑'; color:#143c5a; }
+  .sort-desc .sort-icon::after { content:'↓'; color:#143c5a; }
+  .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
+
+  /* Paginación */
+  .pagination { display:flex;align-items:center;gap:6px;margin-top:14px;flex-wrap:wrap; }
+  .pagination-info { font-size:12px;color:#9ca3af;margin-right:4px; }
+  .pg-btn { padding:5px 10px;border:1.5px solid #e5e7eb;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;color:#374151;font-weight:600;transition:all .15s; }
+  .pg-btn:hover:not(:disabled) { background:#f3f4f6; }
+  .pg-btn.active { background:#143c5a;color:#fff;border-color:#143c5a; }
+  .pg-btn:disabled { opacity:.35;cursor:not-allowed; }
+
+  .empty-table { text-align:center;padding:60px 20px;color:#d1d5db; }
+
+  /* ── ESTADOS DE FILA ── */
+  tr.row-mora   td { background:#fef2f2; }
+  tr.row-mora:hover td { background:#fee2e2; }
+  tr.row-cancelado   td { background:#f9fafb; color:#d1d5db; }
+  tr.row-cancelado:hover td { background:#f3f4f6; color:#d1d5db; }
+  tr.row-pagado   td { background:#f0fdf4; }
+  tr.row-pagado:hover td { background:#dcfce7; }
+
+  /* ── CHIP EN MORA ── */
+  .chip-mora { background:#dc2626;color:#fff;border:none;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;white-space:nowrap; }
+  .chip-mora:hover { background:#b91c1c; }
+
+  /* ── MODAL EN MORA ── */
+  #mora-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;display:none;align-items:center;justify-content:center;padding:20px; }
+  #mora-modal.open { display:flex; }
+  #mora-modal-card {
+    background:#fff;border-radius:20px;padding:28px;width:100%;max-width:500px;
+    max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2);
+  }
+  .mora-card {
+    border:1.5px solid #fca5a5;background:#fef2f2;border-radius:12px;
+    padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:background .15s,border-color .15s;
+  }
+  .mora-card:last-child { margin-bottom:0; }
+  .mora-card:hover { background:#fecaca;border-color:#f87171; }
+  .mora-card-num  { font-size:12px;font-weight:700;color:#dc2626;margin-bottom:4px; }
+  .mora-card-row  { display:flex;justify-content:space-between;font-size:14px;color:#374151;margin-top:4px; }
+  .mora-card-total{ font-weight:800;color:#dc2626; }
+  .mora-card-hint { font-size:11px;color:#9ca3af;margin-top:8px;text-align:right; }
+
+  /* ── TOAST ── */
+  #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#143c5a;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
+    white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
+  #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  #app-toast.toast-error { background:#dc2626; }
+  #app-toast.toast-ok    { background:#16a34a; }
+  #app-toast.toast-warn  { background:#d97706; }
+
+  /* ── CONFIRM MODAL ── */
+  #app-confirm { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:8000;display:none;align-items:center;justify-content:center;padding:20px; }
+  #app-confirm.open { display:flex; }
+
+  /* ── ORDER TABS ── */
+  .order-tabs { display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden; }
+  .order-tab { flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;transition:all .2s; }
+  .order-tab.active { border-bottom:3px solid #143c5a;color:#143c5a; }
+
+  /* ── USER AVATAR ── */
+  .user-avatar { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#143c5a;color:#fff;font-size:8px;font-weight:700;flex-shrink:0;user-select:none;vertical-align:middle; }
+
+  /* ── COLORSIGN ── */
+  .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
+
+  /* ── ORDER DETAIL INLINE ── */
+  .order-detail { background:#f9fafb;border-radius:10px;padding:14px;margin-top:8px;font-size:13px;display:none; }
+  .order-detail.open { display:block; }
+  .order-detail table { font-size:13px; }
+  .order-detail thead th { font-size:11px;padding:8px 12px; }
+  .order-detail tbody td { padding:8px 12px; }
+
+  /* ===== RESPONSIVE: tablet ===== */
+  @media(max-width:768px) {
+    .topbar { padding:12px 16px; }
+    .topbar-brand span { display:none; }
+    .page-tabs { padding:0 4px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; flex-wrap:nowrap; }
+    .page-tabs::-webkit-scrollbar { display:none; }
+    .page-tab { padding:14px 16px; font-size:13px; white-space:nowrap; flex-shrink:0; }
+    .container { padding:20px 16px; overflow-x:hidden; }
+    .stat-grid { grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px; }
+    .stat-value { font-size:20px; }
+    .toolbar { gap:8px; }
+    .search-field { flex-basis:100%; order:-1; }
+    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table { min-width:520px; }
+    .modal-overlay { align-items:flex-end; padding:0; }
+    .modal-card { border-radius:20px 20px 0 0; max-height:92vh; padding:28px 20px; max-width:100% !important; }
+    .form-grid { grid-template-columns:1fr; }
+  }
+
+  @media(max-width:768px) {
+    #page-settings .stat-card > div[style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media(max-width:480px) {
+    .topbar-brand { font-size:14px; }
+    .topbar-logout { padding:6px 10px; font-size:12px; }
+    .page-tab { padding:12px 12px; font-size:12px; }
+    .stat-card { padding:12px 12px; }
+    .stat-value { font-size:18px; }
+    .stat-label { font-size:11px; }
+    .btn { padding:9px 12px; font-size:13px; }
+    .btn-sm { padding:5px 10px; font-size:11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-card">
+    <img src="../Imagenes/Martimac_Logo.png" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
+    <div class="login-title">Tres Ríos</div>
+    <div class="login-sub">Catálogo Colaboradores — acceso restringido</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="usuario" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">Tres Ríos <span>Catálogo Colaboradores</span></div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbar-user"></span>
+    <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" onclick="showPage('orders')">📋 Pedidos</button>
+  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+  <!-- ── PAGE: ORDERS ── -->
+  <div id="page-orders">
+    <!-- Stats -->
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-por-pagar">—</div>
+        <div class="stat-label" id="stat-por-pagar-lbl">Por pagar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-pagados">—</div>
+        <div class="stat-label" id="stat-pagados-lbl">Pagados</div>
+      </div>
+      <div class="stat-card" style="border-color:#fca5a5;background:#fef2f2;">
+        <div class="stat-value" style="color:#dc2626" id="stat-mora">—</div>
+        <div class="stat-label" style="color:#dc2626" id="stat-mora-lbl">En mora</div>
+      </div>
+    </div>
+
+    <!-- Order sub-tabs -->
+    <div class="order-tabs">
+      <button class="order-tab active" id="otab-fact" onclick="showOrderTab('fact')">
+        Por pagar <span class="badge badge-red" id="obadge-fact" style="display:none">0</span>
+      </button>
+      <button class="order-tab" id="otab-pag" onclick="showOrderTab('pag')">
+        Pagados
+      </button>
+    </div>
+
+    <!-- Por pagar (facturados) -->
+    <div id="opage-fact">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="hist-search" placeholder="Buscar por nombre…" oninput="filterFacturado()">
+        </div>
+        <input type="date" id="hist-desde" onchange="filterFacturado()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortHist('fecha')" id="hth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortHist('usuario_nombre')" id="hth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortHist('usuario_departamento')" id="hth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortHist('total')" id="hth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="hist-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagados -->
+    <div id="opage-pag" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="pagados-search" placeholder="Buscar por nombre…" oninput="filterPagados()">
+        </div>
+        <input type="date" id="pagados-desde" onchange="filterPagados()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortPagados('fecha')" id="pgth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortPagados('usuario_nombre')" id="pgth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('usuario_departamento')" id="pgth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortPagados('total')" id="pgth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="pagados-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SETTINGS ── -->
+  <div id="page-settings" style="display:none">
+    <div style="max-width:860px;margin:0 auto;padding-top:8px;">
+
+      <!-- Credenciales -->
+      <div class="stat-card" style="margin-bottom:24px;">
+        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Credenciales de acceso — Tres Ríos</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel de Tres Ríos.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
+          <div class="form-field">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
+            <input type="text" id="cfg-user" placeholder="usuario" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;">
+          </div>
+          <div></div>
+          <div class="form-field">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Nueva contraseña</label>
+            <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;">
+          </div>
+          <div class="form-field">
+            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirmar nueva contraseña</label>
+            <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;">
+          </div>
+        </div>
+        <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:16px;margin-bottom:4px;"></div>
+        <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="margin-top:20px;padding:12px 32px;">Guardar cambios</button>
+      </div>
+
+      <!-- Eliminar colaboradores -->
+      <div class="stat-card">
+        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Eliminar colaborador</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Busca y elimina un colaborador de la base de datos. Esta acción cerrará su sesión automáticamente.</div>
+        <div class="toolbar" style="margin-bottom:16px;">
+          <div class="search-field" style="flex:1;">
+            <span>🔍</span>
+            <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
+          </div>
+          <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:80px;text-align:center;">Acción</th>
+            </tr></thead>
+            <tbody id="cfg-users-tbody">
+              <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="app-toast"></div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="order-detail-modal">
+  <div class="modal-card" id="order-detail-card">
+  </div>
+</div>
+
+<!-- MORA MODAL -->
+<div id="mora-modal" onclick="closeMoraModal()">
+  <div id="mora-modal-card" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;">Pedidos en mora</div>
+        <div style="font-size:17px;font-weight:700;color:#111827;margin-top:4px;line-height:1.2;" id="mora-modal-name"></div>
+        <div style="font-size:13px;color:#6b7280;margin-top:3px;" id="mora-modal-sub"></div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px;flex-shrink:0;">
+        <div style="text-align:right;">
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;">Total mora</div>
+          <div style="font-size:18px;font-weight:800;color:#dc2626;white-space:nowrap;" id="mora-modal-total"><span style="font-size:13px;">₡</span>0</div>
+        </div>
+        <button onclick="closeMoraModal()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+      </div>
+    </div>
+    <div id="mora-modal-body"></div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="app-confirm">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
+    <div style="font-size:34px;margin-bottom:12px;" id="app-confirm-icon">⚠️</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:8px;" id="app-confirm-title"></div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:24px;" id="app-confirm-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" onclick="_confirmReject()">Cancelar</button>
+      <button style="flex:1;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" id="app-confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── LUGAR ────────────────────────────────────────────────
+const LUGAR = 'Tres Ríos';
+
+// ── TOAST ────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('app-toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ── CONFIRM ──────────────────────────────────────────────
+let _confirmOk = null;
+function showConfirm(title, msg, onOk, { icon = '⚠️', okLabel = 'Confirmar', okColor = '#dc2626' } = {}) {
+  document.getElementById('app-confirm-icon').textContent  = icon;
+  document.getElementById('app-confirm-title').textContent = title;
+  document.getElementById('app-confirm-msg').textContent   = msg;
+  const okBtn = document.getElementById('app-confirm-ok');
+  okBtn.textContent = okLabel; okBtn.style.background = okColor;
+  _confirmOk = onOk;
+  okBtn.onclick = () => { _confirmReject(); onOk(); };
+  document.getElementById('app-confirm').classList.add('open');
+}
+function _confirmReject() {
+  document.getElementById('app-confirm').classList.remove('open');
+  _confirmOk = null;
+}
+
+// ── CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── AUTH KEYS (derivadas de LUGAR) ───────────────────────
+const SESSION_KEY = LUGAR === 'Grecia' ? 'gr_session'       : '3r_session';
+const TOKEN_KEY   = LUGAR === 'Grecia' ? 'gr_session_token' : '3r_session_token';
+const USER_KEY    = LUGAR === 'Grecia' ? 'gr_user'          : '3r_user';
+const PASS_KEY    = LUGAR === 'Grecia' ? 'gr_pass'          : '3r_pass';
+
+// ── ESTADO ───────────────────────────────────────────────
+let allAdminHist   = [];
+let _moraUsersMap  = {};
+let _moraNombreMap = {};
+
+function _rebuildMoraMap() {
+  const now = Date.now();
+  _moraUsersMap  = {};
+  _moraNombreMap = {};
+  allAdminHist.forEach(o => {
+    if (o.estado === 'facturado' && now > getMoraThreshold(o.fecha)) {
+      const key = o.usuario_email || o.usuario_nombre;
+      if (!_moraUsersMap[key]) _moraUsersMap[key] = [];
+      _moraUsersMap[key].push(o);
+      if (o.usuario_nombre) _moraNombreMap[o.usuario_nombre] = key;
+    }
+  });
+}
+
+function _getMoraKey(nombre, email) {
+  if (email && _moraUsersMap[email]?.length > 0) return email;
+  if (nombre && _moraUsersMap[nombre]?.length > 0) return nombre;
+  if (nombre && _moraNombreMap[nombre] && _moraUsersMap[_moraNombreMap[nombre]]?.length > 0) return _moraNombreMap[nombre];
+  return null;
+}
+
+function moraUserChip(nombre, email) {
+  const key = _getMoraKey(nombre, email);
+  if (!key) return '';
+  return `<button class="chip-mora" onclick="event.stopPropagation();openMoraModal('${esc(key)}','${esc(nombre||'—')}')">⚠ En mora</button>`;
+}
+
+function moraOrderBadge(o) {
+  if (!o || o.estado !== 'facturado') return '';
+  if (Date.now() <= getMoraThreshold(o.fecha)) return '';
+  return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
+}
+
+/* ── Mapa de duplicados ── */
+const _ADMIN_DUP_COLORS = ['#ffe0b255','#c8e6c955','#bbdefb55','#f8bbd055','#e1bee755','#fff9c455','#b2ebf255','#ffccbc55','#dcedc855','#d7ccc855'];
+let _adminDupMap = {};
+function _rebuildAdminDupMap() {
+  const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
+  const all = [...allAdminHist].filter(o =>
+    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
+  );
+  const groups = {};
+  for (const o of all) {
+    const fp = _dupFingerprint(o);
+    if (!fp) continue;
+    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
+    const key  = user + '||' + fp;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o.id);
+  }
+  _adminDupMap = {};
+  let ci = 0;
+  for (const ids of Object.values(groups)) {
+    if (ids.length < 2) continue;
+    const color = _ADMIN_DUP_COLORS[ci % _ADMIN_DUP_COLORS.length];
+    ci++;
+    for (const id of ids) _adminDupMap[id] = color;
+  }
+}
+
+// ── AUTH ─────────────────────────────────────────────────
+async function initAuth() {
+  const saved = localStorage.getItem(SESSION_KEY);
+  if (saved && saved !== 'ok') {
+    try {
+      const { data } = await sb.from('app_config').select('value').eq('key', TOKEN_KEY).maybeSingle();
+      if (data?.value === saved) { await onLogin(); return; }
+      localStorage.removeItem(SESSION_KEY);
+    } catch(e) {
+      await onLogin(); return;
+    }
+  } else if (saved === 'ok') {
+    localStorage.removeItem(SESSION_KEY);
+  }
+  document.getElementById('login-overlay').classList.remove('hidden');
+}
+
+function _dupFingerprint(order) {
+  return (order.lineas_pedido || [])
+    .map(l => `${(l.producto_codigo || l.producto_nombre || '').trim()}:${l.cantidad}`)
+    .sort().join('|');
+}
+
+async function onLogin() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('topbar-user').textContent = LUGAR;
+  showPage('orders');
+  await loadOrders();
+}
+
+function onLogout() {
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const btn  = document.getElementById('login-btn');
+  const err  = document.getElementById('login-error');
+
+  if (!user || !pass) { err.textContent = 'Completa todos los campos.'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Verificando…'; err.classList.remove('show');
+
+  try {
+    const { data, error } = await sb.from('app_config')
+      .select('key, value')
+      .in('key', [USER_KEY, PASS_KEY]);
+
+    if (error) throw error;
+
+    const cfg    = {};
+    (data || []).forEach(r => { cfg[r.key] = r.value; });
+    const okUser = (cfg[USER_KEY] || 'admin') === user;
+    const okPass = (cfg[PASS_KEY] || 'admin') === pass;
+
+    if (okUser && okPass) {
+      let token;
+      const { data: td } = await sb.from('app_config').select('value').eq('key', TOKEN_KEY).maybeSingle();
+      if (td?.value) {
+        token = td.value;
+      } else {
+        token = Date.now().toString();
+        await sb.from('app_config').upsert([{ key: TOKEN_KEY, value: token }], { onConflict: 'key' });
+      }
+      localStorage.setItem(SESSION_KEY, token);
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      await onLogin();
+    } else {
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      err.textContent = 'Usuario o contraseña incorrectos.';
+      err.classList.add('show');
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Ingresar';
+    err.textContent = 'Error de conexión. Verifica tu red e intenta de nuevo.';
+    err.classList.add('show');
+  }
+}
+
+function doLogout() { onLogout(); }
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+
+// ── RESPONSIVE ZOOM ──────────────────────────────────────
+function applyZoom() {
+  const vw = window.innerWidth;
+  document.body.style.zoom = vw < 600 ? (vw / 600) : '';
+}
+window.addEventListener('resize', applyZoom);
+applyZoom();
+
+// ── PAGES ────────────────────────────────────────────────
+function showPage(page) {
+  ['orders','settings'].forEach(p => {
+    document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
+  });
+  document.querySelectorAll('.page-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['orders','settings'][i] === page);
+  });
+  if (page==='orders' && allAdminHist.length===0) loadOrders();
+  if (page==='settings') { loadConfig(); loadCfgUsers(); }
+}
+
+// ── MORA THRESHOLD ────────────────────────────────────────────
+function getMoraThreshold(fecha) {
+  const CR_OFFSET_MS = 6 * 3600000;
+  const d  = new Date(fecha);
+  const cr = new Date(d.getTime() - CR_OFFSET_MS);
+  const dow  = cr.getUTCDay();
+  const hour = cr.getUTCHours();
+  const min  = cr.getUTCMinutes();
+  let daysToInvoice;
+  if (dow === 1 && (hour < 9 || (hour === 9 && min === 0))) {
+    daysToInvoice = 0;
+  } else if (dow === 1) {
+    daysToInvoice = 7;
+  } else {
+    daysToInvoice = (8 - dow) % 7;
+  }
+  const inv = new Date(cr);
+  inv.setUTCDate(cr.getUTCDate() + daysToInvoice);
+  inv.setUTCHours(15, 0, 0, 0);
+  return inv.getTime() + 10 * 24 * 3600000;
+}
+
+// Auto-elimina duplicados exactos
+async function _autoDeleteExactDups() {
+  const all = [...allAdminHist].filter(o => o.estado !== 'cancelado');
+  const groups = {};
+  for (const o of all) {
+    const fp = _dupFingerprint(o);
+    if (!fp) continue;
+    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
+    const key  = user + '||' + fp;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o);
+  }
+  const toDelete = [];
+  for (const orders of Object.values(groups)) {
+    if (orders.length < 2) continue;
+    const byTs = {};
+    for (const o of orders) {
+      const ts = new Date(o.fecha).toISOString().slice(0, 19);
+      if (!byTs[ts]) byTs[ts] = [];
+      byTs[ts].push(o);
+    }
+    for (const same of Object.values(byTs)) {
+      if (same.length < 2) continue;
+      same.sort((a, b) => a.id < b.id ? -1 : 1);
+      for (const o of same.slice(1)) toDelete.push(o);
+    }
+  }
+  if (toDelete.length === 0) return;
+  for (const o of toDelete) {
+    const { error } = await sb.from('pedidos').delete().eq('id', o.id);
+    if (error) { console.error('Auto-delete exact dup failed:', o.id, error); continue; }
+    allAdminHist = allAdminHist.filter(x => x.id !== o.id);
+  }
+  showToast(`🗑 ${toDelete.length} pedido${toDelete.length > 1 ? 's duplicados eliminados' : ' duplicado eliminado'} automáticamente`, 'warn');
+}
+
+async function loadOrders() {
+  const [resPend, resHist] = await Promise.all([
+    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:false})
+  ]);
+  // Filter by LUGAR client-side
+  allAdminHist = (resHist.data || []).filter(o => o.usuario_lugar === LUGAR);
+
+  await _autoDeleteExactDups();
+  _rebuildMoraMap();
+
+  const now        = Date.now();
+  const facturados = allAdminHist.filter(o => o.estado === 'facturado');
+  const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
+  const enMora     = facturados.filter(o => now > getMoraThreshold(o.fecha));
+  document.getElementById('stat-por-pagar').textContent = facturados.length;
+  document.getElementById('stat-pagados').textContent   = pagados.length;
+  document.getElementById('stat-mora').textContent      = enMora.length;
+
+  const badgeFact = document.getElementById('obadge-fact');
+  if (badgeFact) { badgeFact.textContent = facturados.length; badgeFact.style.display = facturados.length ? 'inline-flex' : 'none'; }
+
+  filterFacturado();
+  filterPagados();
+}
+
+function showOrderTab(tab) {
+  ['fact','pag'].forEach(t => {
+    document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('otab-' + t);
+    btn.classList.toggle('active', t === tab);
+  });
+}
+
+let _histSort = { col: 'fecha', dir: 'desc' };
+
+function sortHist(col) {
+  if (_histSort.col === col) { _histSort.dir = _histSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _histSort.col = col; _histSort.dir = col === 'total' ? 'desc' : 'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','total'].forEach(c => {
+    const th = document.getElementById('hth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _histSort.col) th.classList.add(_histSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterFacturado();
+}
+
+function filterFacturado() {
+  const q     = (document.getElementById('hist-search').value || '').toLowerCase();
+  const desde = document.getElementById('hist-desde').value;
+  let list = allAdminHist.filter(o =>
+    o.estado === 'facturado' &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  const { col, dir } = _histSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderAdminOrders('hist-tbody', list);
+}
+
+let _pagadosSort = { col: 'fecha', dir: 'desc' };
+
+function sortPagados(col) {
+  if (_pagadosSort.col === col) { _pagadosSort.dir = _pagadosSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _pagadosSort.col = col; _pagadosSort.dir = col === 'total' ? 'desc' : 'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','total'].forEach(c => {
+    const th = document.getElementById('pgth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _pagadosSort.col) th.classList.add(_pagadosSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterPagados();
+}
+
+function filterPagados() {
+  const q     = (document.getElementById('pagados-search').value || '').toLowerCase();
+  const desde = document.getElementById('pagados-desde').value;
+  let list = allAdminHist.filter(o =>
+    (o.estado === 'pagado' || o.estado === 'cancelado') &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  const { col, dir } = _pagadosSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  renderAdminOrders('pagados-tbody', list);
+}
+
+function renderAdminOrders(tbodyId, list) {
+  _rebuildAdminDupMap();
+  const tbody = document.getElementById(tbodyId);
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin pedidos</td></tr>'; return;
+  }
+  const now = Date.now();
+  const usuariosMora = _moraUsersMap;
+
+  tbody.innerHTML = list.map(o => {
+    const cancelado  = o.estado === 'cancelado';
+    const pagado     = o.estado === 'pagado';
+    const facturado  = o.estado === 'facturado';
+    const mora       = facturado && now > getMoraThreshold(o.fecha);
+    const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const num        = o.id.slice(0,8).toUpperCase();
+
+    const dupColor   = !cancelado ? (_adminDupMap[o.id] || '') : '';
+    const dupChip    = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+
+    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+    const rowStyle   = dupColor && !mora && !cancelado && !pagado ? `background:${dupColor};` : '';
+
+    let badgeHtml = '';
+    if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
+    if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
+    if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
+
+    const chipMora = moraUserChip(o.usuario_nombre, o.usuario_email || o.usuario_nombre);
+
+    const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       mora      ? 'font-weight:700;color:#dc2626' :
+                       pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
+
+    const btnPagado = facturado
+      ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
+      : '';
+
+    return `<tr class="${rowClass}" style="${rowStyle}">
+      <td>${fecha}${dupChip}</td>
+      <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
+      <td>${esc(o.usuario_departamento||'—')}</td>
+      <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function userAvatar(nombre) {
+  const ini = (nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  return `<span class="user-avatar" title="${esc(nombre||'—')}">${ini}</span>`;
+}
+
+function markAsPagado(id) {
+  showConfirm(
+    '¿Marcar como pagado?',
+    'El pedido pasará al estado "Pagado" y se sumará al total pagado.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'pagado' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      showToast('Pedido marcado como pagado.', 'ok');
+      await loadOrders();
+    },
+    { icon: '💳', okLabel: 'Confirmar pago', okColor: '#047857' }
+  );
+}
+
+function openMoraModal(userKey, nombre) {
+  const now = Date.now();
+  const pedidosMora = allAdminHist.filter(o =>
+    o.estado === 'facturado' &&
+    now > getMoraThreshold(o.fecha) &&
+    (o.usuario_email === userKey || o.usuario_nombre === userKey)
+  );
+  const totalMora = pedidosMora.reduce((s, o) => s + (o.total || 0), 0);
+  const maxDias   = pedidosMora.length ? Math.max(...pedidosMora.map(o => Math.max(0, Math.floor((now - getMoraThreshold(o.fecha)) / 86400000)))) : 0;
+  document.getElementById('mora-modal-name').textContent  = nombre;
+  document.getElementById('mora-modal-sub').textContent   = `${pedidosMora.length} pedido${pedidosMora.length !== 1 ? 's' : ''} · ${maxDias} día${maxDias !== 1 ? 's' : ''} sin pago`;
+  document.getElementById('mora-modal-total').innerHTML   = `<span style="font-size:13px;">₡</span>${totalMora.toLocaleString('es-CR')}`;
+  document.getElementById('mora-modal-body').innerHTML = pedidosMora.map(o => {
+    const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const threshold = getMoraThreshold(o.fecha);
+    const diasRetr  = Math.max(0, Math.floor((now - threshold) / (1000*60*60*24)));
+    return `<div class="mora-card" onclick="closeMoraModal();openOrderDetail('${o.id}')">
+      <div class="mora-card-num">Pedido #${o.id.slice(0,8).toUpperCase()}</div>
+      <div class="mora-card-row"><span>Fecha del pedido</span><span>${fecha}</span></div>
+      <div class="mora-card-row"><span>Días en retraso</span><span style="color:#dc2626;font-weight:700">${diasRetr} día${diasRetr !== 1 ? 's' : ''}</span></div>
+      <div class="mora-card-row"><span>Total</span><span class="mora-card-total"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</span></div>
+      <div class="mora-card-hint">Toca para ver detalle →</div>
+    </div>`;
+  }).join('');
+  document.getElementById('mora-modal').classList.add('open');
+}
+
+function closeMoraModal() {
+  document.getElementById('mora-modal').classList.remove('open');
+}
+
+function openOrderDetail(id) {
+  const o = allAdminHist.find(x => x.id === id);
+  if (!o) return;
+  const fecha  = new Date(o.fecha).toLocaleString('es-CR');
+  const lineas = (o.lineas_pedido || []);
+  const total  = o.total || 0;
+  const subtotalSinIva = Math.round(total / 1.13);
+  const iva = total - subtotalSinIva;
+  document.getElementById('order-detail-card').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px">
+      <div class="modal-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Pedido ${o.id.slice(0,8).toUpperCase()}${moraOrderBadge(o)}</div>
+      <div style="font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px">${fecha}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px">
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(o.usuario_nombre||'—')}${moraUserChip(o.usuario_nombre,o.usuario_email||o.usuario_nombre)}</span></div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cédula</strong>${esc(o.usuario_email||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Departamento</strong>${esc(o.usuario_departamento||'—')}</div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Lugar</strong>${esc(o.usuario_lugar||'—')}</div>
+    </div>
+    ${o.observaciones ? `<div style="background:#fffbeb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px;border:1px solid #fde68a"><strong>Observaciones:</strong> ${esc(o.observaciones)}</div>` : ''}
+    <div class="table-wrap" style="margin-bottom:16px">
+      <table>
+        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          ${lineas.map(l => `
+            <tr>
+              <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
+              <td style="text-align:center;font-weight:600">${l.cantidad}</td>
+              <td>${esc(l.producto_nombre)}</td>
+              <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
+              <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:13px" onclick="document.getElementById('order-detail-modal').classList.remove('open')">Cerrar</button>`;
+  document.getElementById('order-detail-modal').classList.add('open');
+}
+
+// ── ELIMINAR COLABORADOR (sección settings) ───────────────
+let allCfgUsers = [];
+
+async function loadCfgUsers() {
+  const { data, error } = await sb.from('usuarios')
+    .select('cedula, nombre, departamento, lugar')
+    .eq('lugar', LUGAR)
+    .order('nombre');
+  if (error) { console.error(error); return; }
+  allCfgUsers = data || [];
+  renderCfgUsers(allCfgUsers);
+}
+
+function filterCfgUsers() {
+  const q = document.getElementById('cfg-user-search').value.toLowerCase();
+  renderCfgUsers(allCfgUsers.filter(u =>
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
+  ));
+}
+
+function renderCfgUsers(list) {
+  const tbody = document.getElementById('cfg-users-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
+  }
+  tbody.innerHTML = list.map(u => `<tr>
+    <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+    <td>${esc(u.cedula||'—')}</td>
+    <td>${esc(u.departamento||'—')}</td>
+    <td>${esc(u.lugar||'—')}</td>
+    <td style="text-align:center">
+      <button class="btn btn-sm btn-danger" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🗑</button>
+    </td>
+  </tr>`).join('');
+}
+
+function deleteCfgUser(cedula, nombre) {
+  showConfirm(
+    `¿Eliminar a ${nombre}?`,
+    'El colaborador perderá el acceso al catálogo inmediatamente.',
+    async () => {
+      const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
+      if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
+      showToast(`${nombre} eliminado.`, 'ok');
+      allCfgUsers = allCfgUsers.filter(u => u.cedula !== cedula);
+      renderCfgUsers(allCfgUsers);
+    },
+    { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────
+async function loadConfig() {
+  const { data } = await sb.from('app_config').select('key, value').in('key',[USER_KEY, PASS_KEY]);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('cfg-user').value = cfg[USER_KEY] || 'admin';
+  document.getElementById('cfg-pass').value  = '';
+  document.getElementById('cfg-pass2').value = '';
+  document.getElementById('cfg-msg').style.display = 'none';
+}
+
+async function saveConfig() {
+  const user  = document.getElementById('cfg-user').value.trim();
+  const pass  = document.getElementById('cfg-pass').value.trim();
+  const pass2 = document.getElementById('cfg-pass2').value.trim();
+  const btn   = document.getElementById('cfg-btn');
+  const msg   = document.getElementById('cfg-msg');
+
+  const showMsg = (text, ok) => {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = `1px solid ${ok ? '#86efac' : '#fca5a5'}`;
+    msg.style.color  = ok ? '#166534' : '#dc2626';
+  };
+
+  if (!user)          { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
+  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const updates = [{ key: USER_KEY, value: user }];
+  if (pass) {
+    const newToken = Date.now().toString();
+    updates.push({ key: PASS_KEY, value: pass });
+    updates.push({ key: TOKEN_KEY, value: newToken });
+  }
+
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (error) { showMsg('Error al guardar: ' + error.message, false); }
+  else {
+    if (pass) {
+      const { data: td } = await sb.from('app_config').select('value').eq('key', TOKEN_KEY).maybeSingle();
+      if (td?.value) localStorage.setItem(SESSION_KEY, td.value);
+    }
+    showMsg('✅ Credenciales actualizadas. Otros dispositivos deberán iniciar sesión de nuevo.', true);
+    document.getElementById('cfg-pass').value  = '';
+    document.getElementById('cfg-pass2').value = '';
+  }
+}
+
+// ── HELPER ───────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ── TOUCH GESTURES ────────────────────────────────────────────
+(function() {
+  var sx = 0, sy = 0, tgt = null;
+  var PAGES = ['orders','settings'];
+
+  function currentPage() {
+    for (var i = 0; i < PAGES.length; i++) {
+      var el = document.getElementById('page-' + PAGES[i]);
+      if (el && el.style.display !== 'none') return PAGES[i];
+    }
+    return 'orders';
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+
+    // Swipe abajo sobre el fondo de un modal → cerrar
+    if (ady > 70 && dy > 0 && ady > adx) {
+      document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+        var card = m.querySelector('.modal-card');
+        if (!card || !card.contains(tgt)) m.classList.remove('open');
+      });
+      return;
+    }
+
+    // Swipe horizontal → cambiar página
+    if (adx < 60 || ady > adx * 0.65) return;
+    var idx = PAGES.indexOf(currentPage());
+    if (dx < 0 && idx < PAGES.length - 1) showPage(PAGES[idx + 1]);
+    else if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);
+  }, { passive: true });
+})();
+
+// ── TECLADO MÓVIL ──────────────────────────────────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    const overlay = document.getElementById('login-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const kbHeight = window.innerHeight - window.visualViewport.height;
+    if (kbHeight > 100) {
+      overlay.style.alignItems  = 'flex-start';
+      overlay.style.paddingTop  = Math.max(12, (window.visualViewport.height - 480) / 2) + 'px';
+    } else {
+      overlay.style.alignItems  = '';
+      overlay.style.paddingTop  = '';
+    }
+  });
+}
+
+initAuth();
+</script>
+
+</body>
+</html>

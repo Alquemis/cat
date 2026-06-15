@@ -246,6 +246,7 @@
 <!-- TABS -->
 <div class="page-tabs">
   <button class="page-tab active" onclick="showPage('orders')">📋 Pedidos</button>
+  <button class="page-tab" onclick="showPage('colaboradores')">👥 Colaboradores</button>
   <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
 </div>
 
@@ -331,6 +332,34 @@
     </div>
   </div>
 
+  <!-- ── PAGE: COLABORADORES ── -->
+  <div id="page-colaboradores" style="display:none">
+    <div style="max-width:860px;margin:0 auto;padding-top:8px;">
+      <div class="stat-card">
+        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Colaboradores</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Lista de colaboradores de Heredia. Puedes buscar y eliminar un colaborador de la base de datos.</div>
+        <div class="toolbar" style="margin-bottom:16px;">
+          <div class="search-field" style="flex:1;">
+            <span>🔍</span>
+            <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
+          </div>
+          <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table style="table-layout:fixed">
+            <colgroup><col style="width:40%"><col style="width:22%"><col><col style="width:80px"></colgroup>
+            <thead><tr>
+              <th>Nombre</th><th>Cédula</th><th>Departamento</th><th style="text-align:center;">Acción</th>
+            </tr></thead>
+            <tbody id="cfg-users-tbody">
+              <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── PAGE: SETTINGS ── -->
   <div id="page-settings" style="display:none">
     <div style="max-width:860px;margin:0 auto;padding-top:8px;">
@@ -356,29 +385,6 @@
         </div>
         <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:16px;margin-bottom:4px;"></div>
         <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="margin-top:20px;padding:12px 32px;">Guardar cambios</button>
-      </div>
-
-      <!-- Eliminar colaboradores -->
-      <div class="stat-card">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Eliminar colaborador</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Busca y elimina un colaborador de la base de datos. Esta acción cerrará su sesión automáticamente.</div>
-        <div class="toolbar" style="margin-bottom:16px;">
-          <div class="search-field" style="flex:1;">
-            <span>🔍</span>
-            <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
-          </div>
-          <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:80px;text-align:center;">Acción</th>
-            </tr></thead>
-            <tbody id="cfg-users-tbody">
-              <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
       </div>
 
     </div>
@@ -633,14 +639,15 @@ applyZoom();
 
 // ── PAGES ────────────────────────────────────────────────
 function showPage(page) {
-  ['orders','settings'].forEach(p => {
+  ['orders','colaboradores','settings'].forEach(p => {
     document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
   });
   document.querySelectorAll('.page-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['orders','settings'][i] === page);
+    t.classList.toggle('active', ['orders','colaboradores','settings'][i] === page);
   });
   if (page==='orders' && allAdminHist.length===0) loadOrders();
-  if (page==='settings') { loadConfig(); loadCfgUsers(); }
+  if (page==='colaboradores') loadCfgUsers();
+  if (page==='settings') loadConfig();
 }
 
 // ── MORA THRESHOLD ────────────────────────────────────────────
@@ -846,7 +853,7 @@ function renderAdminOrders(tbodyId, list) {
     return `<tr class="${rowClass}" style="${rowStyle}">
       <td>${fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
-      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap">
@@ -974,13 +981,12 @@ function filterCfgUsers() {
 function renderCfgUsers(list) {
   const tbody = document.getElementById('cfg-users-tbody');
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
   }
   tbody.innerHTML = list.map(u => `<tr>
     <td style="font-weight:600">${esc(u.nombre||'—')}</td>
     <td>${esc(u.cedula||'—')}</td>
     <td>${esc(u.departamento||'—')}</td>
-    <td>${esc(u.lugar||'—')}</td>
     <td style="text-align:center">
       <button class="btn btn-sm btn-danger" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🗑</button>
     </td>
@@ -1061,7 +1067,7 @@ function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'
 // ── TOUCH GESTURES ────────────────────────────────────────────
 (function() {
   var sx = 0, sy = 0, tgt = null;
-  var PAGES = ['orders','settings'];
+  var PAGES = ['orders','colaboradores','settings'];
 
   function currentPage() {
     for (var i = 0; i < PAGES.length; i++) {

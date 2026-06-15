@@ -625,14 +625,14 @@ function recalcStats() {
   const facturados = allHistorial.filter(o => o.estado === 'facturado');
   const pagados    = allHistorial.filter(o => o.estado === 'pagado');
   const cancelados  = allHistorial.filter(o => o.estado === 'cancelado');
-  const granTotal  = allPendientes.reduce((s, o) => s + (o.total || 0), 0)
-                   + facturados.reduce((s, o) => s + (o.total || 0), 0)
+  // Gran total: solo lo ya facturado o pagado (excluye pendientes / "total a facturar")
+  const granTotal  = facturados.reduce((s, o) => s + (o.total || 0), 0)
                    + pagados.reduce((s, o) => s + (o.total || 0), 0);
   const now = new Date();
   const curY = now.getFullYear(), curM = now.getMonth();
   const inMes = o => { const d = new Date(o.fecha); return d.getFullYear() === curY && d.getMonth() === curM; };
-  const granTotalMes = allPendientes.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
-                     + facturados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
+  // Facturado este mes: solo facturados + pagados del mes actual (excluye pendientes)
+  const granTotalMes = facturados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
                      + pagados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0);
   document.getElementById('chip-total-facturado').innerHTML = '<span class="col-sign">₡</span>' + granTotal.toLocaleString('es-CR');
   document.getElementById('chip-total-mes').innerHTML      = '<span class="col-sign">₡</span>' + granTotalMes.toLocaleString('es-CR');

@@ -1578,6 +1578,44 @@ function getMoraThreshold(fecha) {
   return inv.getTime() + 7 * 24 * 3600000;
 }
 
+// Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
+async function _autoDeleteExactDups() {
+  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado');
+  const groups = {};
+  for (const o of all) {
+    const fp = _dupFingerprint(o);
+    if (!fp) continue;
+    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
+    const key  = user + '||' + fp;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o);
+  }
+  const toDelete = [];
+  for (const orders of Object.values(groups)) {
+    if (orders.length < 2) continue;
+    const byTs = {};
+    for (const o of orders) {
+      const ts = new Date(o.fecha).toISOString().slice(0, 19); // precisión al segundo
+      if (!byTs[ts]) byTs[ts] = [];
+      byTs[ts].push(o);
+    }
+    for (const same of Object.values(byTs)) {
+      if (same.length < 2) continue;
+      // Ordenar por id para determinismo; conservar el primero, borrar el resto
+      same.sort((a, b) => a.id < b.id ? -1 : 1);
+      for (const o of same.slice(1)) toDelete.push(o);
+    }
+  }
+  if (toDelete.length === 0) return;
+  for (const o of toDelete) {
+    const { error } = await sb.from('pedidos').delete().eq('id', o.id);
+    if (error) { console.error('Auto-delete exact dup failed:', o.id, error); continue; }
+    allAdminPend = allAdminPend.filter(x => x.id !== o.id);
+    allAdminHist = allAdminHist.filter(x => x.id !== o.id);
+  }
+  showToast(`🗑 ${toDelete.length} pedido${toDelete.length > 1 ? 's duplicados eliminados' : ' duplicado eliminado'} automáticamente`, 'warn');
+}
+
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
@@ -1585,6 +1623,7 @@ async function loadOrders() {
   ]);
   allAdminPend = resPend.data || [];
   allAdminHist = resHist.data || [];
+  await _autoDeleteExactDups();
   const now        = Date.now();
   const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
   const facturados = allAdminHist.filter(o => o.estado === 'facturado');
@@ -2538,7 +2577,7 @@ function renderSuRankUnidades() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 // ── LISTA Y FICHA COLABORADORES SU ───────────────────────
@@ -2856,7 +2895,7 @@ function renderSuRankMonto() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.total||0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 function setSuUnidPeriod(p) {

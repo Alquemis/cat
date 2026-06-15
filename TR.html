@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<title>Grecia – Catálogo Colaboradores</title>
+<title>Tres Ríos – Catálogo Colaboradores</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -219,7 +219,7 @@
 <div id="login-overlay" class="login-overlay">
   <div class="login-card">
     <img src="../Imagenes/Martimac_Logo.png" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
-    <div class="login-title">Grecia</div>
+    <div class="login-title">Tres Ríos</div>
     <div class="login-sub">Catálogo Colaboradores — acceso restringido</div>
     <div class="login-field">
       <label>Usuario</label>
@@ -236,7 +236,7 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-brand">Grecia <span>Catálogo Colaboradores</span></div>
+  <div class="topbar-brand">Tres Ríos <span>Catálogo Colaboradores</span></div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbar-user"></span>
     <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
@@ -337,7 +337,7 @@
     <div style="max-width:860px;margin:0 auto;padding-top:8px;">
       <div class="stat-card">
         <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Colaboradores</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Lista de colaboradores de Grecia. Puedes buscar y eliminar un colaborador de la base de datos.</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Lista de colaboradores de Tres Ríos. Puedes buscar y eliminar un colaborador de la base de datos.</div>
         <div class="toolbar" style="margin-bottom:16px;">
           <div class="search-field" style="flex:1;">
             <span>🔍</span>
@@ -366,8 +366,8 @@
 
       <!-- Credenciales -->
       <div class="stat-card" style="margin-bottom:24px;">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Credenciales de acceso — Grecia</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel de Grecia.</div>
+        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Credenciales de acceso — Tres Ríos</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel de Tres Ríos.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;">
           <div class="form-field">
             <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
@@ -436,7 +436,7 @@
 
 <script>
 // ── LUGAR ────────────────────────────────────────────────
-const LUGAR = 'Grecia';
+const LUGAR = 'Tres Ríos';
 
 // ── TOAST ────────────────────────────────────────────────
 let _toastTimer = null;
@@ -471,10 +471,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── AUTH KEYS ────────────────────────────────────────────
-const SESSION_KEY = 'gr_session';
-const TOKEN_KEY   = 'gr_session_token';
-const USER_KEY    = 'gr_user';
-const PASS_KEY    = 'gr_pass';
+const SESSION_KEY = 'tr_session';
+const TOKEN_KEY   = 'tr_session_token';
+const USER_KEY    = 'tr_user';
+const PASS_KEY    = 'tr_pass';
 
 // ── ESTADO ───────────────────────────────────────────────
 let allAdminHist   = [];
@@ -715,11 +715,7 @@ async function loadOrders() {
   ]);
   // Filter by LUGAR client-side
   allAdminHist = (resHist.data || []).filter(o => o.usuario_lugar === LUGAR);
-  // Also filter pending for dup detection context (but we don't show them)
-  const allPendFiltered = (resPend.data || []).filter(o => o.usuario_lugar === LUGAR);
 
-  // For dup detection, combine filtered arrays
-  const _origAllAdminHist = allAdminHist;
   await _autoDeleteExactDups();
   _rebuildMoraMap();
 

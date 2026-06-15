@@ -864,15 +864,15 @@
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
-                <input type="text" id="su-3r-user" placeholder="admin">
+                <input type="text" id="su-tr-user" placeholder="admin">
               </div>
               <div class="su-field">
                 <label>Contraseña</label>
-                <input type="text" id="su-3r-pass" placeholder="admin">
+                <input type="text" id="su-tr-pass" placeholder="admin">
               </div>
             </div>
-            <div class="su-msg" id="su-msg-3r"></div>
-            <button class="btn btn-primary btn-sm" onclick="saveSuCred('3r')" id="su-btn-3r" style="width:100%;padding:10px;">Guardar</button>
+            <div class="su-msg" id="su-msg-tr"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('tr')" id="su-btn-tr" style="width:100%;padding:10px;">Guardar</button>
           </div>
 
           <!-- Heredia -->
@@ -2215,7 +2215,7 @@ async function saveConfig() {
 async function loadSuPage() {
   const { data } = await sb.from('app_config').select('key, value')
     .in('key', ['admin_user','admin_pass','fact_user','fact_pass','su_user','su_pass',
-                'gr_user','gr_pass','3r_user','3r_pass','he_user','he_pass']);
+                'gr_user','gr_pass','tr_user','tr_pass','he_user','he_pass']);
   const cfg = {};
   (data || []).forEach(r => { cfg[r.key] = r.value; });
   document.getElementById('su-admin-user').value = cfg.admin_user || 'admin';
@@ -2226,12 +2226,12 @@ async function loadSuPage() {
   document.getElementById('su-su-pass').value    = cfg.su_pass    || 'admin';
   document.getElementById('su-gr-user').value    = cfg.gr_user    || 'admin';
   document.getElementById('su-gr-pass').value    = cfg.gr_pass    || 'admin';
-  document.getElementById('su-3r-user').value    = cfg['3r_user'] || 'admin';
-  document.getElementById('su-3r-pass').value    = cfg['3r_pass'] || 'admin';
+  document.getElementById('su-tr-user').value    = cfg.tr_user    || 'admin';
+  document.getElementById('su-tr-pass').value    = cfg.tr_pass    || 'admin';
   document.getElementById('su-he-user').value    = cfg.he_user    || 'admin';
   document.getElementById('su-he-pass').value    = cfg.he_pass    || 'admin';
   // Ocultar mensajes
-  ['admin','fact','su','gr','3r','he'].forEach(t => {
+  ['admin','fact','su','gr','tr','he'].forEach(t => {
     document.getElementById('su-msg-' + t).style.display = 'none';
   });
   await loadSuUsers();

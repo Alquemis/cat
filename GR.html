@@ -295,7 +295,7 @@
         <table>
           <thead><tr>
             <th class="th-sort" onclick="sortHist('fecha')" id="hth-fecha">Fecha <span class="sort-icon">↕</span></th>
-            <th>Pedido #</th>
+            <th style="white-space:nowrap">Pedido #</th>
             <th class="th-sort" onclick="sortHist('usuario_nombre')" id="hth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
             <th class="th-sort" onclick="sortHist('usuario_departamento')" id="hth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
             <th class="th-sort" onclick="sortHist('total')" id="hth-total">Total <span class="sort-icon">↕</span></th>
@@ -320,7 +320,7 @@
         <table>
           <thead><tr>
             <th class="th-sort" onclick="sortPagados('fecha')" id="pgth-fecha">Fecha <span class="sort-icon">↕</span></th>
-            <th>Pedido #</th>
+            <th style="white-space:nowrap">Pedido #</th>
             <th class="th-sort" onclick="sortPagados('usuario_nombre')" id="pgth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
             <th class="th-sort" onclick="sortPagados('usuario_departamento')" id="pgth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
             <th class="th-sort" onclick="sortPagados('total')" id="pgth-total">Total <span class="sort-icon">↕</span></th>
@@ -512,33 +512,6 @@ function moraOrderBadge(o) {
   if (!o || o.estado !== 'facturado') return '';
   if (Date.now() <= getMoraThreshold(o.fecha)) return '';
   return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
-}
-
-/* ── Mapa de duplicados ── */
-const _ADMIN_DUP_COLORS = ['#ffe0b255','#c8e6c955','#bbdefb55','#f8bbd055','#e1bee755','#fff9c455','#b2ebf255','#ffccbc55','#dcedc855','#d7ccc855'];
-let _adminDupMap = {};
-function _rebuildAdminDupMap() {
-  const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
-  const all = [...allAdminHist].filter(o =>
-    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
-  );
-  const groups = {};
-  for (const o of all) {
-    const fp = _dupFingerprint(o);
-    if (!fp) continue;
-    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
-    const key  = user + '||' + fp;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(o.id);
-  }
-  _adminDupMap = {};
-  let ci = 0;
-  for (const ids of Object.values(groups)) {
-    if (ids.length < 2) continue;
-    const color = _ADMIN_DUP_COLORS[ci % _ADMIN_DUP_COLORS.length];
-    ci++;
-    for (const id of ids) _adminDupMap[id] = color;
-  }
 }
 
 // ── AUTH ─────────────────────────────────────────────────
@@ -813,7 +786,6 @@ function filterPagados() {
 }
 
 function renderAdminOrders(tbodyId, list) {
-  _rebuildAdminDupMap();
   const tbody = document.getElementById(tbodyId);
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin pedidos</td></tr>'; return;
@@ -829,11 +801,7 @@ function renderAdminOrders(tbodyId, list) {
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num        = o.id.slice(0,8).toUpperCase();
 
-    const dupColor   = !cancelado ? (_adminDupMap[o.id] || '') : '';
-    const dupChip    = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
-
     const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
-    const rowStyle   = dupColor && !mora && !cancelado && !pagado ? `background:${dupColor};` : '';
 
     let badgeHtml = '';
     if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
@@ -850,8 +818,8 @@ function renderAdminOrders(tbodyId, list) {
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
 
-    return `<tr class="${rowClass}" style="${rowStyle}">
-      <td>${fecha}${dupChip}</td>
+    return `<tr class="${rowClass}">
+      <td>${fecha}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;"><span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>

@@ -687,7 +687,8 @@ async function loadOrders() {
     sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:false})
   ]);
   // Filter by LUGAR client-side
-  allAdminHist = (resHist.data || []).filter(o => o.usuario_lugar === LUGAR);
+  allAdminHist = (resHist.data || []).filter(o => o.usuario_lugar === LUGAR)
+    .map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   // Also filter pending for dup detection context (but we don't show them)
   const allPendFiltered = (resPend.data || []).filter(o => o.usuario_lugar === LUGAR);
 
@@ -937,7 +938,7 @@ async function loadCfgUsers() {
     .eq('lugar', LUGAR)
     .order('nombre');
   if (error) { console.error(error); return; }
-  allCfgUsers = data || [];
+  allCfgUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   renderCfgUsers(allCfgUsers);
 }
 
@@ -1034,6 +1035,7 @@ async function saveConfig() {
 
 // ── HELPER ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
 
 // ── TOUCH GESTURES ────────────────────────────────────────────
 (function() {

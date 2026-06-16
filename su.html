@@ -1746,8 +1746,8 @@ async function loadOrders() {
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
     sb.from('pedidos').select('*, lineas_pedido(*)').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:false})
   ]);
-  allAdminPend = resPend.data || [];
-  allAdminHist = resHist.data || [];
+  allAdminPend = (resPend.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
+  allAdminHist = (resHist.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   await _autoDeleteExactDups();
   _rebuildMoraMap();
   const now        = Date.now();
@@ -2286,7 +2286,7 @@ function sortSuDeleteUsers(col) {
 async function loadSuUsers() {
   const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
   if (error) { console.error(error); return; }
-  allSuUsers = data || [];
+  allSuUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   filterSuUsers();
 }
 
@@ -2393,6 +2393,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── HELPER ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
 
 // ── TOUCH GESTURES ────────────────────────────────────────────
 (function() {

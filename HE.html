@@ -605,7 +605,7 @@ document.getElementById('login-user').addEventListener('keydown', e => { if(e.ke
 // ── RESPONSIVE ZOOM ──────────────────────────────────────
 function applyZoom() {
   const vw = window.innerWidth;
-  document.body.style.zoom = vw < 600 ? (vw / 600) : '';
+  document.body.style.zoom = vw < 860 ? (vw / 860) : '';
 }
 window.addEventListener('resize', applyZoom);
 applyZoom();

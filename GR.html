@@ -453,7 +453,7 @@ let _confirmOk = null;
 function showConfirm(title, msg, onOk, { icon = '⚠️', okLabel = 'Confirmar', okColor = '#dc2626' } = {}) {
   document.getElementById('app-confirm-icon').textContent  = icon;
   document.getElementById('app-confirm-title').textContent = title;
-  document.getElementById('app-confirm-msg').textContent   = msg;
+  document.getElementById('app-confirm-msg').innerHTML     = msg;
   const okBtn = document.getElementById('app-confirm-ok');
   okBtn.textContent = okLabel; okBtn.style.background = okColor;
   _confirmOk = onOk;
@@ -837,16 +837,19 @@ function userAvatar(nombre) {
 }
 
 function markAsPagado(id) {
+  const o = allAdminHist.find(x => x.id === id);
+  const primerNombre = o ? (o.usuario_nombre || '').trim().split(/\s+/)[0] : '—';
+  const num = id.slice(0, 8).toUpperCase();
   showConfirm(
-    '¿Marcar como pagado?',
-    'El pedido pasará al estado "Pagado" y se sumará al total pagado.',
+    '¿Confirmar pago?',
+    `El pedido de <strong>${primerNombre}</strong> (#${num}) se reportará como pagado.`,
     async () => {
       const { error } = await sb.from('pedidos').update({ estado: 'pagado' }).eq('id', id);
       if (error) { showToast('Error: ' + error.message, 'error'); return; }
       showToast('Pedido marcado como pagado.', 'ok');
       await loadOrders();
     },
-    { icon: '💳', okLabel: 'Confirmar pago', okColor: '#047857' }
+    { icon: '💳', okLabel: 'Aceptar', okColor: '#16a34a' }
   );
 }
 

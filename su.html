@@ -1346,6 +1346,18 @@ function doLogout() { onLogout(); }
 
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('app-confirm').classList.contains('open')) { _confirmReject(); return; }
+  let topEl = null, topZ = -1;
+  document.querySelectorAll('.open').forEach(function(el) {
+    const s = getComputedStyle(el);
+    if (s.position !== 'fixed') return;
+    const z = parseInt(s.zIndex) || 0;
+    if (z > topZ) { topZ = z; topEl = el; }
+  });
+  if (topEl) topEl.classList.remove('open');
+});
 
 // ── PAGES ────────────────────────────────────────────────
 const ALL_PAGES = ['products','orders','users','dashboard','su'];

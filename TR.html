@@ -486,7 +486,7 @@ function _rebuildMoraMap() {
   _moraUsersMap  = {};
   _moraNombreMap = {};
   allAdminHist.forEach(o => {
-    if (o.estado === 'facturado' && now > getMoraThreshold(o.fecha)) {
+    if (o.estado === 'facturado' && now > getMoraThreshold(o.facturado_at || o.fecha)) {
       const key = o.usuario_email || o.usuario_nombre;
       if (!_moraUsersMap[key]) _moraUsersMap[key] = [];
       _moraUsersMap[key].push(o);
@@ -510,7 +510,7 @@ function moraUserChip(nombre, email) {
 
 function moraOrderBadge(o) {
   if (!o || o.estado !== 'facturado') return '';
-  if (Date.now() <= getMoraThreshold(o.fecha)) return '';
+  if (Date.now() <= getMoraThreshold(o.facturado_at || o.fecha)) return '';
   return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
 }
 
@@ -624,25 +624,9 @@ function showPage(page) {
 }
 
 // ── MORA THRESHOLD ────────────────────────────────────────────
+// Mora = 10 días después de que el pedido fue facturado
 function getMoraThreshold(fecha) {
-  const CR_OFFSET_MS = 6 * 3600000;
-  const d  = new Date(fecha);
-  const cr = new Date(d.getTime() - CR_OFFSET_MS);
-  const dow  = cr.getUTCDay();
-  const hour = cr.getUTCHours();
-  const min  = cr.getUTCMinutes();
-  let daysToInvoice;
-  if (dow === 1 && (hour < 9 || (hour === 9 && min === 0))) {
-    daysToInvoice = 0;
-  } else if (dow === 1) {
-    daysToInvoice = 7;
-  } else {
-    daysToInvoice = (8 - dow) % 7;
-  }
-  const inv = new Date(cr);
-  inv.setUTCDate(cr.getUTCDate() + daysToInvoice);
-  inv.setUTCHours(15, 0, 0, 0);
-  return inv.getTime() + 10 * 24 * 3600000;
+  return new Date(fecha).getTime() + 10 * 24 * 3600000;
 }
 
 // Auto-elimina duplicados exactos
@@ -696,7 +680,7 @@ async function loadOrders() {
   const now        = Date.now();
   const facturados = allAdminHist.filter(o => o.estado === 'facturado');
   const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
-  const enMora     = facturados.filter(o => now > getMoraThreshold(o.fecha));
+  const enMora     = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
   document.getElementById('stat-por-pagar').textContent = facturados.length;
   document.getElementById('stat-pagados').textContent   = pagados.length;
   document.getElementById('stat-mora').textContent      = enMora.length;
@@ -794,7 +778,7 @@ function renderAdminOrders(tbodyId, list) {
     const cancelado  = o.estado === 'cancelado';
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
-    const mora       = facturado && now > getMoraThreshold(o.fecha);
+    const mora       = facturado && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num        = o.id.slice(0,8).toUpperCase();
 
@@ -854,17 +838,17 @@ function openMoraModal(userKey, nombre) {
   const now = Date.now();
   const pedidosMora = allAdminHist.filter(o =>
     o.estado === 'facturado' &&
-    now > getMoraThreshold(o.fecha) &&
+    now > getMoraThreshold(o.facturado_at || o.fecha) &&
     (o.usuario_email === userKey || o.usuario_nombre === userKey)
   );
   const totalMora = pedidosMora.reduce((s, o) => s + (o.total || 0), 0);
-  const maxDias   = pedidosMora.length ? Math.max(...pedidosMora.map(o => Math.max(0, Math.floor((now - getMoraThreshold(o.fecha)) / 86400000)))) : 0;
+  const maxDias   = pedidosMora.length ? Math.max(...pedidosMora.map(o => Math.max(0, Math.floor((now - getMoraThreshold(o.facturado_at || o.fecha)) / 86400000)))) : 0;
   document.getElementById('mora-modal-name').textContent  = nombre;
   document.getElementById('mora-modal-sub').textContent   = `${pedidosMora.length} pedido${pedidosMora.length !== 1 ? 's' : ''} · ${maxDias} día${maxDias !== 1 ? 's' : ''} sin pago`;
   document.getElementById('mora-modal-total').innerHTML   = `<span style="font-size:13px;">₡</span>${totalMora.toLocaleString('es-CR')}`;
   document.getElementById('mora-modal-body').innerHTML = pedidosMora.map(o => {
     const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
-    const threshold = getMoraThreshold(o.fecha);
+    const threshold = getMoraThreshold(o.facturado_at || o.fecha);
     const diasRetr  = Math.max(0, Math.floor((now - threshold) / (1000*60*60*24)));
     return `<div class="mora-card" onclick="closeMoraModal();openOrderDetail('${o.id}')">
       <div class="mora-card-num">Pedido #${o.id.slice(0,8).toUpperCase()}</div>

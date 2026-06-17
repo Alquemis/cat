@@ -1882,8 +1882,8 @@ function renderAdminOrders(tbodyId, list) {
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
     const mora       = facturado && now > getMoraThreshold(o.facturado_at || o.fecha);
-    const fechaBase  = (pagado && o.pagado_at) ? o.pagado_at : o.fecha;
-    const fecha      = new Date(fechaBase).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
+    const fechaPago  = (pagado && o.pagado_at) ? new Date(o.pagado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
     const num        = o.id.slice(0,8).toUpperCase();
 
     // Duplicado
@@ -1914,7 +1914,7 @@ function renderAdminOrders(tbodyId, list) {
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
-      <td>${fecha}${dupChip}</td>
+      <td style="${pagado ? 'line-height:1.4' : ''}">${pagado ? `<span style="font-size:10px;color:#9ca3af;font-weight:600">Pedido</span><br><span style="font-size:11px">${fecha}</span>${fechaPago ? `<br><span style="font-size:10px;color:#9ca3af;font-weight:600">Pagado</span><br><span style="font-size:11px;color:#047857;font-weight:700">${fechaPago}</span>` : ''}` : fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>

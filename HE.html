@@ -795,7 +795,8 @@ function renderAdminOrders(tbodyId, list) {
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
     const mora       = facturado && now > getMoraThreshold(o.facturado_at || o.fecha);
-    const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const fechaBase  = (pagado && o.pagado_at) ? o.pagado_at : o.fecha;
+    const fecha      = new Date(fechaBase).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const num        = o.id.slice(0,8).toUpperCase();
 
     const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
@@ -841,7 +842,7 @@ function markAsPagado(id) {
     '¿Confirmar pago?',
     `El pedido de <strong>${primerNombre}</strong> (#${num}) se reportará como pagado.`,
     async () => {
-      const { error } = await sb.from('pedidos').update({ estado: 'pagado' }).eq('id', id);
+      const { error } = await sb.from('pedidos').update({ estado: 'pagado', pagado_at: new Date().toISOString() }).eq('id', id);
       if (error) { showToast('Error: ' + error.message, 'error'); return; }
       showToast('Pedido marcado como pagado.', 'ok');
       await loadOrders();

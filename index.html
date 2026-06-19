@@ -413,6 +413,7 @@
   .chip-facturado { background:#dbeafe; color:#1e40af; }
   .chip-pagado    { background:#dcfce7; color:#166534; }
   .chip-cancelado { background:#fee2e2; color:#dc2626; }
+  .chip-pendiente { background:#dc2626; color:#fff; }
   .notif-msg    { font-size:12px; color:#374151; line-height:1.4; }
   .notif-close  { background:none; border:none; color:#d1d5db; font-size:14px; cursor:pointer; padding:0 2px; line-height:1; flex-shrink:0; transition:color .15s; }
   .notif-close:hover { color:#dc2626; }
@@ -2694,10 +2695,18 @@ function clearSearch() {
 let _notifTimer = null;
 let _notifCache = [];   // caché local para evitar re-fetches innecesarios
 
+function getMoraThreshold(fecha) {
+  const CR_OFFSET_MS = 6 * 3600000;
+  const cr = new Date(new Date(fecha).getTime() - CR_OFFSET_MS);
+  cr.setUTCHours(0, 0, 0, 0);
+  return cr.getTime() + CR_OFFSET_MS + 10 * 24 * 3600000;
+}
+
 const _notifMeta = {
   facturado: { icon: '🔵', title: (num) => `Tu pedido #${num} ha sido facturado`, sub: '' },
   pagado:    { icon: '🟢', title: (num) => `Tu pedido #${num} ha sido pagado, Gracias!!`, sub: '' },
   cancelado: { icon: '🔴', title: (num) => `Tu pedido #${num} fue rechazado`, sub: 'Contáctanos si tienes dudas.' },
+  mora:      { icon: '⚠️', title: (num) => `Tu pedido #${num} está pendiente de pago`, sub: '' },
 };
 
 async function checkNotifications() {
@@ -2705,7 +2714,7 @@ async function checkNotifications() {
 
   // Traer TODOS los pedidos del usuario (todos los estados)
   const { data: pedidos, error } = await sb.from('pedidos')
-    .select('id, estado')
+    .select('id, estado, facturado_at')
     .eq('usuario_email', currentUser.cedula);
   if (error || !pedidos) return;
 
@@ -2730,6 +2739,22 @@ async function checkNotifications() {
       });
     }
     knownStates[o.id] = curr;
+  });
+
+  // Detectar pedidos facturados que entraron en mora
+  const _nowMs = Date.now();
+  pedidos.forEach(o => {
+    if (o.estado === 'facturado' && o.facturado_at) {
+      if (_nowMs >= getMoraThreshold(o.facturado_at)) {
+        nuevas.push({
+          usuario_cedula: currentUser.cedula,
+          order_id:       o.id,
+          order_num:      o.id.slice(0,8).toUpperCase(),
+          estado:         'mora',
+          read:           false,
+        });
+      }
+    }
   });
 
   // Guardar estados actualizados
@@ -2805,8 +2830,8 @@ async function renderNotifList() {
     const meta = _notifMeta[n.estado] || { icon: '📋', title: n.estado, sub: '' };
     const time = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
     const fecha = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
-    const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : 'Rechazado';
-    const chipClass = `chip-${n.estado}`;
+    const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : n.estado === 'mora' ? '⚠ Pendiente' : 'Rechazado';
+    const chipClass = n.estado === 'mora' ? 'chip-pendiente' : `chip-${n.estado}`;
     const msg = typeof meta.title === 'function' ? meta.title(escHtml(n.order_num)) : meta.title;
     return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}" style="cursor:pointer;" onclick="notifOpenOrder('${n.order_id}','${n.id}')">
       <div class="notif-top-row">

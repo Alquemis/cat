@@ -1224,7 +1224,8 @@ function _getMoraKey(nombre, email) {
 function moraUserChip(nombre, email) {
   const key = _getMoraKey(nombre, email);
   if (!key) return '';
-  return `<button class="chip-mora" onclick="event.stopPropagation();openMoraModal('${esc(key)}','${esc(nombre||'—')}')">⚠ En mora</button>`;
+  const count = (_moraUsersMap[key] || []).length;
+  return `<button class="chip-mora" onclick="event.stopPropagation();openMoraModal('${esc(key)}','${esc(nombre||'—')}')">⚠ Mora (${count})</button>`;
 }
 
 function moraOrderBadge(o) {
@@ -1691,9 +1692,12 @@ async function deleteProduct(codigo, nombre) {
 
 // ── PEDIDOS ──────────────────────────────────────────────
 // ── MORA THRESHOLD ────────────────────────────────────────────
-// Mora = 10 días después de que el pedido fue facturado
+// Mora = al inicio del día 10 en hora CR (medianoche CR = UTC-6)
 function getMoraThreshold(fecha) {
-  return new Date(fecha).getTime() + 10 * 24 * 3600000;
+  const CR_OFFSET_MS = 6 * 3600000;
+  const cr = new Date(new Date(fecha).getTime() - CR_OFFSET_MS);
+  cr.setUTCHours(0, 0, 0, 0); // medianoche CR
+  return cr.getTime() + CR_OFFSET_MS + 10 * 24 * 3600000;
 }
 
 // Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
@@ -1737,7 +1741,7 @@ async function _autoDeleteExactDups() {
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*)').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:false})
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at, pagado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:true})
   ]);
   allAdminPend = (resPend.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   allAdminHist = (resHist.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
@@ -1781,7 +1785,7 @@ function showOrdersTab(tab) {
 }
 
 let _suPendSort = { col: 'fecha', dir: 'asc' };
-let _suHistSort = { col: 'fecha', dir: 'desc' };
+let _suHistSort = { col: 'fecha', dir: 'asc' };
 
 function _sortOrderList(list, col, dir) {
   return [...list].sort((a,b) => {
@@ -1839,7 +1843,7 @@ function filterAdminHist() {
   renderAdminOrders('hist-tbody', _sortOrderList(list, _suHistSort.col, _suHistSort.dir));
 }
 
-let _suPagadosSort = { col: 'fecha', dir: 'desc' };
+let _suPagadosSort = { col: 'fecha', dir: 'asc' };
 
 function sortPagados(col) {
   if (_suPagadosSort.col===col) { _suPagadosSort.dir=_suPagadosSort.dir==='asc'?'desc':'asc'; }
@@ -1901,12 +1905,12 @@ function renderAdminOrders(tbodyId, list) {
                        mora      ? 'font-weight:700;color:#dc2626' :
                        pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
 
-    const btnPagado = facturado && !mora
+    const btnPagado = facturado
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
-      <td style="${pagado ? 'line-height:1.4' : ''}">${pagado ? `<span style="font-size:10px;color:#9ca3af;font-weight:600">Pedido</span><br><span style="font-size:11px">${fecha}</span>${fechaPago ? `<br><span style="font-size:10px;color:#9ca3af;font-weight:600">Pagado</span><br><span style="font-size:11px;color:#047857;font-weight:700">${fechaPago}</span>` : ''}` : fecha}${dupChip}</td>
+      <td style="${pagado ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
@@ -1974,7 +1978,8 @@ function markAsPagado(id) {
 }
 
 function openMoraModal(userKey, nombre) {
-  const now = Date.now();
+  const _cr = new Date(Date.now() - 6 * 3600000); _cr.setUTCHours(0, 0, 0, 0);
+  const now  = _cr.getTime() + 6 * 3600000; // medianoche CR hoy
   const pedidosMora = allAdminHist.filter(o =>
     o.estado === 'facturado' &&
     now > getMoraThreshold(o.facturado_at || o.fecha) &&

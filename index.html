@@ -859,6 +859,15 @@
     .nav-tabs { padding: 0; }
     .nav-tab, .home-btn { flex: 1 1 auto; min-width: 0; padding: 11px 2px; font-size: 11px; letter-spacing: 0; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
     .nav-tab.cta { flex: none; padding: 7px 10px; font-size: 10px; margin-left: 2px; border-radius: 6px; align-self: center; }
+  @keyframes paper-fall {
+    0%   { transform: translateY(-6px) rotate(0deg) scaleX(1); opacity: 0; }
+    15%  { opacity: 1; }
+    50%  { transform: translateY(22px) rotate(160deg) scaleX(.4); }
+    100% { transform: translateY(40px) rotate(300deg) scaleX(.9); opacity: 0; }
+  }
+  .confetti-wrap { position:absolute; inset:0; overflow:visible; pointer-events:none; }
+  .confetti-piece { position: absolute; pointer-events: none; border-radius: 1px; animation: paper-fall linear infinite; display: none; top: 0; }
+  .nav-tab.has-promo .confetti-piece { display: block; }
 
     /* Hero */
     #banner-area { width: 100%; }
@@ -1023,7 +1032,7 @@
     <button class="nav-tab" data-tab="FACIAL" onclick="selectTab('FACIAL')">FACIAL</button>
     <button class="nav-tab" data-tab="CORPORAL" onclick="selectTab('CORPORAL')">CORPORAL</button>
     <button class="nav-tab" data-tab="PACKS" onclick="selectTab('PACKS')">PACKS</button>
-  <button class="nav-tab" data-tab="PROMOCIONES" onclick="selectTab('PROMOCIONES')">PROMOCIONES</button>
+  <button class="nav-tab" data-tab="PROMOCIONES" onclick="selectTab('PROMOCIONES')" id="tab-promociones" style="position:relative;overflow:visible">PROMOCIONES<div class="confetti-wrap" id="confetti-wrap"></div></button>
   </div>
 
   <!-- ========== SEARCH ROW ========== -->
@@ -1289,6 +1298,7 @@ async function onLogin(session, isRestore = false) {
   try { document.getElementById('notif-wrap').classList.add('visible'); } catch(e) {}
   try { if (typeof renderNotifBadge === 'function') renderNotifBadge(); } catch(e) {}
   try { if (typeof startNotifPolling === 'function') startNotifPolling(); } catch(e) {}
+  try { if (typeof startPromoStockPolling === 'function') startPromoStockPolling(); } catch(e) {}
   try { _updateInstallMenuBtn(); } catch(e) {}
 
   // Intentar cargar productos desde Supabase
@@ -1302,6 +1312,7 @@ async function onLogin(session, isRestore = false) {
 function onLogout() {
   stopSessionWatchdog();
   stopNotifPolling();
+  stopPromoStockPolling();
   document.getElementById('notif-wrap').classList.remove('visible');
   currentUser = null;
   cart = [];
@@ -1733,6 +1744,9 @@ async function loadProductsFromDB() {
         stock: r.stock != null ? r.stock : null
       }));
       loadCart(); // restaurar carrito guardado tras tener el catálogo
+      const tabPromo = document.getElementById('tab-promociones');
+      if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo));
+      positionConfetti();
     }
   } catch(e) {
     console.error('Error cargando productos:', e);
@@ -1901,7 +1915,8 @@ function updateQaddQty(delta) {
   if (!_qaddId) return;
   const item = cart.find(i => i.product.id === _qaddId);
   if (!item) return;
-  item.qty = Math.max(1, item.qty + delta);
+  const maxQty = item.product.stock != null ? item.product.stock : Infinity;
+  item.qty = Math.min(maxQty, Math.max(1, item.qty + delta));
   renderQadd();
 }
 
@@ -2417,7 +2432,7 @@ function renderCard(p) {
   const priceLabel = p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar';
   const emoji = p.b === 'SEED' || p.b === 'SODIET' ? '🍪' : '🧴';
   const stockChip = (p.stock != null && p.stock > 0)
-    ? `<div style="margin-top:6px;display:inline-block;background:#fef3c7;color:#dc2626;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;">¡Solo quedan ${p.stock}!</div>`
+    ? `<div style="margin-top:6px;display:block;text-align:center;background:#fef3c7;color:#dc2626;font-size:20px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;">¡Solo quedan ${p.stock}!</div>`
     : '';
   return `
     <div class="product-card">
@@ -2921,6 +2936,77 @@ function startNotifPolling() {
 
 function stopNotifPolling() {
   if (_notifTimer) { clearInterval(_notifTimer); _notifTimer = null; }
+}
+
+// ── CONFETI PROMOCIONES ───────────────────────────────────────
+const _confettiData = [
+  { bg:'#f59e0b', w:9,  h:6, dur:1.1, del:0    },
+  { bg:'#ef4444', w:8,  h:5, dur:1.4, del:.2   },
+  { bg:'#3b82f6', w:10, h:5, dur:1.2, del:.5   },
+  { bg:'#10b981', w:8,  h:6, dur:1.0, del:.8   },
+  { bg:'#8b5cf6', w:9,  h:5, dur:1.3, del:.1   },
+  { bg:'#f43f5e', w:8,  h:6, dur:1.1, del:.6   },
+  { bg:'#f59e0b', w:7,  h:7, dur:1.5, del:.35  },
+  { bg:'#3b82f6', w:9,  h:5, dur:1.2, del:1.0  },
+  { bg:'#10b981', w:8,  h:5, dur:1.3, del:.9   },
+];
+
+function positionConfetti() {
+  requestAnimationFrame(() => {
+    const btn  = document.getElementById('tab-promociones');
+    const wrap = document.getElementById('confetti-wrap');
+    if (!btn || !wrap) return;
+    const W = btn.getBoundingClientRect().width;
+    if (!W) return;
+    wrap.innerHTML = _confettiData.map((c, i) => {
+      const left = Math.round((i / (_confettiData.length - 1)) * (W - c.w));
+      return `<div class="confetti-piece" style="background:${c.bg};width:${c.w}px;height:${c.h}px;left:${left}px;animation-duration:${c.dur}s;animation-delay:${c.del}s"></div>`;
+    }).join('');
+  });
+}
+
+(function setupConfettiResize() {
+  const btn = document.getElementById('tab-promociones');
+  if (!btn) return;
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => positionConfetti()).observe(btn);
+  } else {
+    window.addEventListener('resize', positionConfetti);
+  }
+})();
+
+// ── POLLING DE STOCK DE PROMOCIONES ──────────────────────────
+let _promoStockTimer = null;
+
+async function pollPromoStock() {
+  if (!currentUser) return;
+  const promos = CATALOG.filter(p => p.promo);
+  if (!promos.length) return;
+  const { data } = await sb.from('productos')
+    .select('codigo, stock, activo')
+    .in('codigo', promos.map(p => p.id));
+  if (!data) return;
+  let changed = false;
+  data.forEach(r => {
+    const p = CATALOG.find(c => c.id === r.codigo);
+    if (!p) return;
+    if (p.stock !== r.stock) { p.stock = r.stock; changed = true; }
+    if (!r.activo) { CATALOG = CATALOG.filter(c => c.id !== r.codigo); changed = true; }
+  });
+  const tabPromo = document.getElementById('tab-promociones');
+  if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo));
+  positionConfetti();
+  if (changed && activeTab === 'PROMOCIONES') renderTabContent();
+  else if (changed) refreshAddButtons();
+}
+
+function startPromoStockPolling() {
+  pollPromoStock();
+  _promoStockTimer = setInterval(pollPromoStock, 3000);
+}
+
+function stopPromoStockPolling() {
+  if (_promoStockTimer) { clearInterval(_promoStockTimer); _promoStockTimer = null; }
 }
 
 // Cerrar panel al hacer clic fuera

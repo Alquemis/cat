@@ -591,18 +591,16 @@ async function confirmCancelar() {
   }
 
   // Restaurar stock de productos con límite al cancelar
-  const orderObj = (from === 'pend'
-    ? allHistorial.find(o => o.id === id)
-    : allHistorial.find(o => o.id === id));
-  const lineasCanceladas = orderObj ? (orderObj.lineas_pedido || []) : [];
-  if (lineasCanceladas.length > 0) {
+  const { data: lineasCanceladas } = await sb.from('lineas_pedido')
+    .select('producto_codigo, cantidad').eq('pedido_id', id);
+  if (lineasCanceladas && lineasCanceladas.length > 0) {
     const codigos = lineasCanceladas.map(l => l.producto_codigo);
     const { data: prodsConStock } = await sb.from('productos')
       .select('codigo, stock').in('codigo', codigos).not('stock', 'is', null);
     for (const prod of (prodsConStock || [])) {
       const linea = lineasCanceladas.find(l => l.producto_codigo === prod.codigo);
       if (!linea) continue;
-      const newStock = (prod.stock || 0) + linea.cantidad;
+      const newStock = (prod.stock ?? 0) + linea.cantidad;
       await sb.from('productos').update({ stock: newStock, activo: true }).eq('codigo', prod.codigo);
     }
   }

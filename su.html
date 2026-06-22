@@ -1971,6 +1971,20 @@ function confirmDeleteOrder(id, num) {
     `¿Eliminar pedido #${num}?`,
     'Se eliminarán el pedido y todas sus líneas. Esta acción no se puede deshacer.',
     async () => {
+      // Restaurar stock de productos con límite antes de eliminar
+      const { data: lineasElim } = await sb.from('lineas_pedido')
+        .select('producto_codigo, cantidad').eq('pedido_id', id);
+      if (lineasElim && lineasElim.length > 0) {
+        const codigos = lineasElim.map(l => l.producto_codigo);
+        const { data: prodsConStock } = await sb.from('productos')
+          .select('codigo, stock').in('codigo', codigos).not('stock', 'is', null);
+        for (const prod of (prodsConStock || [])) {
+          const linea = lineasElim.find(l => l.producto_codigo === prod.codigo);
+          if (!linea) continue;
+          const newStock = (prod.stock ?? 0) + linea.cantidad;
+          await sb.from('productos').update({ stock: newStock, activo: true }).eq('codigo', prod.codigo);
+        }
+      }
       const { error: errL } = await sb.from('lineas_pedido').delete().eq('pedido_id', id);
       if (errL) { showToast('Error al eliminar líneas: ' + errL.message, false); return; }
       const { error: errP } = await sb.from('pedidos').delete().eq('id', id);

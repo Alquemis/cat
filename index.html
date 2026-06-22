@@ -1729,7 +1729,8 @@ async function loadProductsFromDB() {
         spc: r.spc, c: r.categoria, s: r.subcategoria,
         pr: r.precio, img: r.imagen,
         iva: r.iva != null ? r.iva : 13,
-        promo: !!r.promocion
+        promo: !!r.promocion,
+        stock: r.stock != null ? r.stock : null
       }));
       loadCart(); // restaurar carrito guardado tras tener el catálogo
     }
@@ -2064,6 +2065,24 @@ function closeMoraWarn() {
 async function submitOrder() {
   if (!currentUser) return;
 
+  // Verificar stock de productos con límite
+  const cartItems = cart.filter(i => !i.product.agotado);
+  const promoConStock = cartItems.filter(i => i.product.stock != null);
+  if (promoConStock.length > 0) {
+    const codigos = promoConStock.map(i => i.product.id);
+    const { data: stockActual } = await sb.from('productos')
+      .select('codigo, stock').in('codigo', codigos);
+    for (const item of promoConStock) {
+      const prod = (stockActual || []).find(p => p.codigo === item.product.id);
+      const disponible = prod ? (prod.stock || 0) : 0;
+      if (item.qty > disponible) {
+        const nombre = item.product.n || item.product.id;
+        showToast(`Stock insuficiente para "${nombre}". Disponible: ${disponible}.`);
+        return;
+      }
+    }
+  }
+
   // Verificar mora: pedidos facturados con más de 7 días sin pago
   const MS7 = 7 * 24 * 60 * 60 * 1000;
   const now  = Date.now();
@@ -2116,6 +2135,19 @@ async function submitOrder() {
     subtotal:         priceIva(item.product) * item.qty
   }));
   await sb.from('lineas_pedido').insert(lineas);
+
+  // Decrementar stock de productos con límite
+  for (const item of activeCart) {
+    if (item.product.stock == null) continue;
+    const { data: prodData } = await sb.from('productos')
+      .select('stock').eq('codigo', item.product.id).single();
+    if (!prodData) continue;
+    const newStock = Math.max(0, (prodData.stock || 0) - item.qty);
+    const updateObj = newStock <= 0
+      ? { stock: 0, activo: false }
+      : { stock: newStock };
+    await sb.from('productos').update(updateObj).eq('codigo', item.product.id);
+  }
 
   // Guardar para descarga antes de limpiar
   _lastOrder = {

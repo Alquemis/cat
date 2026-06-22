@@ -1812,7 +1812,8 @@ function removeFromCart(productId) {
 function updateQty(productId, delta) {
   const item = cart.find(i => i.product.id === productId);
   if (!item) return;
-  item.qty = Math.max(1, item.qty + delta);
+  const maxQty = item.product.stock != null ? item.product.stock : Infinity;
+  item.qty = Math.min(maxQty, Math.max(1, item.qty + delta));
   renderCartItems();
   updateCartBadge();
   saveCart();
@@ -2415,6 +2416,9 @@ async function descargarCopiaRecibo(orderData) {
 function renderCard(p) {
   const priceLabel = p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar';
   const emoji = p.b === 'SEED' || p.b === 'SODIET' ? '🍪' : '🧴';
+  const stockChip = (p.stock != null && p.stock > 0)
+    ? `<div style="margin-top:6px;display:inline-block;background:#fef3c7;color:#dc2626;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;">¡Solo quedan ${p.stock}!</div>`
+    : '';
   return `
     <div class="product-card">
       <div class="product-img-wrap">
@@ -2428,6 +2432,7 @@ function renderCard(p) {
           <div class="product-code">${escHtml(p.id)}</div>
           <div class="product-price">${priceLabel}</div>
         </div>
+        ${stockChip}
         <button class="add-btn" data-product-id="${escAttr(p.id)}" onclick="addToCart('${p.id.replace(/'/g,"\'")}')">
           Agregar
         </button>

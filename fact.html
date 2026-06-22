@@ -259,6 +259,7 @@
       </tbody>
     </table>
   </div>
+  <div id="hist-pager"></div>
 </div>
 
 <!-- ── CONFIGURACIÓN ── -->
@@ -471,6 +472,9 @@ async function loadPendientes() {
 function updatePendienteStats() { recalcStats(); }
 
 const _factSort = { pend: { col:'fecha', dir:'asc' }, hist: { col:'fecha', dir:'desc' } };
+let _histPage = 1;
+const HIST_PER_PAGE = 20;
+let _histFullList = [];
 
 function sortFact(tab, col) {
   const s = _factSort[tab];
@@ -671,7 +675,35 @@ function filterHistorial() {
     const matchD = !desde || fecha >= desde;
     return matchQ && matchL && matchD;
   });
-  renderHistorial(_sortList(list, _factSort.hist.col, _factSort.hist.dir));
+  _histFullList = _sortList(list, _factSort.hist.col, _factSort.hist.dir);
+  _histPage = 1;
+  renderHistorial(_histFullList.slice(0, HIST_PER_PAGE));
+  renderHistPager();
+}
+
+function renderHistPager() {
+  const total = _histFullList.length;
+  const pages = Math.ceil(total / HIST_PER_PAGE);
+  const el = document.getElementById('hist-pager');
+  if (!el) return;
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '<div style="display:flex;align-items:center;gap:6px;padding:10px 0;justify-content:center;flex-wrap:wrap;font-size:13px;">';
+  html += `<button class="btn btn-secondary" style="padding:4px 10px" onclick="goPageHist(${_histPage-1})" ${_histPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="btn ${i===_histPage?'btn-primary':'btn-secondary'}" style="padding:4px 10px;min-width:34px" onclick="goPageHist(${i})">${i}</button>`;
+  }
+  html += `<button class="btn btn-secondary" style="padding:4px 10px" onclick="goPageHist(${_histPage+1})" ${_histPage===pages?'disabled':''}>›</button>`;
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function goPageHist(page) {
+  const pages = Math.ceil(_histFullList.length / HIST_PER_PAGE);
+  if (page < 1 || page > pages) return;
+  _histPage = page;
+  const from = (_histPage - 1) * HIST_PER_PAGE;
+  renderHistorial(_histFullList.slice(from, from + HIST_PER_PAGE));
+  renderHistPager();
 }
 
 function renderHistorial(list) {

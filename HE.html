@@ -329,6 +329,7 @@
           <tbody id="pagados-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
         </table>
       </div>
+      <div id="pagados-pager"></div>
     </div>
   </div>
 
@@ -753,7 +754,10 @@ function filterFacturado() {
   renderAdminOrders('hist-tbody', list);
 }
 
-let _pagadosSort = { col: 'fecha', dir: 'asc' };
+let _pagadosSort = { col: 'pagado_at', dir: 'desc' };
+let _pagadosPage = 1;
+const PAGADOS_PER_PAGE = 20;
+let _pagadosFullList = [];
 
 function sortPagados(col) {
   if (_pagadosSort.col === col) { _pagadosSort.dir = _pagadosSort.dir === 'asc' ? 'desc' : 'asc'; }
@@ -764,6 +768,31 @@ function sortPagados(col) {
     if (c === _pagadosSort.col) th.classList.add(_pagadosSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
   });
   filterPagados();
+}
+
+function renderPagadosPager() {
+  const total = _pagadosFullList.length;
+  const pages = Math.ceil(total / PAGADOS_PER_PAGE);
+  const el = document.getElementById('pagados-pager');
+  if (!el) return;
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '<div style="display:flex;align-items:center;gap:6px;padding:10px 0;justify-content:center;flex-wrap:wrap;font-size:13px;">';
+  html += `<button class="btn btn-secondary" style="padding:4px 10px" onclick="goPagePagados(${_pagadosPage-1})" ${_pagadosPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="btn ${i===_pagadosPage?'btn-primary':'btn-secondary'}" style="padding:4px 10px;min-width:34px" onclick="goPagePagados(${i})">${i}</button>`;
+  }
+  html += `<button class="btn btn-secondary" style="padding:4px 10px" onclick="goPagePagados(${_pagadosPage+1})" ${_pagadosPage===pages?'disabled':''}>›</button>`;
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function goPagePagados(page) {
+  const pages = Math.ceil(_pagadosFullList.length / PAGADOS_PER_PAGE);
+  if (page < 1 || page > pages) return;
+  _pagadosPage = page;
+  const from = (_pagadosPage - 1) * PAGADOS_PER_PAGE;
+  renderAdminOrders('pagados-tbody', _pagadosFullList.slice(from, from + PAGADOS_PER_PAGE));
+  renderPagadosPager();
 }
 
 function filterPagados() {
@@ -783,7 +812,10 @@ function filterPagados() {
     if (va > vb) return dir === 'asc' ?  1 : -1;
     return 0;
   });
-  renderAdminOrders('pagados-tbody', list);
+  _pagadosFullList = list;
+  _pagadosPage = 1;
+  renderAdminOrders('pagados-tbody', _pagadosFullList.slice(0, PAGADOS_PER_PAGE));
+  renderPagadosPager();
 }
 
 function renderAdminOrders(tbodyId, list) {

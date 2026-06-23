@@ -2432,8 +2432,11 @@ async function descargarCopiaRecibo(orderData) {
 function renderCard(p) {
   const priceLabel = p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar';
   const emoji = p.b === 'SEED' || p.b === 'SODIET' ? '🍪' : '🧴';
+  const bigChip = p.promo && activeTab === 'PROMOCIONES';
   const stockChip = (p.stock != null && p.stock > 0)
-    ? `<div style="margin-top:6px;display:block;text-align:center;background:#fef3c7;color:#dc2626;font-size:20px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;">¡Solo quedan ${p.stock}!</div>`
+    ? bigChip
+      ? `<div style="margin-top:6px;text-align:center;"><span style="display:inline-block;background:#f5e642;color:#dc2626;font-size:20px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">¡Solo quedan ${p.stock}!</span></div>`
+      : `<div style="margin-top:4px;text-align:center;"><span style="display:inline-block;background:#f5e642;color:#dc2626;font-size:15px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">¡Solo quedan ${p.stock}!</span></div>`
     : '';
   return `
     <div class="product-card">

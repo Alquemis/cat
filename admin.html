@@ -496,6 +496,7 @@
       <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Nuevos pedidos</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
       <div class="stat-card" style="border-color:#d1d5db;background:#f9fafb;"><div class="stat-value" style="color:#6b7280" id="stat-orders-cancelados">0</div><div class="stat-label" style="color:#6b7280">Cancelados</div></div>
+      <div class="stat-card" style="border-color:#fca5a5;background:#fff5f5;"><div class="stat-value" style="color:#dc2626" id="stat-orders-devueltos">0</div><div class="stat-label" style="color:#dc2626">Devueltos</div></div>
       <!-- Gran total -->
       <div class="stat-card stat-card-gran" style="border-color:#bfdbfe;background:#eff6ff;">
         <div class="stat-gran-main">
@@ -520,6 +521,10 @@
             <div class="stat-gran-item-lbl">En mora</div>
             <div class="stat-gran-item-val" style="color:#dc2626" id="stat-gt-mora">—</div>
           </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Devueltos</div>
+            <div class="stat-gran-item-val" style="color:#dc2626" id="stat-gt-devueltos">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -537,6 +542,10 @@
         style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
         Pagados
       </button>
+      <button id="otab-devueltos" onclick="showOrdersTab('devueltos')"
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Devueltos
+      </button>
     </div>
 
     <!-- Pendientes -->
@@ -550,6 +559,7 @@
           <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
         </select>
         <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('pend')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -580,6 +590,7 @@
         <input type="date" id="hist-desde" onchange="filterAdminHist()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
         <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('hist')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -610,6 +621,7 @@
         <input type="date" id="pagados-desde" onchange="filterAdminPagados()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
         <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('pagados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -626,6 +638,37 @@
         </table>
       </div>
       <div id="pagados-pager"></div>
+    </div>
+
+    <!-- Devueltos -->
+    <div id="opage-devueltos" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="devueltos-search" placeholder="Buscar por nombre…" oninput="filterAdminDevueltos()">
+        </div>
+        <select id="devueltos-lugar" onchange="filterAdminDevueltos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="devueltos-desde" onchange="filterAdminDevueltos()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('devueltos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortDevueltos('fecha')"               id="dvth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortDevueltos('usuario_nombre')"      id="dvth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortDevueltos('usuario_departamento')" id="dvth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortDevueltos('usuario_lugar')"       id="dvth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortDevueltos('total')"               id="dvth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="devueltos-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1731,33 +1774,37 @@ async function _autoDeleteExactDups() {
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:true})
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado','devuelto']).order('fecha', {ascending:true})
   ]);
   allAdminPend = (resPend.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   allAdminHist = (resHist.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   await _autoDeleteExactDups();
   _rebuildMoraMap();
   const now      = Date.now();
-  const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
-  const facturados = allAdminHist.filter(o => o.estado === 'facturado');
-  const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
-  const enMora     = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
-  const totalNuevos = allAdminPend.reduce((s,o) => s + (o.total||0), 0);
-  const totalFact   = facturados.reduce((s,o) => s + (o.total||0), 0);
-  const totalPag    = pagados.reduce((s,o) => s + (o.total||0), 0);
-  const totalMora   = enMora.reduce((s,o) => s + (o.total||0), 0);
-  const granTotal   = totalNuevos + totalFact + totalPag;
+  const cancelados    = allAdminHist.filter(o => o.estado === 'cancelado');
+  const facturados    = allAdminHist.filter(o => o.estado === 'facturado');
+  const pagados       = allAdminHist.filter(o => o.estado === 'pagado');
+  const devueltos     = allAdminHist.filter(o => o.estado === 'devuelto');
+  const enMora        = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
+  const totalNuevos    = allAdminPend.reduce((s,o) => s + (o.total||0), 0);
+  const totalFact      = facturados.reduce((s,o) => s + (o.total||0), 0);
+  const totalPag       = pagados.reduce((s,o) => s + (o.total||0), 0);
+  const totalMora      = enMora.reduce((s,o) => s + (o.total||0), 0);
+  const totalDevueltos = devueltos.reduce((s,o) => s + (o.total||0), 0);
+  const granTotal      = totalNuevos + totalFact + totalPag;
   const fmt = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   // stats principales
   document.getElementById('stat-orders').textContent            = allAdminPend.length;
   document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
-  document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
+  document.getElementById('stat-orders-cancelados').textContent  = cancelados.length;
+  document.getElementById('stat-orders-devueltos').textContent   = devueltos.length;
   // gran total
   document.getElementById('stat-gran-total').textContent    = granTotal.toLocaleString('es-CR');
   document.getElementById('stat-gt-nuevos').innerHTML       = fmt(totalNuevos);
   document.getElementById('stat-gt-facturados').innerHTML   = fmt(totalFact);
   document.getElementById('stat-gt-pagados').innerHTML      = fmt(totalPag);
   document.getElementById('stat-gt-mora').innerHTML         = fmt(totalMora);
+  document.getElementById('stat-gt-devueltos').innerHTML    = fmt(totalDevueltos);
   // badges sub-tabs
   const badgePend = document.getElementById('obadge-pend');
   if (badgePend) { badgePend.textContent = allAdminPend.length; badgePend.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
@@ -1766,10 +1813,11 @@ async function loadOrders() {
   filterAdminPend();
   filterAdminHist();
   filterAdminPagados();
+  filterAdminDevueltos();
 }
 
 function showOrdersTab(tab) {
-  ['pend','hist','pagados'].forEach(t => {
+  ['pend','hist','pagados','devueltos'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('otab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #143c5a' : '3px solid transparent';
@@ -1806,6 +1854,7 @@ function filterAdminPend() {
     if (va > vb) return dir === 'asc' ?  1 : -1;
     return 0;
   });
+  _pendDisplayList = list;
   renderAdminOrders('pend-tbody', list);
 }
 
@@ -1841,13 +1890,17 @@ function filterAdminHist() {
     if (va > vb) return dir === 'asc' ?  1 : -1;
     return 0;
   });
+  _histDisplayList = list;
   renderAdminOrders('hist-tbody', list);
 }
 
 let _pagadosSort = { col: 'pagado_at', dir: 'desc' };
 let _pagadosPage = 1;
 const PAGADOS_PER_PAGE = 20;
-let _pagadosFullList = [];
+let _pagadosFullList    = [];
+let _pendDisplayList    = [];
+let _histDisplayList    = [];
+let _devueltosDisplayList = [];
 
 function sortPagados(col) {
   if (_pagadosSort.col === col) { _pagadosSort.dir = _pagadosSort.dir === 'asc' ? 'desc' : 'asc'; }
@@ -1883,6 +1936,35 @@ function goPagePagados(page) {
   const from = (_pagadosPage - 1) * PAGADOS_PER_PAGE;
   renderAdminOrders('pagados-tbody', _pagadosFullList.slice(from, from + PAGADOS_PER_PAGE));
   renderPagadosPager();
+}
+
+let _devueltosSort = { col: 'fecha', dir: 'desc' };
+function sortDevueltos(col) {
+  if (_devueltosSort.col === col) _devueltosSort.dir = _devueltosSort.dir === 'asc' ? 'desc' : 'asc';
+  else { _devueltosSort.col = col; _devueltosSort.dir = 'asc'; }
+  filterAdminDevueltos();
+}
+function filterAdminDevueltos() {
+  const q     = (document.getElementById('devueltos-search').value || '').toLowerCase();
+  const lugar = document.getElementById('devueltos-lugar').value;
+  const desde = document.getElementById('devueltos-desde').value;
+  let list = allAdminHist.filter(o =>
+    o.estado === 'devuelto' &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  const { col, dir } = _devueltosSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  _devueltosDisplayList = list;
+  renderAdminOrders('devueltos-tbody', list);
 }
 
 function filterAdminPagados() {
@@ -1925,36 +2007,42 @@ function renderAdminOrders(tbodyId, list) {
     const cancelado  = o.estado === 'cancelado';
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
+    const devuelto   = o.estado === 'devuelto';
     const mora       = facturado && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
     const fechaPago  = (pagado && o.pagado_at) ? new Date(o.pagado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
     const num        = o.id.slice(0,8).toUpperCase();
 
     // Duplicado
-    const dupColor   = !cancelado ? (_adminDupMap[o.id] || '') : '';
+    const dupColor   = (!cancelado && !devuelto) ? (_adminDupMap[o.id] || '') : '';
     const dupChip    = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
 
     // Clase y estilo de fila
-    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
-    const rowStyle   = dupColor && !mora && !cancelado && !pagado ? `background:${dupColor};` : '';
+    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+    const rowStyle   = dupColor && !mora && !cancelado && !devuelto && !pagado ? `background:${dupColor};` : '';
 
     // Badge en columna pedido
     let badgeHtml = '';
     if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
     if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
     if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
+    if (devuelto)  badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">DEVUELTO</span>';
 
     // Chip mora — aparece en cualquier fila donde el usuario tenga pedidos en mora
     const chipMora = moraUserChip(o.usuario_nombre, o.usuario_email || o.usuario_nombre);
 
     // Estilo total
     const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       devuelto  ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        mora      ? 'font-weight:700;color:#dc2626' :
                        pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
 
-    // Botón pagado (solo para facturado, no mora)
-    const btnPagado = facturado
+    // Botones de acción
+    const btnPagado   = facturado
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
+      : '';
+    const btnDevuelto = (facturado || pagado)
+      ? `<button class="btn btn-sm" onclick="markAsDevuelto('${o.id}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;">Devuelto</button>`
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
@@ -1965,7 +2053,7 @@ function renderAdminOrders(tbodyId, list) {
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnDevuelto}
       </td>
     </tr>`;
   }).join('');
@@ -1983,6 +2071,54 @@ function markAsPagado(id) {
     },
     { icon: '💳', okLabel: 'Confirmar pago', okColor: '#047857' }
   );
+}
+
+function markAsDevuelto(id) {
+  showConfirm(
+    '¿Marcar como devuelto?',
+    'El pedido pasará al estado "Devuelto" y se descontará del total.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'devuelto' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      showToast('Pedido marcado como devuelto.', true);
+      await loadOrders();
+    },
+    { icon: '↩️', okLabel: 'Confirmar devolución', okColor: '#dc2626' }
+  );
+}
+
+function exportTabToExcel(tab) {
+  const tabLists = {
+    pend:      _pendDisplayList,
+    hist:      _histDisplayList,
+    pagados:   _pagadosFullList,
+    devueltos: _devueltosDisplayList
+  };
+  const tabNames = {
+    pend:      'Nuevos_Pedidos',
+    hist:      'Por_Pagar',
+    pagados:   'Pagados',
+    devueltos: 'Devueltos'
+  };
+  const list = tabLists[tab] || [];
+  if (!list.length) { showToast('No hay datos para exportar.', false); return; }
+  const rows = list.map(o => {
+    const fecha = o.fecha ? new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+    return {
+      'Fecha':        fecha,
+      'Pedido #':     o.id.slice(0,8).toUpperCase(),
+      'Colaborador':  o.usuario_nombre || '',
+      'Departamento': o.usuario_departamento || '',
+      'Lugar':        o.usuario_lugar || '',
+      'Total':        o.total || 0
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:12},{wch:24},{wch:18},{wch:14},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, tabNames[tab].replace(/_/g,' '));
+  const today = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Pedidos_${tabNames[tab]}_${today}.xlsx`);
 }
 
 function openMoraModal(userKey, nombre) {

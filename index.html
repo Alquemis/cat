@@ -2275,17 +2275,19 @@ async function descargarCopiaRecibo(orderData) {
     cancelado:  { bg: '#fee2e2', text: '#dc2626', label: 'Rechazado' },
   };
   const ec = estadoConfig[estado] || estadoConfig.pendiente;
-  ctx.font = 'bold 10px system-ui, sans-serif';
-  ctx.textAlign = 'right';
-  const chipLabel = ec.label;
-  const chipW = ctx.measureText(chipLabel).width + 16;
-  const chipX = W - PAD - chipW;
-  const chipY = 58;
-  rr(chipX, chipY, chipW, 16, 8);
-  ctx.fillStyle = ec.bg; ctx.fill();
-  ctx.fillStyle = ec.text; ctx.textBaseline = 'middle';
-  ctx.fillText(chipLabel, W - PAD - 8, chipY + 8);
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  if (estado !== 'pagado') {
+    ctx.font = 'bold 10px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    const chipLabel = ec.label;
+    const chipW = ctx.measureText(chipLabel).width + 16;
+    const chipX = W - PAD - chipW;
+    const chipY = 58;
+    rr(chipX, chipY, chipW, 16, 8);
+    ctx.fillStyle = ec.bg; ctx.fill();
+    ctx.fillStyle = ec.text; ctx.textBaseline = 'middle';
+    ctx.fillText(chipLabel, W - PAD - 8, chipY + 8);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
 
   // Línea divisoria bajo header
   ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
@@ -2760,7 +2762,7 @@ function getMoraThreshold(fecha) {
 
 const _notifMeta = {
   facturado: { icon: '🔵', title: (num) => `Tu pedido #${num} ha sido facturado`, sub: '' },
-  pagado:    { icon: '🟢', title: (num) => `Tu pedido #${num} ha sido pagado, Gracias!!`, sub: '' },
+  // pagado: notificación desactivada intencionalmente
   cancelado: { icon: '🔴', title: (num) => `Tu pedido #${num} fue rechazado`, sub: 'Contáctanos si tienes dudas.' },
   mora:      { icon: '⚠️', title: (num) => `Tu pedido #${num} está pendiente de pago`, sub: '' },
 };

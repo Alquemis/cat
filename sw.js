@@ -1,3 +1,3 @@
-// Service Worker — v1.3
+// Service Worker — v1.4
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => clients.claim());

@@ -502,7 +502,7 @@
     <div id="opage-pend">
       <div class="toolbar">
         <div class="search-field"><span>🔍</span>
-          <input type="text" id="pend-search" placeholder="Buscar por nombre…" oninput="filterAdminPend()">
+          <input type="text" id="pend-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminPend()">
         </div>
         <select id="pend-lugar" onchange="filterAdminPend()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
           <option value="">Todos los lugares</option>
@@ -530,7 +530,7 @@
     <div id="opage-hist" style="display:none">
       <div class="toolbar">
         <div class="search-field"><span>🔍</span>
-          <input type="text" id="hist-search" placeholder="Buscar por nombre…" oninput="filterAdminHist()">
+          <input type="text" id="hist-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminHist()">
         </div>
         <select id="hist-lugar" onchange="filterAdminHist()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
           <option value="">Todos los lugares</option>
@@ -561,7 +561,7 @@
     <div id="opage-pagados" style="display:none">
       <div class="toolbar">
         <div class="search-field"><span>🔍</span>
-          <input type="text" id="pagados-search" placeholder="Buscar por nombre…" oninput="filterAdminPagados()">
+          <input type="text" id="pagados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminPagados()">
         </div>
         <select id="pagados-lugar" onchange="filterAdminPagados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
           <option value="">Todos los lugares</option>
@@ -593,7 +593,7 @@
     <div id="opage-devueltos" style="display:none">
       <div class="toolbar">
         <div class="search-field"><span>🔍</span>
-          <input type="text" id="devueltos-search" placeholder="Buscar por nombre…" oninput="filterAdminDevueltos()">
+          <input type="text" id="devueltos-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminDevueltos()">
         </div>
         <select id="devueltos-lugar" onchange="filterAdminDevueltos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
           <option value="">Todos los lugares</option>
@@ -1882,7 +1882,7 @@ function filterAdminPend() {
   const q = (document.getElementById('pend-search').value || '').toLowerCase();
   const lugar = document.getElementById('pend-lugar').value;
   let list = allAdminPend.filter(o =>
-    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar)
   );
   const _suPendSorted = _sortOrderList(list, _suPendSort.col, _suPendSort.dir);
@@ -1896,7 +1896,7 @@ function filterAdminHist() {
   const desde = document.getElementById('hist-desde').value;
   let list = allAdminHist.filter(o =>
     o.estado === 'facturado' &&
-    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
   );
@@ -1961,7 +1961,7 @@ function filterAdminDevueltos() {
   const desde = document.getElementById('devueltos-desde').value;
   let list = allAdminHist.filter(o =>
     o.estado === 'devuelto' &&
-    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
   );
@@ -1976,7 +1976,7 @@ function filterAdminPagados() {
   const desde = document.getElementById('pagados-desde').value;
   let list = allAdminHist.filter(o =>
     (o.estado === 'pagado' || o.estado === 'cancelado') &&
-    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q)) &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
   );

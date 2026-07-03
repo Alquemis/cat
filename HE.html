@@ -545,9 +545,35 @@ async function onLogin() {
   document.getElementById('topbar-user').textContent = LUGAR;
   showPage('orders');
   await loadOrders();
+  startRealtimeOrders();
 }
 
+// ── TIEMPO REAL — recarga automática al cambiar pedidos ──
+let _rtOrdersChannel = null;
+let _rtReloadT = null;
+function _rtScheduleReload() {
+  clearTimeout(_rtReloadT);
+  _rtReloadT = setTimeout(() => { loadOrders(); }, 800); // debounce: agrupa ráfagas de cambios
+}
+function startRealtimeOrders() {
+  if (_rtOrdersChannel || !sb.channel) return;
+  _rtOrdersChannel = sb.channel('rt-pedidos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, _rtScheduleReload)
+    .subscribe();
+}
+function stopRealtimeOrders() {
+  if (_rtOrdersChannel) {
+    try { sb.removeChannel(_rtOrdersChannel); } catch(e) {}
+    _rtOrdersChannel = null;
+  }
+}
+// Al volver a la pestaña, refrescar por si hubo cambios mientras estaba oculta
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _rtOrdersChannel) _rtScheduleReload();
+});
+
 function onLogout() {
+  stopRealtimeOrders();
   localStorage.removeItem(SESSION_KEY);
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('login-user').value = '';
@@ -685,8 +711,8 @@ async function _autoDeleteExactDups() {
 
 async function loadOrders() {
   const [resPend, resHist, resProd] = await Promise.all([
-    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:true}),
+    sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').eq('usuario_lugar', LUGAR).order('fecha', {ascending:true}),
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).eq('usuario_lugar', LUGAR).order('fecha', {ascending:true}),
     sb.from('productos').select('codigo, nombre')
   ]);
   _prodMap = {};

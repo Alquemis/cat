@@ -1203,6 +1203,12 @@ const SUPABASE_URL  = 'https://uzfmpctopzvneykqwxny.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ── REALTIME — estado global ─────────────────────────────
+// _rtOk = true cuando la suscripción websocket está activa.
+// Los pollings siguen como respaldo, pero mucho más lentos.
+let _rtOk = false;
+let _rtChannel = null;
+
 // ============================================================
 //  DATOS DEL CATÁLOGO
 // ============================================================
@@ -1295,6 +1301,9 @@ async function onLogin(session, isRestore = false) {
   // Iniciar vigilancia de sesión (detecta eliminación por superuser)
   startSessionWatchdog();
 
+  // Tiempo real: stock, notificaciones y sesión al instante
+  try { startRealtime(); } catch(e) {}
+
   // Notificaciones — cada llamada aislada para que un fallo no cancele las demás
   try { document.getElementById('notif-wrap').classList.add('visible'); } catch(e) {}
   try { if (typeof renderNotifBadge === 'function') renderNotifBadge(); } catch(e) {}
@@ -1302,8 +1311,10 @@ async function onLogin(session, isRestore = false) {
   try { if (typeof startPromoStockPolling === 'function') startPromoStockPolling(); } catch(e) {}
   try { _updateInstallMenuBtn(); } catch(e) {}
 
-  // Intentar cargar productos desde Supabase
-  await loadProductsFromDB();
+  // Esperar el catálogo (ya se estaba cargando en paralelo desde que abrió la página)
+  await ensureCatalog();
+  if (!CATALOG.length) { _catalogPromise = null; await ensureCatalog(); } // reintento si falló
+  loadCart(); // restaurar carrito guardado (requiere catálogo + usuario)
 
   // Inicializar catálogo
   renderHomeBanner();
@@ -1314,6 +1325,7 @@ function onLogout() {
   stopSessionWatchdog();
   stopNotifPolling();
   stopPromoStockPolling();
+  stopRealtime();
   document.getElementById('notif-wrap').classList.remove('visible');
   currentUser = null;
   cart = [];
@@ -1445,11 +1457,16 @@ function doLogout() {
 // Verifica cada 30 s si el usuario sigue existiendo en la BD.
 // Si fue eliminado por el superuser, cierra sesión automáticamente.
 let _watchdogTimer = null;
+let _lastWatchdogCheck = 0;
 
 function startSessionWatchdog() {
   stopSessionWatchdog();
   _watchdogTimer = setInterval(async () => {
     if (!currentUser) { stopSessionWatchdog(); return; }
+    // Con realtime activo el DELETE llega por websocket → chequear solo cada 60s de respaldo
+    if (document.hidden) return;
+    if (_rtOk && Date.now() - _lastWatchdogCheck < 60000) return;
+    _lastWatchdogCheck = Date.now();
     try {
       const { data, error } = await sb
         .from('usuarios')
@@ -1744,7 +1761,6 @@ async function loadProductsFromDB() {
         promo: !!r.promocion,
         stock: r.stock != null ? r.stock : null
       }));
-      loadCart(); // restaurar carrito guardado tras tener el catálogo
       const tabPromo = document.getElementById('tab-promociones');
       if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo));
       positionConfetti();
@@ -1752,6 +1768,14 @@ async function loadProductsFromDB() {
   } catch(e) {
     console.error('Error cargando productos:', e);
   }
+}
+
+// La carga arranca apenas se abre la página (en paralelo al login),
+// así el catálogo ya está listo cuando el usuario entra.
+let _catalogPromise = null;
+function ensureCatalog() {
+  if (!_catalogPromise) _catalogPromise = loadProductsFromDB();
+  return _catalogPromise;
 }
 
 // ============================================================
@@ -2443,7 +2467,7 @@ function renderCard(p) {
   return `
     <div class="product-card">
       <div class="product-img-wrap">
-        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" onclick="event.stopPropagation();openLightbox('${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='block'">` : ''}
+        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" loading="lazy" decoding="async" onclick="event.stopPropagation();openLightbox('${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='block'">` : ''}
         <div class="product-img-placeholder" style="${p.img?'display:none':''}"> ${emoji}</div>
         ${p.b ? `<span class="product-brand-tag">${escHtml(p.b)}</span>` : ''}
       </div>
@@ -2767,8 +2791,15 @@ const _notifMeta = {
   mora:      { icon: '⚠️', title: (num) => `Tu pedido #${num} está pendiente de pago`, sub: '' },
 };
 
-async function checkNotifications() {
+let _lastNotifCheck = 0;
+async function checkNotifications(force = false) {
   if (!currentUser) return;
+  if (!force) {
+    if (document.hidden) return;
+    const minGap = _rtOk ? 60000 : 8000; // con realtime, el polling es solo respaldo
+    if (Date.now() - _lastNotifCheck < minGap) return;
+  }
+  _lastNotifCheck = Date.now();
 
   // Traer TODOS los pedidos del usuario (todos los estados)
   const { data: pedidos, error } = await sb.from('pedidos')
@@ -3012,8 +3043,15 @@ function positionConfetti() {
 // ── POLLING DE STOCK DE PROMOCIONES ──────────────────────────
 let _promoStockTimer = null;
 
-async function pollPromoStock() {
+let _lastPromoPoll = 0;
+async function pollPromoStock(force = false) {
   if (!currentUser) return;
+  if (!force) {
+    if (document.hidden) return; // pestaña en segundo plano: no gastar red/batería
+    const minGap = _rtOk ? 30000 : 3000; // con realtime activo, el polling es solo respaldo
+    if (Date.now() - _lastPromoPoll < minGap) return;
+  }
+  _lastPromoPoll = Date.now();
   const promos = CATALOG.filter(p => p.promo);
   if (!promos.length) {
     // No hay promos activas: asegurarse de que el confeti desaparezca
@@ -3057,6 +3095,47 @@ function stopPromoStockPolling() {
 document.addEventListener('click', e => {
   const wrap = document.getElementById('notif-wrap');
   if (wrap && !wrap.contains(e.target)) closeNotifPanel();
+});
+
+// ============================================================
+//  TIEMPO REAL (Supabase Realtime)
+//  Una sola conexión websocket reemplaza los pollings rápidos:
+//  - productos  → stock de promos al instante
+//  - pedidos    → notificaciones al instante (solo los del usuario)
+//  - usuarios   → cierre de sesión inmediato si lo eliminan
+//  Si el websocket no conecta, los pollings de respaldo siguen
+//  funcionando con su frecuencia original.
+// ============================================================
+function startRealtime() {
+  stopRealtime();
+  if (!currentUser || !sb.channel) return;
+  _rtChannel = sb.channel('rt-catalogo-' + currentUser.cedula)
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'productos' },
+      () => { pollPromoStock(true); })
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'pedidos', filter: 'usuario_email=eq.' + currentUser.cedula },
+      () => { checkNotifications(true); })
+    .on('postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'usuarios', filter: 'cedula=eq.' + currentUser.cedula },
+      () => { stopSessionWatchdog(); onLogout(); })
+    .subscribe(status => { _rtOk = (status === 'SUBSCRIBED'); });
+}
+
+function stopRealtime() {
+  if (_rtChannel) {
+    try { sb.removeChannel(_rtChannel); } catch(e) {}
+    _rtChannel = null;
+  }
+  _rtOk = false;
+}
+
+// Al volver a la pestaña, refrescar de inmediato (los pollings se pausan en segundo plano)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && currentUser) {
+    pollPromoStock(true);
+    checkNotifications(true);
+  }
 });
 
 // ============================================================
@@ -3216,6 +3295,7 @@ if (window.visualViewport) {
   });
 }
 
+ensureCatalog(); // arrancar descarga del catálogo de inmediato, en paralelo al login
 initAuth();
 </script>
 </body>

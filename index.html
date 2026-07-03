@@ -1290,7 +1290,7 @@ async function onLogin(session, isRestore = false) {
   currentUser = session;
 
   // Actualizar UI topbar
-  const nombre = session.nombre;
+  const nombre = toTitleCase(session.nombre);
   const _nw = nombre.trim().split(/\s+/);
   const _shortName = _nw.length >= 3 ? _nw[0] + ' ' + _nw[_nw.length - 2] : nombre;
   document.getElementById('user-name').textContent = _shortName;
@@ -1400,7 +1400,7 @@ async function doQuickLogin() {
 
 function showWelcomePopup(nombre, session, isRestore = false) {
   const popup = document.getElementById('welcome-popup');
-  document.getElementById('welcome-name').textContent = nombre.split(' ')[0];
+  document.getElementById('welcome-name').textContent = toTitleCase(nombre).split(' ')[0];
   document.getElementById('login-overlay').classList.add('hidden');
   popup.style.display = 'flex';
   setTimeout(() => {

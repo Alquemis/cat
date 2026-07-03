@@ -2763,15 +2763,20 @@ function renderRankProductos() {
   const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado');
   const data  = _filterByYearMonth(base, 'f-prod-year', 'f-prod-month');
   const map   = {};
-  data.forEach(o => (o.lineas_pedido||[]).forEach(l => { const k=l.producto_nombre||l.producto_codigo; map[k]=(map[k]||0)+(l.cantidad||0); }));
+  const names = {};
+  data.forEach(o => (o.lineas_pedido||[]).forEach(l => {
+    const k = l.producto_codigo||l.producto_nombre; if (!k) return;
+    map[k] = (map[k]||0)+(l.cantidad||0);
+    names[k] = l.producto_nombre||l.producto_codigo;
+  }));
   const top = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const mx  = top[0]?.[1]||1;
-  document.getElementById('rank-productos').innerHTML = top.length ? top.map(([n,v],i)=>`
+  document.getElementById('rank-productos').innerHTML = top.length ? top.map(([k,v],i)=>`
     <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
-      <div class="rank-name">${esc(n)}</div>
+      <div class="rank-name">${esc(names[k])}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
     </div><span class="rank-val">${v} u.</span>
-    <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openProdDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
+    <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openProdDetail('${esc(k).replace(/'/g,"\\'")}','${esc(names[k]).replace(/'/g,"\\'")}')">Detalles</button>
     </div>`).join('')
     : '<tr><td colspan="3" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</td></tr>';
 }
@@ -2783,11 +2788,13 @@ function openAllProds() {
   const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
   const data = _filterByYearMonth(base, 'f-prod-year', 'f-prod-month');
   const map = {};
+  const names = {};
   data.forEach(o => (o.lineas_pedido||[]).forEach(l => {
-    const k = l.producto_nombre||l.producto_codigo;
+    const k = l.producto_codigo||l.producto_nombre; if (!k) return;
     map[k] = (map[k]||0) + (l.cantidad||0);
+    names[k] = l.producto_nombre||l.producto_codigo;
   }));
-  _allProdsFullList = Object.entries(map).sort((a,b) => b[1]-a[1]);
+  _allProdsFullList = Object.entries(map).sort((a,b) => b[1]-a[1]).map(([k,v]) => [k, v, names[k]]);
   const yrSel = document.getElementById('f-prod-year');
   const moSel = document.getElementById('f-prod-month');
   const yrTxt = yrSel.options[yrSel.selectedIndex]?.text||'';
@@ -2805,29 +2812,31 @@ function closeAllProds() {
 
 function filterAllProds() {
   const q    = (document.getElementById('all-prods-search').value||'').toLowerCase();
-  const list = q ? _allProdsFullList.filter(([n]) => n.toLowerCase().includes(q)) : _allProdsFullList;
+  const list = q ? _allProdsFullList.filter(([k,,n]) => (n||k).toLowerCase().includes(q)) : _allProdsFullList;
   const mx   = list[0]?.[1]||1;
   document.getElementById('all-prods-list').innerHTML = list.length
-    ? list.map(([n,v],i) => `
+    ? list.map(([k,v,n],i) => `
       <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
-        <div class="rank-name">${esc(n)}</div>
+        <div class="rank-name">${esc(n||k)}</div>
         <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
       </div><span class="rank-val">${v} u.</span>
-      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeAllProds();openProdDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
+      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeAllProds();openProdDetail('${esc(k).replace(/'/g,"\\'")}','${esc(n||k).replace(/'/g,"\\'")}')">Detalles</button>
       </div>`).join('')
     : '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin resultados</div>';
 }
 
 // ── DETALLES PRODUCTO ────────────────────────────────────
 let _prodDetailName   = '';
+let _prodDetailKey    = '';
 let _prodDetailRowData = [];
 let _prodDetailChart  = null;
 let _prodDetailPeriod = 'month';
 let _prodDetailData   = [];
 
-function openProdDetail(nombre) {
-  _prodDetailName = nombre;
-  document.getElementById('prod-detail-title').textContent = nombre;
+function openProdDetail(key, displayName) {
+  _prodDetailKey  = key;
+  _prodDetailName = displayName || key;
+  document.getElementById('prod-detail-title').textContent = _prodDetailName;
   // Poblar filtros de año
   const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -2850,7 +2859,7 @@ function renderProdDetail() {
   const userMap = {};
   data.forEach(o => {
     (o.lineas_pedido||[]).forEach(l => {
-      if ((l.producto_nombre||l.producto_codigo) !== _prodDetailName) return;
+      if ((l.producto_codigo||l.producto_nombre) !== _prodDetailKey) return;
       const k = o.usuario_nombre || o.usuario_email;
       if (!userMap[k]) userMap[k] = { total: 0, ultima: o.fecha };
       userMap[k].total += (l.cantidad||0);
@@ -2882,7 +2891,7 @@ function renderProdDetail() {
     const pedidos = data.filter(o=>(o.usuario_nombre===n||o.usuario_email===n)).map(o=>({
       num: o.id.slice(0,8).toUpperCase(),
       fecha: new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'}),
-      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_nombre||l.producto_codigo)===_prodDetailName).reduce((s,l)=>s+(l.cantidad||0),0),
+      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_codigo||l.producto_nombre)===_prodDetailKey).reduce((s,l)=>s+(l.cantidad||0),0),
       mora: o.estado==='facturado' && Date.now()>getMoraThreshold(o.facturado_at || o.fecha)
     })).filter(p=>p.qty>0);
     _prodDetailRowData[idx] = pedidos;
@@ -2929,7 +2938,7 @@ function renderProdDetailChart() {
   const map  = {};
   data.forEach(o => {
     (o.lineas_pedido||[]).forEach(l => {
-      if ((l.producto_nombre||l.producto_codigo) !== _prodDetailName) return;
+      if ((l.producto_codigo||l.producto_nombre) !== _prodDetailKey) return;
       const d = new Date(o.fecha);
       let key;
       if (_prodDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});

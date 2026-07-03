@@ -2767,10 +2767,15 @@ function renderSuRankProductos() {
   const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado');
   const data=_suFilterByYearMonth(base,'sf-prod-year','sf-prod-month');
   const map={};
-  data.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{const k=l.producto_nombre||l.producto_codigo;map[k]=(map[k]||0)+(l.cantidad||0);}));
+  const names={};
+  data.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{
+    const k=l.producto_codigo||l.producto_nombre; if(!k) return;
+    map[k]=(map[k]||0)+(l.cantidad||0);
+    names[k]=l.producto_nombre||l.producto_codigo;
+  }));
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-productos').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${n}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuProdDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-productos').innerHTML=top.length?top.map(([k,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid"><div class="rank-name">${names[k]}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuProdDetail('${k.replace(/'/g,"\\'")}','${(names[k]||k).replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 // ── VER TODOS PRODUCTOS SU ────────────────────────────────────
@@ -2780,11 +2785,13 @@ function openSuAllProds() {
   const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
   const data = _suFilterByYearMonth(base, 'sf-prod-year', 'sf-prod-month');
   const map = {};
+  const names = {};
   data.forEach(o => (o.lineas_pedido||[]).forEach(l => {
-    const k = l.producto_nombre||l.producto_codigo;
+    const k = l.producto_codigo||l.producto_nombre; if (!k) return;
     map[k] = (map[k]||0) + (l.cantidad||0);
+    names[k] = l.producto_nombre||l.producto_codigo;
   }));
-  _suAllProdsFullList = Object.entries(map).sort((a,b) => b[1]-a[1]);
+  _suAllProdsFullList = Object.entries(map).sort((a,b) => b[1]-a[1]).map(([k,v]) => [k, v, names[k]]);
   const yrSel = document.getElementById('sf-prod-year');
   const moSel = document.getElementById('sf-prod-month');
   const yrTxt = yrSel.options[yrSel.selectedIndex]?.text||'';
@@ -2802,29 +2809,31 @@ function closeSuAllProds() {
 
 function filterSuAllProds() {
   const q    = (document.getElementById('su-all-prods-search').value||'').toLowerCase();
-  const list = q ? _suAllProdsFullList.filter(([n]) => n.toLowerCase().includes(q)) : _suAllProdsFullList;
+  const list = q ? _suAllProdsFullList.filter(([k,,n]) => (n||k).toLowerCase().includes(q)) : _suAllProdsFullList;
   const mx   = list[0]?.[1]||1;
   document.getElementById('su-all-prods-list').innerHTML = list.length
-    ? list.map(([n,v],i) => `
+    ? list.map(([k,v,n],i) => `
       <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
-        <div class="rank-name">${n}</div>
+        <div class="rank-name">${n||k}</div>
         <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
       </div><span class="rank-val">${v} u.</span>
-      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeSuAllProds();openSuProdDetail('${n.replace(/'/g,"\\'")}')">Detalles</button>
+      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeSuAllProds();openSuProdDetail('${k.replace(/'/g,"\\'")}','${(n||k).replace(/'/g,"\\'")}')">Detalles</button>
       </div>`).join('')
     : '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin resultados</div>';
 }
 
 // ── DETALLES PRODUCTO ────────────────────────────────────
 let _suProdDetailName   = '';
+let _suProdDetailKey    = '';
 let _suProdDetailRowData = [];
 let _suProdDetailChart  = null;
 let _suProdDetailPeriod = 'month';
 let _suProdDetailData   = [];
 
-function openSuProdDetail(nombre) {
-  _suProdDetailName = nombre;
-  document.getElementById('su-prod-detail-title').textContent = nombre;
+function openSuProdDetail(key, displayName) {
+  _suProdDetailKey  = key;
+  _suProdDetailName = displayName || key;
+  document.getElementById('su-prod-detail-title').textContent = _suProdDetailName;
   const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   document.getElementById('su-pd-year').innerHTML = '<option value="">Todos los años</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
@@ -2845,7 +2854,7 @@ function renderSuProdDetail() {
   const userMap = {};
   data.forEach(o => {
     (o.lineas_pedido||[]).forEach(l => {
-      if ((l.producto_nombre||l.producto_codigo) !== _suProdDetailName) return;
+      if ((l.producto_codigo||l.producto_nombre) !== _suProdDetailKey) return;
       const k = o.usuario_nombre || o.usuario_email;
       if (!userMap[k]) userMap[k] = { total:0, ultima:o.fecha };
       userMap[k].total += (l.cantidad||0);
@@ -2876,7 +2885,7 @@ function renderSuProdDetail() {
     const pedidos = data.filter(o=>(o.usuario_nombre===n||o.usuario_email===n)).map(o=>({
       num: o.id.slice(0,8).toUpperCase(),
       fecha: new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'}),
-      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_nombre||l.producto_codigo)===_suProdDetailName).reduce((s,l)=>s+(l.cantidad||0),0),
+      qty: (o.lineas_pedido||[]).filter(l=>(l.producto_codigo||l.producto_nombre)===_suProdDetailKey).reduce((s,l)=>s+(l.cantidad||0),0),
       mora: o.estado==='facturado' && Date.now()>getMoraThreshold(o.facturado_at || o.fecha)
     })).filter(p=>p.qty>0);
     _suProdDetailRowData[idx] = pedidos;
@@ -2923,7 +2932,7 @@ function renderSuProdDetailChart() {
   const map  = {};
   data.forEach(o => {
     (o.lineas_pedido||[]).forEach(l => {
-      if ((l.producto_nombre||l.producto_codigo) !== _suProdDetailName) return;
+      if ((l.producto_codigo||l.producto_nombre) !== _suProdDetailKey) return;
       const d = new Date(o.fecha);
       let key;
       if (_suProdDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});

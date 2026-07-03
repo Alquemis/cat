@@ -2263,7 +2263,7 @@ function openOrderDetail(id) {
 async function loadUsers() {
   const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
   if (error) { console.error(error); return; }
-  allUsers = data || [];
+  allUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   document.getElementById('stat-users').textContent = allUsers.length;
 
   // Poblar departamentos dinámicamente

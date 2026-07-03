@@ -1188,6 +1188,9 @@
 <script>
 // ── TOAST ────────────────────────────────────────────────
 let _toastTimer = null;
+// Normaliza nombres: todo a minúscula y cada inicial en mayúscula
+function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
+
 function showToast(msg, type = 'error') {
   const t = document.getElementById('app-toast');
   t.textContent = msg;
@@ -1257,6 +1260,7 @@ async function initAuth() {
 }
 
 async function onLogin(session, isRestore = false) {
+  session.nombre = toTitleCase(session.nombre || '');
   // Perfil canónico desde tabla usuarios (cédula = PK)
   try {
     const { data: perfil } = await sb.from('usuarios')
@@ -1267,7 +1271,7 @@ async function onLogin(session, isRestore = false) {
       // Ya existe → usar el perfil guardado en DB
       session = {
         ...session,
-        nombre:       perfil.nombre       || session.nombre,
+        nombre:       toTitleCase(perfil.nombre || session.nombre),
         departamento: perfil.departamento || session.departamento,
         lugar:        perfil.lugar        || session.lugar
       };
@@ -1389,9 +1393,9 @@ async function doQuickLogin() {
     return;
   }
 
-  const session = { nombre: perfil.nombre, cedula: perfil.cedula, departamento: perfil.departamento, lugar: perfil.lugar };
+  const session = { nombre: toTitleCase(perfil.nombre), cedula: perfil.cedula, departamento: perfil.departamento, lugar: perfil.lugar };
   localStorage.setItem('catalogo_session', JSON.stringify(session));
-  showWelcomePopup(perfil.nombre, session, true);
+  showWelcomePopup(session.nombre, session, true);
 }
 
 function showWelcomePopup(nombre, session, isRestore = false) {
@@ -1416,7 +1420,7 @@ function getSelectedLugar() {
 }
 
 function doLogin() {
-  const nombre = document.getElementById('login-nombre').value.trim();
+  const nombre = toTitleCase(document.getElementById('login-nombre').value.trim());
   const cedula = document.getElementById('login-cedula').value.trim();
   const depto  = document.getElementById('login-depto').value.trim();
   const lugar  = getSelectedLugar();

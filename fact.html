@@ -324,6 +324,7 @@ const SESSION_KEY = 'fact_session';
 
 let allPendientes = [];
 let allHistorial  = [];
+let _prodMap      = {};  // codigo → nombre actual del catálogo
 
 /* ── Detección de duplicados ── */
 const _DUP_COLORS = [
@@ -439,7 +440,13 @@ async function checkSession() {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  await Promise.all([loadPendientes(), loadHistorial()]);
+  const [,, resProd] = await Promise.all([
+    loadPendientes(),
+    loadHistorial(),
+    sb.from('productos').select('codigo, nombre')
+  ]);
+  _prodMap = {};
+  (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
 }
 
 // ── TABS ──────────────────────────────────────────────────────
@@ -792,7 +799,7 @@ function openDetail(id, source) {
             '<tr>' +
               '<td><code style="font-size:12px">' + esc(l.producto_codigo||'') + '</code></td>' +
               '<td style="text-align:center;font-weight:600">' + (l.cantidad||0) + '</td>' +
-              '<td>' + esc(l.producto_nombre||'') + '</td>' +
+              '<td>' + esc(_pNombre(l.producto_codigo, l.producto_nombre)) + '</td>' +
               '<td><span class="col-sign">₡</span>' + (l.precio_unitario||0).toLocaleString('es-CR') + '</td>' +
               '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.subtotal||0).toLocaleString('es-CR') + '</td>' +
             '</tr>'
@@ -914,6 +921,7 @@ async function saveConfig() {
 function esc(s) {
   return String(s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
+function _pNombre(codigo, fallback) { return (codigo && _prodMap[codigo]) || fallback || codigo || ''; }
 
 // ── TOUCH GESTURES ────────────────────────────────────────────
 (function() {

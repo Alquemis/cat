@@ -479,6 +479,7 @@ const PASS_KEY    = 'tr_pass';
 
 // ── ESTADO ───────────────────────────────────────────────
 let allAdminHist   = [];
+let _prodMap       = {};  // codigo → nombre actual del catálogo
 let _moraUsersMap  = {};
 let _moraNombreMap = {};
 
@@ -683,10 +684,13 @@ async function _autoDeleteExactDups() {
 }
 
 async function loadOrders() {
-  const [resPend, resHist] = await Promise.all([
+  const [resPend, resHist, resProd] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:true})
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).order('fecha', {ascending:true}),
+    sb.from('productos').select('codigo, nombre')
   ]);
+  _prodMap = {};
+  (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
   // Filter by LUGAR client-side
   allAdminHist = (resHist.data || []).filter(o => o.usuario_lugar === LUGAR)
     .map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
@@ -943,7 +947,7 @@ function openOrderDetail(id) {
             <tr>
               <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
               <td style="text-align:center;font-weight:600">${l.cantidad}</td>
-              <td>${esc(l.producto_nombre)}</td>
+              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</td>
               <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
               <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
             </tr>`).join('')}
@@ -1065,6 +1069,7 @@ async function saveConfig() {
 
 // ── HELPER ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function _pNombre(codigo, fallback) { return (codigo && _prodMap[codigo]) || fallback || codigo || ''; }
 function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
 
 // ── TOUCH GESTURES ────────────────────────────────────────────

@@ -1619,7 +1619,7 @@ function openPedidoDet(idx) {
     return `<div class="mpd-line">
       ${imgHtml}
       <div class="mpd-line-info">
-        <div class="mpd-line-name">${escHtml(l.producto_nombre || '')}</div>
+        <div class="mpd-line-name">${escHtml(prod?.n || l.producto_nombre || '')}</div>
         <div class="mpd-line-qty">Cant: ${l.cantidad} &nbsp;·&nbsp; <span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
       </div>
       <div class="mpd-line-sub"><span class="col-sign">₡</span>${(l.subtotal || 0).toLocaleString('es-CR')}</div>

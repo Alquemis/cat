@@ -464,11 +464,11 @@
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Por pagar</div>
-            <div class="stat-gran-item-val" style="color:#b45309" id="stat-gt-facturados">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="stat-gt-facturados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Pagados</div>
-            <div class="stat-gran-item-val" style="color:#047857" id="stat-gt-pagados">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="stat-gt-pagados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">En mora</div>
@@ -695,15 +695,19 @@
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Por pagar</div>
-            <div class="stat-gran-item-val" style="color:#b45309" id="sdk-gt-facturados">—</div>
+            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-facturados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Pagados</div>
-            <div class="stat-gran-item-val" style="color:#047857" id="sdk-gt-pagados">—</div>
+            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-pagados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">En mora</div>
             <div class="stat-gran-item-val" style="color:#dc2626" id="sdk-gt-mora">—</div>
+          </div>
+          <div class="stat-gran-item">
+            <div class="stat-gran-item-lbl">Devueltos</div>
+            <div class="stat-gran-item-val" style="color:#dc2626" id="sdk-gt-devueltos">—</div>
           </div>
         </div>
       </div>
@@ -773,7 +777,10 @@
             <select class="dash-filter" id="sf-unid-month" onchange="renderSuRankUnidades()"><option value="">Todos los meses</option></select>
           </div>
         </div>
-        <div class="rank-list" id="su-rank-unidades"></div>
+        <div class="rank-list" id="su-rank-unidades" style="flex:1;"></div>
+        <div style="padding-top:10px;border-top:1px solid #f3f4f6;margin-top:8px;text-align:center;">
+          <button onclick="openSuAllUnidades()" style="background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;width:100%;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='none'">Ver todos →</button>
+        </div>
       </div>
       <div class="dash-card">
         <div class="dash-card-title">
@@ -783,7 +790,10 @@
             <select class="dash-filter" id="sf-monto-month" onchange="renderSuRankMonto()"><option value="">Todos los meses</option></select>
           </div>
         </div>
-        <div class="rank-list" id="su-rank-monto"></div>
+        <div class="rank-list" id="su-rank-monto" style="flex:1;"></div>
+        <div style="padding-top:10px;border-top:1px solid #f3f4f6;margin-top:8px;text-align:center;">
+          <button onclick="openSuAllMonto()" style="background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;width:100%;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='none'">Ver todos →</button>
+        </div>
       </div>
     </div>
 
@@ -1056,6 +1066,40 @@
     <input id="su-all-prods-search" type="text" placeholder="Buscar producto…" oninput="filterSuAllProds()"
       style="width:100%;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;outline:none;">
     <div id="su-all-prods-list" class="rank-list" style="overflow-y:auto;flex:1;"></div>
+  </div>
+</div>
+
+<!-- MODAL VER TODOS UNIDADES COMPRADAS SU -->
+<div id="su-all-unidades-modal" onclick="if(event.target===this)closeSuAllUnidades()"
+  style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.2);box-sizing:border-box;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#143c5a;">Todos los colaboradores · Unidades</div>
+        <div id="su-all-unidades-sub" style="font-size:12px;color:#9ca3af;margin-top:2px;"></div>
+      </div>
+      <button onclick="closeSuAllUnidades()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <input id="su-all-unidades-search" type="text" placeholder="Buscar colaborador…" oninput="filterSuAllUnidades()"
+      style="width:100%;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;outline:none;">
+    <div id="su-all-unidades-list" class="rank-list" style="overflow-y:auto;flex:1;"></div>
+  </div>
+</div>
+
+<!-- MODAL VER TODOS MAYOR COMPRA SU -->
+<div id="su-all-monto-modal" onclick="if(event.target===this)closeSuAllMonto()"
+  style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.2);box-sizing:border-box;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#143c5a;">Todos los colaboradores · Monto</div>
+        <div id="su-all-monto-sub" style="font-size:12px;color:#9ca3af;margin-top:2px;"></div>
+      </div>
+      <button onclick="closeSuAllMonto()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <input id="su-all-monto-search" type="text" placeholder="Buscar colaborador…" oninput="filterSuAllMonto()"
+      style="width:100%;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;outline:none;">
+    <div id="su-all-monto-list" class="rank-list" style="overflow-y:auto;flex:1;"></div>
   </div>
 </div>
 
@@ -2703,10 +2747,12 @@ function renderSuDashboard() {
   const sdkFact   = data.filter(o => o.estado === 'facturado');
   const sdkPag    = data.filter(o => o.estado === 'pagado');
   const sdkMora   = sdkFact.filter(o => now_sdk > getMoraThreshold(o.facturado_at || o.fecha));
+  const sdkDev    = data.filter(o => o.estado === 'devuelto');
   const sdkTotNuevos = sdkNuevos.reduce((s,o) => s+(o.total||0), 0);
   const sdkTotFact   = sdkFact.reduce((s,o) => s+(o.total||0), 0);
   const sdkTotPag    = sdkPag.reduce((s,o) => s+(o.total||0), 0);
   const sdkTotMora   = sdkMora.reduce((s,o) => s+(o.total||0), 0);
+  const sdkTotDev    = sdkDev.reduce((s,o) => s+(o.total||0), 0);
   const granTotalDash = sdkTotNuevos + sdkTotFact + sdkTotPag;
   const fmt_sdk  = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   const totalUnid = activos.reduce((s,o) => s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0), 0);
@@ -2716,6 +2762,7 @@ function renderSuDashboard() {
   document.getElementById('sdk-gt-facturados').innerHTML = fmt_sdk(sdkTotFact);
   document.getElementById('sdk-gt-pagados').innerHTML   = fmt_sdk(sdkTotPag);
   document.getElementById('sdk-gt-mora').innerHTML      = fmt_sdk(sdkTotMora);
+  document.getElementById('sdk-gt-devueltos').innerHTML = fmt_sdk(sdkTotDev);
   document.getElementById('sdk-pedidos').textContent       = activos.length;
   document.getElementById('sdk-pendientes').textContent    = data.filter(o => o.estado === 'pendiente').length;
   document.getElementById('sdk-promedio').innerHTML      = activos.length ? '<span class="col-sign">₡</span>' + Math.round(activos.reduce((s,o)=>s+(o.total||0),0)/activos.length).toLocaleString('es-CR') : '<span class="col-sign">₡</span>0';
@@ -2822,6 +2869,84 @@ function filterSuAllProds() {
         <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
       </div><span class="rank-val">${v} u.</span>
       <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeSuAllProds();openSuProdDetail('${k.replace(/'/g,"\\'")}','${(n||k).replace(/'/g,"\\'")}')">Detalles</button>
+      </div>`).join('')
+    : '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin resultados</div>';
+}
+
+// ── VER TODOS UNIDADES COMPRADAS SU ──────────────────────
+let _suAllUnidadesFullList = [];
+
+function openSuAllUnidades() {
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const data = _suFilterByYearMonth(base, 'sf-unid-year', 'sf-unid-month');
+  const map  = {};
+  data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; if(!k) return; map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
+  _suAllUnidadesFullList = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const yrSel = document.getElementById('sf-unid-year');
+  const moSel = document.getElementById('sf-unid-month');
+  const yrTxt = yrSel.options[yrSel.selectedIndex]?.text||'';
+  const moTxt = moSel.options[moSel.selectedIndex]?.text||'';
+  const sub   = [yrTxt,moTxt].filter(s=>s&&s!=='Todos los años'&&s!=='Todos los meses').join(' · ')||'Todos los períodos';
+  document.getElementById('su-all-unidades-sub').textContent = `${_suAllUnidadesFullList.length} colaboradores · ${sub}`;
+  document.getElementById('su-all-unidades-search').value = '';
+  filterSuAllUnidades();
+  document.getElementById('su-all-unidades-modal').style.display = 'flex';
+}
+
+function closeSuAllUnidades() {
+  document.getElementById('su-all-unidades-modal').style.display = 'none';
+}
+
+function filterSuAllUnidades() {
+  const q    = (document.getElementById('su-all-unidades-search').value||'').toLowerCase();
+  const list = q ? _suAllUnidadesFullList.filter(([n]) => n.toLowerCase().includes(q)) : _suAllUnidadesFullList;
+  const mx   = list[0]?.[1]||1;
+  document.getElementById('su-all-unidades-list').innerHTML = list.length
+    ? list.map(([n,v],i) => `
+      <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
+        <div class="rank-name">${esc(n)}</div>
+        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
+      </div><span class="rank-val">${v} u.</span>
+      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeSuAllUnidades();openSuUserDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
+      </div>`).join('')
+    : '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin resultados</div>';
+}
+
+// ── VER TODOS MAYOR COMPRA SU ────────────────────────────
+let _suAllMontoFullList = [];
+
+function openSuAllMonto() {
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const data = _suFilterByYearMonth(base, 'sf-monto-year', 'sf-monto-month');
+  const map  = {};
+  data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; if(!k) return; map[k]=(map[k]||0)+(o.total||0); });
+  _suAllMontoFullList = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const yrSel = document.getElementById('sf-monto-year');
+  const moSel = document.getElementById('sf-monto-month');
+  const yrTxt = yrSel.options[yrSel.selectedIndex]?.text||'';
+  const moTxt = moSel.options[moSel.selectedIndex]?.text||'';
+  const sub   = [yrTxt,moTxt].filter(s=>s&&s!=='Todos los años'&&s!=='Todos los meses').join(' · ')||'Todos los períodos';
+  document.getElementById('su-all-monto-sub').textContent = `${_suAllMontoFullList.length} colaboradores · ${sub}`;
+  document.getElementById('su-all-monto-search').value = '';
+  filterSuAllMonto();
+  document.getElementById('su-all-monto-modal').style.display = 'flex';
+}
+
+function closeSuAllMonto() {
+  document.getElementById('su-all-monto-modal').style.display = 'none';
+}
+
+function filterSuAllMonto() {
+  const q    = (document.getElementById('su-all-monto-search').value||'').toLowerCase();
+  const list = q ? _suAllMontoFullList.filter(([n]) => n.toLowerCase().includes(q)) : _suAllMontoFullList;
+  const mx   = list[0]?.[1]||1;
+  document.getElementById('su-all-monto-list').innerHTML = list.length
+    ? list.map(([n,v],i) => `
+      <div class="rank-row"><span class="rank-num">${i+1}</span><div class="rank-mid">
+        <div class="rank-name">${esc(n)}</div>
+        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div>
+      </div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span>
+      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="closeSuAllMonto();openSuMontoDetail('${esc(n).replace(/'/g,"\\'")}')">Detalles</button>
       </div>`).join('')
     : '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin resultados</div>';
 }

@@ -2630,7 +2630,7 @@ async function loadDashboard() {
 
   const [resPed, resUsers] = await Promise.all([
     sb.from('pedidos')
-      .select('id, fecha, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
+      .select('id, fecha, facturado_at, total, estado, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
       .order('fecha', { ascending: true }),
     sb.from('usuarios').select('cedula', { count: 'exact', head: true })
   ]);

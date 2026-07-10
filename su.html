@@ -1875,7 +1875,7 @@ async function loadOrders() {
   const pagados       = allAdminHist.filter(o => o.estado === 'pagado'    && !o.exento_pago);
   const devueltos     = allAdminHist.filter(o => o.estado === 'devuelto');
   const enMora        = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
-  const totalNuevos    = allAdminPend.reduce((s,o) => s + (o.total||0), 0);
+  const totalNuevos    = allAdminPend.filter(o => o.usuario_cedula !== OWNER_CEDULA).reduce((s,o) => s + (o.total||0), 0);
   const totalFact      = facturados.reduce((s,o) => s + (o.total||0), 0);
   const totalPag       = pagados.reduce((s,o) => s + (o.total||0), 0);
   const totalMora      = enMora.reduce((s,o) => s + (o.total||0), 0);
@@ -2148,7 +2148,7 @@ function confirmDeleteOrder(id, num) {
       const facturados = allAdminHist.filter(o => o.estado === 'facturado' && !o.exento_pago);
       const pagados    = allAdminHist.filter(o => o.estado === 'pagado'    && !o.exento_pago);
       const enMora     = facturados.filter(o => now2 > getMoraThreshold(o.facturado_at || o.fecha));
-      const tNuevos = allAdminPend.reduce((s,o)=>s+(o.total||0),0);
+      const tNuevos = allAdminPend.filter(o => o.usuario_cedula !== OWNER_CEDULA).reduce((s,o)=>s+(o.total||0),0);
       const tFact   = facturados.reduce((s,o)=>s+(o.total||0),0);
       const tPag    = pagados.reduce((s,o)=>s+(o.total||0),0);
       const tMora   = enMora.reduce((s,o)=>s+(o.total||0),0);
@@ -2746,7 +2746,7 @@ function renderSuDashboard() {
   const data     = _suDashData;
   const activos  = data.filter(o => o.estado !== 'cancelado');
   const now_sdk  = Date.now();
-  const sdkNuevos = data.filter(o => o.estado === 'pendiente');
+  const sdkNuevos = data.filter(o => o.estado === 'pendiente' && o.usuario_cedula !== OWNER_CEDULA);
   const sdkFact   = data.filter(o => o.estado === 'facturado' && !o.exento_pago);
   const sdkPag    = data.filter(o => o.estado === 'pagado'    && !o.exento_pago);
   const sdkMora   = sdkFact.filter(o => now_sdk > getMoraThreshold(o.facturado_at || o.fecha));

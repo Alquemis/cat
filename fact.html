@@ -654,7 +654,7 @@ async function marcarListo(id) {
   allPendientes = allPendientes.filter(o => o.id !== id);
   if (moved) {
     // Dueño exento: auto-transición a pagado+exento sin esperar pago
-    if (moved.usuario_cedula === OWNER_CEDULA) {
+    if (moved.usuario_email === OWNER_CEDULA) {
       const now_iso = new Date().toISOString();
       await sb.from('pedidos').update({ estado: 'pagado', exento_pago: true, pagado_at: now_iso }).eq('id', id);
       moved.estado = 'pagado';

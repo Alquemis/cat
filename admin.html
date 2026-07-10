@@ -1853,7 +1853,7 @@ async function loadOrders() {
   const pagados       = allAdminHist.filter(o => o.estado === 'pagado'    && !o.exento_pago);
   const devueltos     = allAdminHist.filter(o => o.estado === 'devuelto');
   const enMora        = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
-  const totalNuevos    = allAdminPend.filter(o => o.usuario_cedula !== OWNER_CEDULA).reduce((s,o) => s + (o.total||0), 0);
+  const totalNuevos    = allAdminPend.filter(o => o.usuario_email !== OWNER_CEDULA).reduce((s,o) => s + (o.total||0), 0);
   const totalFact      = facturados.reduce((s,o) => s + (o.total||0), 0);
   const totalPag       = pagados.reduce((s,o) => s + (o.total||0), 0);
   const totalMora      = enMora.reduce((s,o) => s + (o.total||0), 0);
@@ -2737,7 +2737,7 @@ function renderDashboard() {
 
   // ── KPIs (siempre globales) ──
   const now_dk    = Date.now();
-  const dkNuevos  = data.filter(o => o.estado === 'pendiente' && o.usuario_cedula !== OWNER_CEDULA);
+  const dkNuevos  = data.filter(o => o.estado === 'pendiente' && o.usuario_email !== OWNER_CEDULA);
   const dkFact    = data.filter(o => o.estado === 'facturado' && !o.exento_pago);
   const dkPag     = data.filter(o => o.estado === 'pagado'    && !o.exento_pago);
   const dkMora    = dkFact.filter(o => now_dk > getMoraThreshold(o.facturado_at || o.fecha));

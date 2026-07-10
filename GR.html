@@ -437,7 +437,8 @@
 
 <script>
 // ── LUGAR ────────────────────────────────────────────────
-const LUGAR = 'Grecia';
+const LUGAR        = 'Grecia';
+const OWNER_CEDULA = '116000127'; // Dueño — exento de pago, no suma a ventas
 
 // ── TOAST ────────────────────────────────────────────────
 let _toastTimer = null;
@@ -488,7 +489,7 @@ function _rebuildMoraMap() {
   _moraUsersMap  = {};
   _moraNombreMap = {};
   allAdminHist.forEach(o => {
-    if (o.estado === 'facturado' && now > getMoraThreshold(o.facturado_at || o.fecha)) {
+    if (o.estado === 'facturado' && !o.exento_pago && now > getMoraThreshold(o.facturado_at || o.fecha)) {
       const key = o.usuario_email || o.usuario_nombre;
       if (!_moraUsersMap[key]) _moraUsersMap[key] = [];
       _moraUsersMap[key].push(o);
@@ -512,7 +513,7 @@ function moraUserChip(nombre, email) {
 }
 
 function moraOrderBadge(o) {
-  if (!o || o.estado !== 'facturado') return '';
+  if (!o || o.estado !== 'facturado' || o.exento_pago) return '';
   if (Date.now() <= getMoraThreshold(o.facturado_at || o.fecha)) return '';
   return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
 }
@@ -729,8 +730,8 @@ async function loadOrders() {
   _rebuildMoraMap();
 
   const now        = Date.now();
-  const facturados = allAdminHist.filter(o => o.estado === 'facturado');
-  const pagados    = allAdminHist.filter(o => o.estado === 'pagado');
+  const facturados = allAdminHist.filter(o => o.estado === 'facturado' && !o.exento_pago);
+  const pagados    = allAdminHist.filter(o => o.estado === 'pagado'    && !o.exento_pago);
   const enMora     = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
   document.getElementById('stat-por-pagar').textContent = facturados.length;
   document.getElementById('stat-pagados').textContent   = pagados.length;
@@ -860,23 +861,25 @@ function renderAdminOrders(tbodyId, list) {
     const cancelado  = o.estado === 'cancelado';
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
-    const mora       = facturado && now > getMoraThreshold(o.facturado_at || o.fecha);
+    const exento     = !!o.exento_pago;
+    const mora       = facturado && !exento && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
     const fechaPago  = (pagado && o.pagado_at) ? new Date(o.pagado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
     const num        = o.id.slice(0,8).toUpperCase();
 
-    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : pagado ? 'row-pagado' : '';
+    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : exento ? 'row-pagado' : pagado ? 'row-pagado' : '';
 
     let badgeHtml = '';
     if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
-    if (pagado)    badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
+    if (exento)    badgeHtml = '<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EXENTO</span>';
+    else if (pagado) badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
     if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
 
     const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        mora      ? 'font-weight:700;color:#dc2626' :
                        pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
 
-    const btnPagado = facturado
+    const btnPagado = facturado && !exento
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
 
@@ -919,7 +922,7 @@ function openMoraModal(userKey, nombre) {
   const _cr = new Date(Date.now() - 6 * 3600000); _cr.setUTCHours(0, 0, 0, 0);
   const now  = _cr.getTime() + 6 * 3600000; // medianoche CR hoy
   const pedidosMora = allAdminHist.filter(o =>
-    o.estado === 'facturado' &&
+    o.estado === 'facturado' && !o.exento_pago &&
     now > getMoraThreshold(o.facturado_at || o.fecha) &&
     (o.usuario_email === userKey || o.usuario_nombre === userKey)
   );

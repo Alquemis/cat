@@ -320,7 +320,8 @@ const SUPABASE_URL = 'https://uzfmpctopzvneykqwxny.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6Zm1wY3RvcHp2bmV5a3F3eG55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3ODcwOTMsImV4cCI6MjA5NDM2MzA5M30.lbdpd2hWRhM7qsmR4LePs0A5G_lKEweYcp-uoz8Yv5M';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const SESSION_KEY = 'fact_session';
+const SESSION_KEY  = 'fact_session';
+const OWNER_CEDULA = '116000127'; // Dueño — exento de pago, no suma a ventas
 
 let allPendientes = [];
 let allHistorial  = [];
@@ -652,7 +653,16 @@ async function marcarListo(id) {
   const moved = allPendientes.find(o => o.id === id);
   allPendientes = allPendientes.filter(o => o.id !== id);
   if (moved) {
-    moved.estado = 'facturado';
+    // Dueño exento: auto-transición a pagado+exento sin esperar pago
+    if (moved.usuario_cedula === OWNER_CEDULA) {
+      const now_iso = new Date().toISOString();
+      await sb.from('pedidos').update({ estado: 'pagado', exento_pago: true, pagado_at: now_iso }).eq('id', id);
+      moved.estado = 'pagado';
+      moved.exento_pago = true;
+      moved.pagado_at = now_iso;
+    } else {
+      moved.estado = 'facturado';
+    }
     allHistorial = [moved, ...allHistorial];
     filterHistorial();
   }
@@ -668,16 +678,16 @@ function recalcStats() {
   const badge = document.getElementById('badge-pendientes');
   badge.textContent = count; badge.classList.toggle('hidden', count === 0);
 
-  const facturados = allHistorial.filter(o => o.estado === 'facturado');
-  const pagados    = allHistorial.filter(o => o.estado === 'pagado');
+  const facturados = allHistorial.filter(o => o.estado === 'facturado' && !o.exento_pago);
+  const pagados    = allHistorial.filter(o => o.estado === 'pagado'    && !o.exento_pago);
   const cancelados  = allHistorial.filter(o => o.estado === 'cancelado');
-  // Gran total: solo lo ya facturado o pagado (excluye pendientes / "total a facturar")
+  // Gran total: solo lo ya facturado o pagado (excluye pendientes / "total a facturar" / exentos)
   const granTotal  = facturados.reduce((s, o) => s + (o.total || 0), 0)
                    + pagados.reduce((s, o) => s + (o.total || 0), 0);
   const now = new Date();
   const curY = now.getFullYear(), curM = now.getMonth();
   const inMes = o => { const d = new Date(o.fecha); return d.getFullYear() === curY && d.getMonth() === curM; };
-  // Facturado este mes: solo facturados + pagados del mes actual (excluye pendientes)
+  // Facturado este mes: solo facturados + pagados del mes actual (excluye pendientes / exentos)
   const granTotalMes = facturados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
                      + pagados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0);
   document.getElementById('chip-total-facturado').innerHTML = '<span class="col-sign">₡</span>' + granTotal.toLocaleString('es-CR');
@@ -758,12 +768,14 @@ function renderHistorial(list) {
   tbody.innerHTML = list.map(o => {
     const cancelado = o.estado === 'cancelado';
     const pagado    = o.estado === 'pagado';
+    const exento    = !!o.exento_pago;
     const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
     const num       = o.id.slice(0,8).toUpperCase();
     const dupColor  = !cancelado ? (_factDupMap[o.id] || '') : '';
-    const rowStyle  = cancelado ? 'background:#fef2f2;' : pagado ? 'background:#f0fdf4;' : (dupColor ? `background:${dupColor};` : '');
+    const rowStyle  = cancelado ? 'background:#fef2f2;' : exento ? 'background:#eff6ff;' : pagado ? 'background:#f0fdf4;' : (dupColor ? `background:${dupColor};` : '');
     const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
     const badgeIgn  = cancelado ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>'
+                    : exento    ? ' <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">EXENTO</span>'
                     : pagado    ? ' <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">PAGADO</span>'
                     : '';
     const accionBtn = (cancelado || pagado)

@@ -498,6 +498,10 @@
         style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
         Devueltos
       </button>
+      <button id="otab-eliminados" onclick="showOrdersTab('eliminados')"
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Eliminados
+      </button>
     </div>
     <div id="opage-pend">
       <div class="toolbar">
@@ -616,6 +620,37 @@
             <th>Acciones</th>
           </tr></thead>
           <tbody id="devueltos-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Eliminados -->
+    <div id="opage-eliminados" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="eliminados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminEliminados()">
+        </div>
+        <select id="eliminados-lugar" onchange="filterAdminEliminados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="eliminados-desde" onchange="filterAdminEliminados()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('eliminados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortEliminados('fecha')"                id="selth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortEliminados('usuario_nombre')"       id="selth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortEliminados('usuario_departamento')" id="selth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortEliminados('usuario_lugar')"        id="selth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortEliminados('total')"                id="selth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="eliminados-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1139,6 +1174,20 @@
 <!-- TOAST -->
 <div id="app-toast"></div>
 
+<!-- MODAL DUPLICADOS -->
+<div id="dup-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:8100;align-items:center;justify-content:center;padding:20px;">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:500px;box-shadow:0 25px 60px rgba(0,0,0,.2);max-height:82vh;display:flex;flex-direction:column;">
+    <div style="font-size:32px;text-align:center;margin-bottom:10px;">🗑</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;text-align:center;margin-bottom:4px;">Duplicados detectados</div>
+    <div style="font-size:13px;color:#6b7280;text-align:center;margin-bottom:16px;" id="dup-confirm-sub"></div>
+    <div id="dup-confirm-list" style="overflow-y:auto;flex:1;margin-bottom:20px;display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" onclick="_dupConfirmReject()">Cancelar</button>
+      <button style="flex:1;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" id="dup-confirm-ok">Eliminar duplicados</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div id="app-confirm">
   <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
@@ -1465,6 +1514,7 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('dup-confirm-modal').style.display === 'flex') { _dupConfirmReject(); return; }
   if (document.getElementById('app-confirm').classList.contains('open')) { _confirmReject(); return; }
   let topEl = null, topZ = -1;
   document.querySelectorAll('.open').forEach(function(el) {
@@ -1824,7 +1874,7 @@ function getMoraThreshold(fecha) {
 
 // Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
 async function _autoDeleteExactDups() {
-  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado');
+  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado' && o.estado !== 'devuelto' && o.estado !== 'sin_inventario' && o.estado !== 'eliminado');
   const groups = {};
   for (const o of all) {
     const fp = _dupFingerprint(o);
@@ -1851,19 +1901,66 @@ async function _autoDeleteExactDups() {
     }
   }
   if (toDelete.length === 0) return;
-  for (const o of toDelete) {
-    const { error } = await sb.from('pedidos').delete().eq('id', o.id);
-    if (error) { console.error('Auto-delete exact dup failed:', o.id, error); continue; }
-    allAdminPend = allAdminPend.filter(x => x.id !== o.id);
-    allAdminHist = allAdminHist.filter(x => x.id !== o.id);
-  }
-  showToast(`🗑 ${toDelete.length} pedido${toDelete.length > 1 ? 's duplicados eliminados' : ' duplicado eliminado'} automáticamente`, 'warn');
+  _showDupConfirm(toDelete);
+}
+
+function _showDupConfirm(toDelete) {
+  const n = toDelete.length;
+  document.getElementById('dup-confirm-sub').textContent =
+    `Se ${n > 1 ? 'encontraron' : 'encontró'} ${n} pedido${n > 1 ? 's' : ''} duplicado${n > 1 ? 's' : ''} para eliminar. Se conservará el de ID menor en cada caso.`;
+
+  const listEl = document.getElementById('dup-confirm-list');
+  listEl.innerHTML = toDelete.map(o => {
+    const fecha   = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+    const nombre  = o.usuario_nombre || o.usuario_email || '—';
+    const total   = (o.total || 0).toLocaleString('es-CR');
+    const num     = o.id.slice(0, 8).toUpperCase();
+    const prods   = (o.lineas_pedido || []).map(l => `${l.cantidad}× ${l.producto_nombre || l.producto_codigo || '?'}`).join(', ') || '—';
+    const estadoBadge = o.estado === 'pendiente'
+      ? '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">PENDIENTE</span>'
+      : o.estado === 'facturado'
+      ? '<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">FACTURADO</span>'
+      : `<span style="background:#f3f4f6;color:#6b7280;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">${o.estado.toUpperCase()}</span>`;
+    return `<div style="background:#fff5f5;border:1px solid #fecaca;border-radius:12px;padding:12px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+        <span style="font-weight:700;color:#143c5a;font-size:13px;">${esc(nombre)}</span>
+        ${estadoBadge}
+      </div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">${esc(prods)}</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;">
+        <span>ID: ${num}</span>
+        <span>${fecha}</span>
+        <span style="font-weight:700;color:#dc2626;">₡${total}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const modal = document.getElementById('dup-confirm-modal');
+  modal.style.display = 'flex';
+  document.getElementById('dup-confirm-ok').onclick = async () => {
+    _dupConfirmReject();
+    let deleted = 0;
+    for (const o of toDelete) {
+      const { error } = await sb.from('pedidos').delete().eq('id', o.id);
+      if (error) { console.error('Dup delete failed:', o.id, error); continue; }
+      allAdminPend = allAdminPend.filter(x => x.id !== o.id);
+      allAdminHist = allAdminHist.filter(x => x.id !== o.id);
+      deleted++;
+    }
+    showToast(`🗑 ${deleted} pedido${deleted > 1 ? 's duplicados eliminados' : ' duplicado eliminado'}`, 'warn');
+    filterAdminPend();
+    filterAdminHist();
+  };
+}
+
+function _dupConfirmReject() {
+  document.getElementById('dup-confirm-modal').style.display = 'none';
 }
 
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at, pagado_at').in('estado',['facturado','cancelado','pagado','devuelto']).order('fecha', {ascending:true})
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at, pagado_at').in('estado',['facturado','cancelado','pagado','devuelto','sin_inventario','eliminado']).order('fecha', {ascending:true})
   ]);
   allAdminPend = (resPend.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   allAdminHist = (resHist.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
@@ -1896,13 +1993,13 @@ async function loadOrders() {
   if (badgePend) { badgePend.textContent = allAdminPend.length; badgePend.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
   const badgeFact = document.getElementById('obadge-fact');
   if (badgeFact) { badgeFact.textContent = facturados.length; badgeFact.style.display = facturados.length ? 'inline-flex' : 'none'; }
-  filterAdminPend(); filterAdminHist(); filterAdminPagados(); filterAdminDevueltos();
+  filterAdminPend(); filterAdminHist(); filterAdminPagados(); filterAdminDevueltos(); filterAdminEliminados();
   // Re-render collab list if visible so mora chips appear
   if (document.getElementById('page-users')?.style.display !== 'none' && allUsers.length > 0) filterUsers();
 }
 
 function showOrdersTab(tab) {
-  ['pend','hist','pagados','devueltos'].forEach(t => {
+  ['pend','hist','pagados','devueltos','eliminados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('otab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
@@ -1980,6 +2077,7 @@ let _pagadosFullList      = [];
 let _pendDisplayList      = [];
 let _histDisplayList      = [];
 let _devueltosDisplayList = [];
+let _eliminadosDisplayList = [];
 
 function sortPagados(col) {
   if (_suPagadosSort.col===col) { _suPagadosSort.dir=_suPagadosSort.dir==='asc'?'desc':'asc'; }
@@ -2038,6 +2136,27 @@ function filterAdminDevueltos() {
   renderAdminOrders('devueltos-tbody', list);
 }
 
+let _eliminadosSort = { col: 'fecha', dir: 'desc' };
+function sortEliminados(col) {
+  if (_eliminadosSort.col === col) _eliminadosSort.dir = _eliminadosSort.dir === 'asc' ? 'desc' : 'asc';
+  else { _eliminadosSort.col = col; _eliminadosSort.dir = 'asc'; }
+  filterAdminEliminados();
+}
+function filterAdminEliminados() {
+  const q     = (document.getElementById('eliminados-search').value || '').toLowerCase();
+  const lugar = document.getElementById('eliminados-lugar').value;
+  const desde = document.getElementById('eliminados-desde').value;
+  let list = allAdminHist.filter(o =>
+    (o.estado === 'eliminado' || o.estado === 'sin_inventario') &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  list = _sortOrderList(list, _eliminadosSort.col, _eliminadosSort.dir);
+  _eliminadosDisplayList = list;
+  renderAdminOrders('eliminados-tbody', list);
+}
+
 function filterAdminPagados() {
   const q = (document.getElementById('pagados-search').value || '').toLowerCase();
   const lugar = document.getElementById('pagados-lugar').value;
@@ -2068,17 +2187,19 @@ function renderAdminOrders(tbodyId, list) {
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
     const devuelto   = o.estado === 'devuelto';
+    const sinInventario = o.estado === 'sin_inventario';
+    const eliminado    = o.estado === 'eliminado';
     const exento     = !!o.exento_pago;
     const mora       = facturado && !exento && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
     const fechaPago  = (pagado && o.pagado_at) ? new Date(o.pagado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
     const num        = o.id.slice(0,8).toUpperCase();
 
-    const dupColor  = (!cancelado && !devuelto) ? (_adminDupMap[o.id] || '') : '';
+    const dupColor  = (!cancelado && !devuelto && !sinInventario && !eliminado) ? (_adminDupMap[o.id] || '') : '';
     const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
 
-    const rowClass  = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : exento ? 'row-pagado' : pagado ? 'row-pagado' : '';
-    const rowStyle  = dupColor && !mora && !cancelado && !devuelto && !pagado && !exento ? `background:${dupColor};` : '';
+    const rowClass  = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : sinInventario ? 'row-cancelado' : eliminado ? 'row-cancelado' : exento ? 'row-pagado' : pagado ? 'row-pagado' : '';
+    const rowStyle  = dupColor && !mora && !cancelado && !devuelto && !sinInventario && !eliminado && !pagado && !exento ? `background:${dupColor};` : '';
 
     let badgeHtml = '';
     if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
@@ -2086,19 +2207,26 @@ function renderAdminOrders(tbodyId, list) {
     else if (pagado) badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
     if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
     if (devuelto)  badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">DEVUELTO</span>';
+    if (sinInventario) badgeHtml = '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">SIN INVENTARIO</span>';
+    if (eliminado)    badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">ELIMINADO</span>';
 
     // Chip mora — aparece en cualquier fila donde el usuario tenga pedidos en mora
     const chipMora = moraUserChip(o.usuario_nombre, o.usuario_email || o.usuario_nombre);
 
     const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        devuelto  ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       sinInventario ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       eliminado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        mora      ? 'font-weight:700;color:#dc2626' :
                        pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
 
     const btnPagado   = facturado
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
-    const btnDevuelto = (facturado || pagado)
+    const btnSinInv  = (!cancelado && !devuelto && !sinInventario && !eliminado)
+      ? `<button class="btn btn-sm" onclick="markAsSinInventario('${o.id}')" style="margin-left:6px;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;">Sin inventario</button>`
+      : '';
+    const btnDevuelto = (facturado || pagado) && !sinInventario && !eliminado
       ? `<button class="btn btn-sm" onclick="markAsDevuelto('${o.id}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;">Devuelto</button>`
       : '';
 
@@ -2110,8 +2238,8 @@ function renderAdminOrders(tbodyId, list) {
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnDevuelto}
-        <button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
+        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -2120,9 +2248,9 @@ function renderAdminOrders(tbodyId, list) {
 function confirmDeleteOrder(id, num) {
   showConfirm(
     `¿Eliminar pedido #${num}?`,
-    'Se eliminarán el pedido y todas sus líneas. Esta acción no se puede deshacer.',
+    'El pedido pasará al historial de Eliminados y se restaurará el stock.',
     async () => {
-      // Restaurar stock de productos con límite antes de eliminar
+      // Restaurar stock de productos con límite antes de marcar eliminado
       const { data: lineasElim } = await sb.from('lineas_pedido')
         .select('producto_codigo, cantidad').eq('pedido_id', id);
       if (lineasElim && lineasElim.length > 0) {
@@ -2136,34 +2264,9 @@ function confirmDeleteOrder(id, num) {
           await sb.from('productos').update({ stock: newStock, activo: true }).eq('codigo', prod.codigo);
         }
       }
-      const { error: errL } = await sb.from('lineas_pedido').delete().eq('pedido_id', id);
-      if (errL) { showToast('Error al eliminar líneas: ' + errL.message, false); return; }
-      const { error: errP } = await sb.from('pedidos').delete().eq('id', id);
-      if (errP) { showToast('Error al eliminar pedido: ' + errP.message, false); return; }
-      allAdminPend = allAdminPend.filter(o => o.id !== id);
-      allAdminHist = allAdminHist.filter(o => o.id !== id);
-      // Actualizar stats
-      const now2       = Date.now();
-      const cancelados = allAdminHist.filter(o => o.estado === 'cancelado');
-      const facturados = allAdminHist.filter(o => o.estado === 'facturado' && !o.exento_pago);
-      const pagados    = allAdminHist.filter(o => o.estado === 'pagado'    && !o.exento_pago);
-      const enMora     = facturados.filter(o => now2 > getMoraThreshold(o.facturado_at || o.fecha));
-      const tNuevos = allAdminPend.filter(o => o.usuario_email !== OWNER_CEDULA).reduce((s,o)=>s+(o.total||0),0);
-      const tFact   = facturados.reduce((s,o)=>s+(o.total||0),0);
-      const tPag    = pagados.reduce((s,o)=>s+(o.total||0),0);
-      const tMora   = enMora.reduce((s,o)=>s+(o.total||0),0);
-      const fmt2 = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
-      document.getElementById('stat-orders').textContent       = allAdminPend.length;
-      document.getElementById('stat-orders-total').textContent = allAdminPend.length + allAdminHist.length;
-      document.getElementById('stat-orders-cancelados').textContent = cancelados.length;
-      document.getElementById('stat-gran-total').textContent   = (tNuevos+tFact+tPag).toLocaleString('es-CR');
-      document.getElementById('stat-gt-nuevos').innerHTML      = fmt2(tNuevos);
-      document.getElementById('stat-gt-facturados').innerHTML  = fmt2(tFact);
-      document.getElementById('stat-gt-pagados').innerHTML     = fmt2(tPag);
-      document.getElementById('stat-gt-mora').innerHTML        = fmt2(tMora);
-      filterAdminPend();
-      filterAdminHist();
-      filterAdminPagados();
+      const { error } = await sb.from('pedidos').update({ estado: 'eliminado' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      await loadOrders();
       showToast('Pedido eliminado.', true);
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
@@ -2198,18 +2301,34 @@ function markAsDevuelto(id) {
   );
 }
 
+function markAsSinInventario(id) {
+  showConfirm(
+    '¿Marcar como sin inventario?',
+    'El pedido se moverá al historial de Eliminados y se descontará del total.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'sin_inventario' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      showToast('Pedido marcado como sin inventario.', true);
+      await loadOrders();
+    },
+    { icon: '📦', okLabel: 'Confirmar', okColor: '#92400e' }
+  );
+}
+
 function exportTabToExcel(tab) {
   const tabLists = {
     pend:      _pendDisplayList,
     hist:      _histDisplayList,
     pagados:   _pagadosFullList,
-    devueltos: _devueltosDisplayList
+    devueltos: _devueltosDisplayList,
+    eliminados: _eliminadosDisplayList
   };
   const tabNames = {
     pend:      'Nuevos_Pedidos',
     hist:      'Por_Pagar',
     pagados:   'Pagados',
-    devueltos: 'Devueltos'
+    devueltos: 'Devueltos',
+    eliminados: 'Eliminados'
   };
   const list = tabLists[tab] || [];
   if (!list.length) { showToast('No hay datos para exportar.', false); return; }

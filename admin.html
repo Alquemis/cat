@@ -546,6 +546,10 @@
         style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
         Devueltos
       </button>
+      <button id="otab-eliminados" onclick="showOrdersTab('eliminados')"
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Eliminados
+      </button>
     </div>
 
     <!-- Pendientes -->
@@ -667,6 +671,37 @@
             <th>Acciones</th>
           </tr></thead>
           <tbody id="devueltos-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Eliminados -->
+    <div id="opage-eliminados" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="eliminados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminEliminados()">
+        </div>
+        <select id="eliminados-lugar" onchange="filterAdminEliminados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="eliminados-desde" onchange="filterAdminEliminados()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('eliminados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortEliminados('fecha')"                id="selth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortEliminados('usuario_nombre')"       id="selth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortEliminados('usuario_departamento')" id="selth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortEliminados('usuario_lugar')"        id="selth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortEliminados('total')"                id="selth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="eliminados-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1802,7 +1837,7 @@ function getMoraThreshold(fecha) {
 
 // Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
 async function _autoDeleteExactDups() {
-  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado');
+  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado' && o.estado !== 'devuelto' && o.estado !== 'sin_inventario');
   const groups = {};
   for (const o of all) {
     const fp = _dupFingerprint(o);
@@ -1841,7 +1876,7 @@ async function _autoDeleteExactDups() {
 async function loadOrders() {
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
-    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado','devuelto']).order('fecha', {ascending:true})
+    sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado','devuelto','sin_inventario','eliminado']).order('fecha', {ascending:true})
   ]);
   allAdminPend = (resPend.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
   allAdminHist = (resHist.data || []).map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));
@@ -1881,10 +1916,11 @@ async function loadOrders() {
   filterAdminHist();
   filterAdminPagados();
   filterAdminDevueltos();
+  filterAdminEliminados();
 }
 
 function showOrdersTab(tab) {
-  ['pend','hist','pagados','devueltos'].forEach(t => {
+  ['pend','hist','pagados','devueltos','eliminados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('otab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #143c5a' : '3px solid transparent';
@@ -1968,6 +2004,7 @@ let _pagadosFullList    = [];
 let _pendDisplayList    = [];
 let _histDisplayList    = [];
 let _devueltosDisplayList = [];
+let _eliminadosDisplayList = [];
 
 function sortPagados(col) {
   if (_pagadosSort.col === col) { _pagadosSort.dir = _pagadosSort.dir === 'asc' ? 'desc' : 'asc'; }
@@ -2034,6 +2071,35 @@ function filterAdminDevueltos() {
   renderAdminOrders('devueltos-tbody', list);
 }
 
+let _eliminadosSort = { col: 'fecha', dir: 'desc' };
+function sortEliminados(col) {
+  if (_eliminadosSort.col === col) _eliminadosSort.dir = _eliminadosSort.dir === 'asc' ? 'desc' : 'asc';
+  else { _eliminadosSort.col = col; _eliminadosSort.dir = 'asc'; }
+  filterAdminEliminados();
+}
+function filterAdminEliminados() {
+  const q     = (document.getElementById('eliminados-search').value || '').toLowerCase();
+  const lugar = document.getElementById('eliminados-lugar').value;
+  const desde = document.getElementById('eliminados-desde').value;
+  let list = allAdminHist.filter(o =>
+    (o.estado === 'eliminado' || o.estado === 'sin_inventario') &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  const { col: ecol, dir: edir } = _eliminadosSort;
+  list = [...list].sort((a, b) => {
+    let va = a[ecol] ?? '', vb = b[ecol] ?? '';
+    if (ecol === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return edir === 'asc' ? -1 : 1;
+    if (va > vb) return edir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  _eliminadosDisplayList = list;
+  renderAdminOrders('eliminados-tbody', list);
+}
+
 function filterAdminPagados() {
   const q     = (document.getElementById('pagados-search').value || '').toLowerCase();
   const lugar = document.getElementById('pagados-lugar').value;
@@ -2075,6 +2141,8 @@ function renderAdminOrders(tbodyId, list) {
     const pagado     = o.estado === 'pagado';
     const facturado  = o.estado === 'facturado';
     const devuelto   = o.estado === 'devuelto';
+    const sinInventario = o.estado === 'sin_inventario';
+    const eliminado    = o.estado === 'eliminado';
     const exento     = !!o.exento_pago;
     const mora       = facturado && !exento && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha      = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
@@ -2082,12 +2150,12 @@ function renderAdminOrders(tbodyId, list) {
     const num        = o.id.slice(0,8).toUpperCase();
 
     // Duplicado
-    const dupColor   = (!cancelado && !devuelto) ? (_adminDupMap[o.id] || '') : '';
+    const dupColor   = (!cancelado && !devuelto && !sinInventario && !eliminado) ? (_adminDupMap[o.id] || '') : '';
     const dupChip    = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
 
     // Clase y estilo de fila
-    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : exento ? 'row-pagado' : pagado ? 'row-pagado' : '';
-    const rowStyle   = dupColor && !mora && !cancelado && !devuelto && !pagado && !exento ? `background:${dupColor};` : '';
+    const rowClass   = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : sinInventario ? 'row-cancelado' : eliminado ? 'row-cancelado' : exento ? 'row-pagado' : pagado ? 'row-pagado' : '';
+    const rowStyle   = dupColor && !mora && !cancelado && !devuelto && !sinInventario && !eliminado && !pagado && !exento ? `background:${dupColor};` : '';
 
     // Badge en columna pedido
     let badgeHtml = '';
@@ -2096,10 +2164,14 @@ function renderAdminOrders(tbodyId, list) {
     else if (pagado) badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
     if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
     if (devuelto)  badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">DEVUELTO</span>';
+    if (sinInventario) badgeHtml = '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">SIN INVENTARIO</span>';
+    if (eliminado)    badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">ELIMINADO</span>';
 
     // Estilo total
     const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        devuelto  ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       sinInventario ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
+                       eliminado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        mora      ? 'font-weight:700;color:#dc2626' :
                        pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
 
@@ -2107,7 +2179,10 @@ function renderAdminOrders(tbodyId, list) {
     const btnPagado   = facturado
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
-    const btnDevuelto = (facturado || pagado)
+    const btnSinInv  = (!cancelado && !devuelto && !sinInventario && !eliminado)
+      ? `<button class="btn btn-sm" onclick="markAsSinInventario('${o.id}')" style="margin-left:6px;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;">Sin inventario</button>`
+      : '';
+    const btnDevuelto = (facturado || pagado) && !sinInventario && !eliminado
       ? `<button class="btn btn-sm" onclick="markAsDevuelto('${o.id}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;">Devuelto</button>`
       : '';
 
@@ -2119,7 +2194,8 @@ function renderAdminOrders(tbodyId, list) {
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnDevuelto}
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
+        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -2153,18 +2229,62 @@ function markAsDevuelto(id) {
   );
 }
 
+function markAsSinInventario(id) {
+  showConfirm(
+    '¿Marcar como sin inventario?',
+    'El pedido se moverá al historial de Eliminados y se descontará del total.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'sin_inventario' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      showToast('Pedido marcado como sin inventario.', true);
+      await loadOrders();
+    },
+    { icon: '📦', okLabel: 'Confirmar', okColor: '#92400e' }
+  );
+}
+
+function confirmDeleteOrder(id, num) {
+  showConfirm(
+    `¿Eliminar pedido #${num}?`,
+    'El pedido pasará al historial de Eliminados y se restaurará el stock.',
+    async () => {
+      // Restaurar stock de productos con límite antes de marcar eliminado
+      const { data: lineasElim } = await sb.from('lineas_pedido')
+        .select('producto_codigo, cantidad').eq('pedido_id', id);
+      if (lineasElim && lineasElim.length > 0) {
+        const codigos = lineasElim.map(l => l.producto_codigo);
+        const { data: prodsConStock } = await sb.from('productos')
+          .select('codigo, stock').in('codigo', codigos).not('stock', 'is', null);
+        for (const prod of (prodsConStock || [])) {
+          const linea = lineasElim.find(l => l.producto_codigo === prod.codigo);
+          if (!linea) continue;
+          const newStock = (prod.stock ?? 0) + linea.cantidad;
+          await sb.from('productos').update({ stock: newStock, activo: true }).eq('codigo', prod.codigo);
+        }
+      }
+      const { error } = await sb.from('pedidos').update({ estado: 'eliminado' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      await loadOrders();
+      showToast('Pedido eliminado.', true);
+    },
+    { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
+}
+
 function exportTabToExcel(tab) {
   const tabLists = {
     pend:      _pendDisplayList,
     hist:      _histDisplayList,
     pagados:   _pagadosFullList,
-    devueltos: _devueltosDisplayList
+    devueltos: _devueltosDisplayList,
+    eliminados: _eliminadosDisplayList
   };
   const tabNames = {
     pend:      'Nuevos_Pedidos',
     hist:      'Por_Pagar',
     pagados:   'Pagados',
-    devueltos: 'Devueltos'
+    devueltos: 'Devueltos',
+    eliminados: 'Eliminados'
   };
   const list = tabLists[tab] || [];
   if (!list.length) { showToast('No hay datos para exportar.', false); return; }

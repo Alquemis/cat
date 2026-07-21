@@ -2223,10 +2223,10 @@ function renderAdminOrders(tbodyId, list) {
     const btnPagado   = facturado
       ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
       : '';
-    const btnSinInv  = (!cancelado && !devuelto && !sinInventario && !eliminado)
+    const btnSinInv  = facturado && !sinInventario && !eliminado
       ? `<button class="btn btn-sm" onclick="markAsSinInventario('${o.id}')" style="margin-left:6px;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;">Sin inventario</button>`
       : '';
-    const btnDevuelto = (facturado || pagado) && !sinInventario && !eliminado
+    const btnDevuelto = facturado && !sinInventario && !eliminado
       ? `<button class="btn btn-sm" onclick="markAsDevuelto('${o.id}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;">Devuelto</button>`
       : '';
 
@@ -2239,13 +2239,13 @@ function renderAdminOrders(tbodyId, list) {
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
-        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>` : ''}
+        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>` : ''}
       </td>
     </tr>`;
   }).join('');
 }
 
-function confirmDeleteOrder(id, num) {
+function confirmDeleteOrder(id, num, usuarioEmail) {
   showConfirm(
     `¿Eliminar pedido #${num}?`,
     'El pedido pasará al historial de Eliminados y se restaurará el stock.',
@@ -2266,6 +2266,16 @@ function confirmDeleteOrder(id, num) {
       }
       const { error } = await sb.from('pedidos').update({ estado: 'eliminado' }).eq('id', id);
       if (error) { showToast('Error: ' + error.message, false); return; }
+      // Notificar al colaborador
+      if (usuarioEmail) {
+        await sb.from('notificaciones').insert({
+          usuario_cedula: usuarioEmail,
+          order_id: id,
+          order_num: num,
+          estado: 'eliminado',
+          read: false
+        });
+      }
       await loadOrders();
       showToast('Pedido eliminado.', true);
     },
@@ -3482,7 +3492,7 @@ function renderSuUserDetail() {
       </div>`).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
-        <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}</div><div class="ud-order-meta">${fecha}</div></div>
+        <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}${o.estado==='sin_inventario'?'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;white-space:nowrap;">SIN INVENTARIO</span>':''}${o.estado==='eliminado'?'<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;white-space:nowrap;">ELIMINADO</span>':''}</div><div class="ud-order-meta">${fecha}</div></div>
         <span class="ud-order-units">${unid} u.</span>
         <span class="ud-order-arrow">›</span>
       </div>

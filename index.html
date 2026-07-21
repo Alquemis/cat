@@ -414,6 +414,7 @@
   .chip-pagado    { background:#dcfce7; color:#166534; }
   .chip-cancelado { background:#fee2e2; color:#dc2626; }
   .chip-pendiente { background:#dc2626; color:#fff; }
+  .chip-eliminado { background:#f3f4f6; color:#6b7280; }
   .notif-msg    { font-size:12px; color:#374151; line-height:1.4; }
   .notif-close  { background:none; border:none; color:#d1d5db; font-size:14px; cursor:pointer; padding:0 2px; line-height:1; flex-shrink:0; transition:color .15s; }
   .notif-close:hover { color:#dc2626; }
@@ -1526,6 +1527,8 @@ async function loadMyOrders() {
       .select('*, lineas_pedido(*)')
       .eq('usuario_email', currentUser.cedula)
       .neq('oculto_usuario', true)
+      .neq('estado', 'eliminado')
+      .neq('estado', 'sin_inventario')
       .order('fecha', { ascending: false });
     if (error) throw error;
     renderMyOrders(data || []);
@@ -1674,9 +1677,10 @@ function pedidoDeleteConfirm(idx) {
   _delOrderIdx = idx;
   const o = window._myOrdersList && window._myOrdersList[idx];
   if (!o) return;
-  const sinAdvertencia = o.estado === 'cancelado' || o.estado === 'pagado';
   const msgEl = document.getElementById('del-order-msg');
-  if (sinAdvertencia) {
+  if (o.estado === 'pendiente') {
+    msgEl.innerHTML = 'Este pedido <strong>aún no ha sido facturado</strong>. Al eliminarlo, se borrará permanentemente y no quedará registro en facturación.';
+  } else if (o.estado === 'cancelado' || o.estado === 'pagado') {
     msgEl.innerHTML = 'El pedido desaparecerá de tu historial.';
   } else {
     msgEl.innerHTML = 'El pedido desaparecerá de tu historial, pero <strong>no queda cancelado</strong> — seguirá visible en facturación y se tomará en cuenta en el total a cobrar.';
@@ -1701,7 +1705,30 @@ async function confirmDeleteOrder() {
   const btn = document.getElementById('del-order-confirm-btn');
   btn.disabled = true; btn.textContent = 'Eliminando…';
 
-  const { error } = await sb.from('pedidos').update({ oculto_usuario: true }).eq('id', o.id);
+  let error = null;
+
+  if (o.estado === 'pendiente') {
+    // Borrado permanente: restaurar stock + eliminar lineas + eliminar pedido
+    const lineas = o.lineas_pedido || [];
+    for (const l of lineas) {
+      if (l.producto_codigo && l.cantidad) {
+        const { data: prod } = await sb.from('productos')
+          .select('codigo, stock').eq('codigo', l.producto_codigo).maybeSingle();
+        if (prod && prod.stock != null) {
+          await sb.from('productos')
+            .update({ stock: prod.stock + l.cantidad, activo: true })
+            .eq('codigo', l.producto_codigo);
+        }
+      }
+    }
+    await sb.from('lineas_pedido').delete().eq('pedido_id', o.id);
+    const res = await sb.from('pedidos').delete().eq('id', o.id);
+    error = res.error;
+  } else {
+    // Ocultar del historial del usuario (ya facturado o en otro estado terminal)
+    const res = await sb.from('pedidos').update({ oculto_usuario: true }).eq('id', o.id);
+    error = res.error;
+  }
 
   btn.disabled = false; btn.textContent = 'Eliminar';
   closeDelOrderModal();
@@ -2789,10 +2816,12 @@ function getMoraThreshold(fecha) {
 }
 
 const _notifMeta = {
-  facturado: { icon: '🔵', title: (num) => `Tu pedido #${num} ha sido facturado`, sub: '' },
+  facturado:      { icon: '🔵', title: (num) => `Tu pedido #${num} ha sido facturado`, sub: '' },
   // pagado: notificación desactivada intencionalmente
-  cancelado: { icon: '🔴', title: (num) => `Tu pedido #${num} fue rechazado`, sub: 'Contáctanos si tienes dudas.' },
-  mora:      { icon: '⚠️', title: (num) => `Tu pedido #${num} está pendiente de pago`, sub: '' },
+  cancelado:      { icon: '🔴', title: (num) => `Tu pedido #${num} fue rechazado`, sub: 'Contáctanos si tienes dudas.' },
+  mora:           { icon: '⚠️', title: (num) => `Tu pedido #${num} está pendiente de pago`, sub: '' },
+  eliminado:      { icon: '🗑️', title: (num) => `Tu pedido #${num} fue eliminado`, sub: 'Contacta a administración si tienes dudas.' },
+  sin_inventario: { icon: '📦', title: (num) => `Tu pedido #${num} no pudo ser procesado por falta de inventario`, sub: 'Contacta a administración para más información.' },
 };
 
 let _lastNotifCheck = 0;
@@ -2923,8 +2952,8 @@ async function renderNotifList() {
     const meta = _notifMeta[n.estado] || { icon: '📋', title: n.estado, sub: '' };
     const time = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
     const fecha = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
-    const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : n.estado === 'mora' ? '⚠ Pendiente' : 'Rechazado';
-    const chipClass = n.estado === 'mora' ? 'chip-pendiente' : `chip-${n.estado}`;
+    const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : n.estado === 'mora' ? '⚠ Pendiente' : n.estado === 'eliminado' ? 'Eliminado' : n.estado === 'sin_inventario' ? 'Sin inventario' : 'Rechazado';
+    const chipClass = n.estado === 'mora' ? 'chip-pendiente' : n.estado === 'sin_inventario' ? 'chip-eliminado' : `chip-${n.estado}`;
     const msg = typeof meta.title === 'function' ? meta.title(escHtml(n.order_num)) : meta.title;
     return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}" style="cursor:pointer;" onclick="notifOpenOrder('${n.order_id}','${n.id}')">
       <div class="notif-top-row">

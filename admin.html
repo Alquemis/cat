@@ -73,13 +73,15 @@
   .btn-danger { background:#fee2e2;color:#dc2626; }
   .btn-danger:hover { background:#fecaca; }
   .btn-sm { padding:6px 12px;font-size:12px;border-radius:7px; }
+  .btn-icon { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;font-size:14px;border-radius:7px;border:none;cursor:pointer;transition:opacity .15s; }
+  .btn-icon:hover { opacity:.75; }
   .btn-success { background:#d1fae5;color:#065f46; }
   .btn-success:hover { background:#a7f3d0; }
 
   /* ── TABLE ── */
   .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
   table { width:100%;border-collapse:collapse; }
-  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:2; }
   tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
   tbody tr:last-child td { border-bottom:none; }
   tbody tr:hover { background:#fafafa; }
@@ -1482,6 +1484,7 @@ function showPage(page) {
     t.classList.toggle('active', ['products','orders','users','dashboard','settings'][i] === page);
   });
   if (page==='orders' && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
+  if (page==='orders') requestAnimationFrame(_fitOrdersTable);
   if (page==='users') {
     if (allUsers.length===0) loadUsers();
     if (allAdminHist.length===0) loadOrders();
@@ -1917,7 +1920,27 @@ async function loadOrders() {
   filterAdminPagados();
   filterAdminDevueltos();
   filterAdminEliminados();
+  requestAnimationFrame(_fitOrdersTable);
 }
+
+function _fitOrdersTable() {
+  const ordersPage = document.getElementById('page-orders');
+  if (!ordersPage || ordersPage.style.display === 'none') return;
+  const panes = ['pend','hist','pagados','devueltos','eliminados'];
+  for (const t of panes) {
+    const pane = document.getElementById('opage-' + t);
+    if (!pane || pane.style.display === 'none') continue;
+    const tw = pane.querySelector('.table-wrap');
+    if (!tw) return;
+    const top = tw.getBoundingClientRect().top;
+    const h = Math.max(200, window.innerHeight - top - 16);
+    tw.style.height = h + 'px';
+    tw.style.overflowY = 'auto';
+    tw.style.overflowX = 'auto';
+    return;
+  }
+}
+window.addEventListener('resize', _fitOrdersTable);
 
 function showOrdersTab(tab) {
   ['pend','hist','pagados','devueltos','eliminados'].forEach(t => {
@@ -1926,6 +1949,7 @@ function showOrdersTab(tab) {
     btn.style.borderBottom = t === tab ? '3px solid #143c5a' : '3px solid transparent';
     btn.style.color = t === tab ? '#143c5a' : '#6b7280';
   });
+  requestAnimationFrame(_fitOrdersTable);
 }
 
 let _pendSort = { col: 'fecha', dir: 'asc' };
@@ -2125,6 +2149,13 @@ function filterAdminPagados() {
   renderPagadosPager();
 }
 
+const _SVG = {
+  check:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><polyline points="20 6 9 17 4 12"/></svg>`,
+  box:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><path d="M21 8V21H3V8"/><path d="M23 3H1v5h22V3z"/><path d="M10 12h4"/></svg>`,
+  undo:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>`,
+  trash:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
+};
+
 function renderAdminOrders(tbodyId, list) {
   _rebuildAdminDupMap();
   const tbody = document.getElementById(tbodyId);
@@ -2177,13 +2208,13 @@ function renderAdminOrders(tbodyId, list) {
 
     // Botones de acción
     const btnPagado   = facturado
-      ? `<button class="btn btn-sm btn-success" onclick="markAsPagado('${o.id}')" style="margin-left:6px">Pagado</button>`
+      ? `<button class="btn-icon" onclick="markAsPagado('${o.id}')" title="Marcar como pagado" style="margin-left:4px;background:#d1fae5;color:#065f46;">${_SVG.check}</button>`
       : '';
     const btnSinInv  = facturado && !sinInventario && !eliminado
-      ? `<button class="btn btn-sm" onclick="markAsSinInventario('${o.id}')" style="margin-left:6px;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;">Sin inventario</button>`
+      ? `<button class="btn-icon" onclick="markAsSinInventario('${o.id}')" title="Sin inventario" style="margin-left:4px;background:#fef3c7;color:#92400e;">${_SVG.box}</button>`
       : '';
     const btnDevuelto = facturado && !sinInventario && !eliminado
-      ? `<button class="btn btn-sm" onclick="markAsDevuelto('${o.id}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;">Devuelto</button>`
+      ? `<button class="btn-icon" onclick="markAsDevuelto('${o.id}')" title="Marcar como devuelto" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.undo}</button>`
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
@@ -2195,7 +2226,7 @@ function renderAdminOrders(tbodyId, list) {
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
-        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn btn-sm" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" style="margin-left:6px;background:#fee2e2;color:#dc2626;border:none;" title="Eliminar pedido">🗑</button>` : ''}
+        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" title="Eliminar pedido" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.trash}</button>` : ''}
       </td>
     </tr>`;
   }).join('');

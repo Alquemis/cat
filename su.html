@@ -2271,6 +2271,7 @@ function renderAdminOrders(tbodyId, list) {
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
         ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" title="Eliminar pedido" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.trash}</button>` : ''}
+        ${eliminado || sinInventario ? `<button class="btn-icon" onclick="confirmDeleteEliminadoRow('${o.id}','${num}')" title="Borrar permanentemente" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.trash}</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -2311,6 +2312,23 @@ function confirmDeleteOrder(id, num, usuarioEmail) {
       showToast('Pedido eliminado.', true);
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
+}
+
+function confirmDeleteEliminadoRow(id, num) {
+  showConfirm(
+    `¿Borrar permanentemente #${num}?`,
+    'Se borrará de forma definitiva de la base de datos y no podrá recuperarse.',
+    async () => {
+      const { error: errL } = await sb.from('lineas_pedido').delete().eq('pedido_id', id);
+      if (errL) { showToast('Error al borrar líneas: ' + errL.message, false); return; }
+      const { error } = await sb.from('pedidos').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      allAdminHist = allAdminHist.filter(o => o.id !== id);
+      filterAdminEliminados();
+      showToast('Pedido borrado permanentemente.', true);
+    },
+    { icon: '🗑', okLabel: 'Borrar', okColor: '#dc2626' }
   );
 }
 
@@ -3308,6 +3326,37 @@ function filterSuCollabList() {
   }).join('');
 }
 
+let _suCollabProfileActivos = [];
+let _suCollabProfilePeriod  = 'month';
+
+function setSuCollabProfilePeriod(p) {
+  _suCollabProfilePeriod = p;
+  ['day','week','month','year'].forEach(x => document.getElementById('su-cp-pbtn-'+x)?.classList.toggle('active', x===p));
+  _renderSuCollabProfileTimeCharts();
+}
+function _renderSuCollabProfileTimeCharts() {
+  const p = _suCollabProfilePeriod;
+  function key(fecha) {
+    const d = new Date(fecha);
+    if (p==='day')  return d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+    if (p==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); return w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    if (p==='year') return String(d.getFullYear());
+    return d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+  }
+  const _suCpYr = document.getElementById('su-cp-year-filter')?.value;
+  const _suCpData = _suCpYr ? _suCollabProfileActivos.filter(o => new Date(o.fecha).getFullYear() == _suCpYr) : _suCollabProfileActivos;
+  const mapT={}, mapU={};
+  _suCpData.forEach(o => {
+    const k = key(o.fecha);
+    mapT[k] = (mapT[k]||0) + (o.total||0);
+    mapU[k] = (mapU[k]||0) + (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+  });
+  if (_suCollabProfileChart1) _suCollabProfileChart1.destroy();
+  _suCollabProfileChart1 = new Chart(document.getElementById('su-profile-chart-tiempo').getContext('2d'),{type:'line',data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#7c3aed'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+  if (window._suCollabProfileChart3) window._suCollabProfileChart3.destroy();
+  window._suCollabProfileChart3 = new Chart(document.getElementById('su-profile-chart-unid').getContext('2d'),{type:'line',data:{labels:Object.keys(mapU),datasets:[{data:Object.values(mapU),borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,0.1)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ea5e9'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+}
+
 async function openSuCollabProfile(cedulaOrNombre) {
   if (!_suCollabListData.length) {
     if (!allUsers.length) await loadUsers();
@@ -3330,6 +3379,8 @@ async function openSuCollabProfile(cedulaOrNombre) {
   const diasNom=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const porDia=Array(7).fill(0);
   activos.forEach(o=>{porDia[new Date(o.fecha).getDay()]++;});
+  _suCollabProfileActivos = activos;
+  _suCollabProfilePeriod  = 'day';
   const card=document.getElementById('su-collab-profile-card');
   card.innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
@@ -3347,7 +3398,18 @@ async function openSuCollabProfile(cedulaOrNombre) {
       <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val"><span class="col-sign">₡</span>${Math.round(avgPedido).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
     </div>
-    <div class="profile-section-title">Compras en el tiempo</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;margin-bottom:4px;">
+      <div class="profile-section-title" style="margin:0;">Compras en el tiempo</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <select id="su-cp-year-filter" class="dash-filter" onchange="_renderSuCollabProfileTimeCharts()" style="font-size:11px;padding:2px 6px;height:26px;"></select>
+        <div class="dash-period-btns">
+          <button class="dash-period-btn active" id="su-cp-pbtn-day"   onclick="setSuCollabProfilePeriod('day')">Día</button>
+          <button class="dash-period-btn" id="su-cp-pbtn-week"  onclick="setSuCollabProfilePeriod('week')">Sem</button>
+          <button class="dash-period-btn" id="su-cp-pbtn-month" onclick="setSuCollabProfilePeriod('month')">Mes</button>
+          <button class="dash-period-btn" id="su-cp-pbtn-year"  onclick="setSuCollabProfilePeriod('year')">Año</button>
+        </div>
+      </div>
+    </div>
     <div style="position:relative;width:100%;height:130px;"><canvas id="su-profile-chart-tiempo"></canvas></div>
     <div class="profile-section-title">Unidades compradas en el tiempo</div>
     <div style="position:relative;width:100%;height:120px;"><canvas id="su-profile-chart-unid"></canvas></div>
@@ -3360,23 +3422,18 @@ async function openSuCollabProfile(cedulaOrNombre) {
       const num=o.id.slice(0,8).toUpperCase();
       const fecha=new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
       const unid=(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
-      const estadoBadge=o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>'+moraOrderBadge(o):'';
+      const estadoBadge=o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>'+moraOrderBadge(o):o.estado==='devuelto'?'<span style="background:#ede9fe;color:#5b21b6;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DEVUELTO</span>':o.estado==='sin_inventario'?'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">SIN INVENTARIO</span>':o.estado==='eliminado'?'<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">ELIMINADO</span>':'';
       const lines=(o.lineas_pedido||[]).map(l=>`<div class="ud-line"><span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</span><span class="ud-line-qty">${l.cantidad} u.</span></div>`).join('');
       return `<div class="ud-order"><div class="ud-order-hd" onclick="toggleUdOrder(this)"><div><div class="ud-order-num">#${num}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div></div><span class="ud-order-units">${unid} u. · <span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</span><span class="ud-order-arrow">›</span></div><div class="ud-order-body">${lines}</div></div>`;
     }).join('')}`;
   document.getElementById('su-collab-profile-modal').classList.add('open');
+  // Poblar año dropdown
+  const _suCpYears = [...new Set(activos.map(o => new Date(o.fecha).getFullYear()))].sort();
+  const _suCpYrSel = document.getElementById('su-cp-year-filter');
+  if (_suCpYrSel) _suCpYrSel.innerHTML = '<option value="">Todos los años</option>' + _suCpYears.map(y => `<option>${y}</option>`).join('');
   requestAnimationFrame(()=>{
-    const mapT={};
-    activos.forEach(o=>{const k=new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});mapT[k]=(mapT[k]||0)+(o.total||0);});
-    if(_suCollabProfileChart1)_suCollabProfileChart1.destroy();
-    _suCollabProfileChart1=new Chart(document.getElementById('su-profile-chart-tiempo').getContext('2d'),{type:'line',data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#7c3aed'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+    _renderSuCollabProfileTimeCharts();
     const mxD=Math.max(...porDia)||1;
-    // Unidades en el tiempo
-    const mapU={};
-    activos.forEach(o=>{const k=new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});mapU[k]=(mapU[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
-    if(window._suCollabProfileChart3)window._suCollabProfileChart3.destroy();
-    window._suCollabProfileChart3=new Chart(document.getElementById('su-profile-chart-unid').getContext('2d'),{type:'line',data:{labels:Object.keys(mapU),datasets:[{data:Object.values(mapU),borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,0.1)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ea5e9'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
-    // Días favoritos
     if(_suCollabProfileChart2)_suCollabProfileChart2.destroy();
     _suCollabProfileChart2=new Chart(document.getElementById('su-profile-chart-dias').getContext('2d'),{type:'bar',data:{labels:diasNom,datasets:[{data:porDia,backgroundColor:porDia.map(v=>v===mxD?'#7c3aed':'#e5e7eb'),borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} pedido${c.raw!==1?'s':''}`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
   });
@@ -3670,12 +3727,13 @@ function renderSuChartTiempo() {
 
 function _fixSuDashHeights() {
   const zoom = window.innerWidth <= 600 ? window.innerWidth / 900 : 1;
-  [['su-chart-tiempo-wrap', 130], ['su-chart-diasmes-wrap', 120]].forEach(([id, base]) => {
+  [['su-chart-tiempo-wrap', 130], ['su-chart-unid-tiempo-wrap', 130], ['su-chart-diasmes-wrap', 120]].forEach(([id, base]) => {
     const el = document.getElementById(id);
     if (el) el.style.height = Math.round(base / zoom) + 'px';
   });
-  if (_suChartTiempo)  _suChartTiempo.resize();
-  if (_suChartDiasMes) _suChartDiasMes.resize();
+  if (_suChartTiempo)     _suChartTiempo.resize();
+  if (_suChartUnidTiempo) _suChartUnidTiempo.resize();
+  if (_suChartDiasMes)    _suChartDiasMes.resize();
 }
 window.addEventListener('resize', _fixSuDashHeights);
 

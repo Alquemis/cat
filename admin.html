@@ -3285,6 +3285,36 @@ function renderRankUnidades() {
 let _collabListData = [];
 let _collabProfileChart1 = null;
 let _collabProfileChart2 = null;
+let _collabProfileActivos = [];
+let _collabProfilePeriod  = 'month';
+
+function setCollabProfilePeriod(p) {
+  _collabProfilePeriod = p;
+  ['day','week','month','year'].forEach(x => document.getElementById('cp-pbtn-'+x)?.classList.toggle('active', x===p));
+  _renderCollabProfileTimeCharts();
+}
+function _renderCollabProfileTimeCharts() {
+  const p = _collabProfilePeriod;
+  function key(fecha) {
+    const d = new Date(fecha);
+    if (p==='day')  return d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
+    if (p==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); return w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
+    if (p==='year') return String(d.getFullYear());
+    return d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
+  }
+  const _cpYr = document.getElementById('cp-year-filter')?.value;
+  const _cpData = _cpYr ? _collabProfileActivos.filter(o => new Date(o.fecha).getFullYear() == _cpYr) : _collabProfileActivos;
+  const mapT={}, mapU={};
+  _cpData.forEach(o => {
+    const k = key(o.fecha);
+    mapT[k] = (mapT[k]||0) + (o.total||0);
+    mapU[k] = (mapU[k]||0) + (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+  });
+  if (_collabProfileChart1) _collabProfileChart1.destroy();
+  _collabProfileChart1 = new Chart(document.getElementById('profile-chart-tiempo').getContext('2d'),{type:'line',data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#143c5a',backgroundColor:'rgba(31,41,55,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#143c5a'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+  if (window._collabProfileChart3) window._collabProfileChart3.destroy();
+  window._collabProfileChart3 = new Chart(document.getElementById('profile-chart-unid').getContext('2d'),{type:'line',data:{labels:Object.keys(mapU),datasets:[{data:Object.values(mapU),borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,0.1)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ea5e9'}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+}
 
 function userAvatar(nombre, key) {
   const ini = (nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
@@ -3365,6 +3395,8 @@ async function openCollabProfile(cedulaOrNombre) {
   const porDia  = Array(7).fill(0);
   activos.forEach(o=>{ porDia[new Date(o.fecha).getDay()]++; });
 
+  _collabProfileActivos = activos;
+  _collabProfilePeriod  = 'day';
   const card = document.getElementById('collab-profile-card');
   card.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
@@ -3384,7 +3416,18 @@ async function openCollabProfile(cedulaOrNombre) {
       <div class="profile-kpi"><div class="profile-kpi-val"><span class="col-sign">₡</span>${Math.round(avgPedido).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
     </div>
 
-    <div class="profile-section-title">Compras en el tiempo</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;margin-bottom:4px;">
+      <div class="profile-section-title" style="margin:0;">Compras en el tiempo</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <select id="cp-year-filter" class="dash-filter" onchange="_renderCollabProfileTimeCharts()" style="font-size:11px;padding:2px 6px;height:26px;"></select>
+        <div class="dash-period-btns">
+          <button class="dash-period-btn active" id="cp-pbtn-day"   onclick="setCollabProfilePeriod('day')">Día</button>
+          <button class="dash-period-btn" id="cp-pbtn-week"  onclick="setCollabProfilePeriod('week')">Sem</button>
+          <button class="dash-period-btn" id="cp-pbtn-month" onclick="setCollabProfilePeriod('month')">Mes</button>
+          <button class="dash-period-btn" id="cp-pbtn-year"  onclick="setCollabProfilePeriod('year')">Año</button>
+        </div>
+      </div>
+    </div>
     <div style="position:relative;width:100%;height:130px;"><canvas id="profile-chart-tiempo"></canvas></div>
     <div class="profile-section-title">Unidades compradas en el tiempo</div>
     <div style="position:relative;width:100%;height:120px;"><canvas id="profile-chart-unid"></canvas></div>
@@ -3410,6 +3453,7 @@ async function openCollabProfile(cedulaOrNombre) {
       const estadoBadge = o.estado==='cancelado'?'<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">CANCELADO</span>':
                          o.estado==='pagado'?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PAGADO</span>':
                          o.estado==='facturado'?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">FACTURADO</span>'+moraOrderBadge(o):
+                         o.estado==='devuelto'?'<span style="background:#ede9fe;color:#5b21b6;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DEVUELTO</span>':
                          o.estado==='sin_inventario'?'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">SIN INVENTARIO</span>':
                          o.estado==='eliminado'?'<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">ELIMINADO</span>':'';
       const lines = (o.lineas_pedido||[]).map(l=>`
@@ -3427,31 +3471,14 @@ async function openCollabProfile(cedulaOrNombre) {
 
   document.getElementById('collab-profile-modal').classList.add('open');
 
+  // Poblar año dropdown
+  const _cpYears = [...new Set(activos.map(o => new Date(o.fecha).getFullYear()))].sort();
+  const _cpYrSel = document.getElementById('cp-year-filter');
+  if (_cpYrSel) _cpYrSel.innerHTML = '<option value="">Todos los años</option>' + _cpYears.map(y => `<option>${y}</option>`).join('');
+
   // Renderizar gráficos después del DOM
   requestAnimationFrame(() => {
-    // Gasto en el tiempo (por mes)
-    const mapT = {};
-    activos.forEach(o=>{
-      const k = new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});
-      mapT[k]=(mapT[k]||0)+(o.total||0);
-    });
-    if (_collabProfileChart1) _collabProfileChart1.destroy();
-    _collabProfileChart1 = new Chart(document.getElementById('profile-chart-tiempo').getContext('2d'),{
-      type:'line', data:{labels:Object.keys(mapT),datasets:[{data:Object.values(mapT),borderColor:'#143c5a',backgroundColor:'rgba(31,41,55,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#143c5a'}]},
-      options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₡'+Math.round(c.raw).toLocaleString('es-CR')}}},scales:{y:{ticks:{callback:v=>'₡'+(v>=1000?(v/1000).toFixed(0)+'k':v),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}
-    });
-    // Unidades en el tiempo (por mes)
-    const mapU = {};
-    activos.forEach(o=>{
-      const k = new Date(o.fecha).toLocaleDateString('es-CR',{month:'short',year:'numeric'});
-      mapU[k]=(mapU[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
-    });
-    if (window._collabProfileChart3) window._collabProfileChart3.destroy();
-    window._collabProfileChart3 = new Chart(document.getElementById('profile-chart-unid').getContext('2d'),{
-      type:'line', data:{labels:Object.keys(mapU),datasets:[{data:Object.values(mapU),borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,0.1)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ea5e9'}]},
-      options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}},scales:{y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}
-    });
-    // Días favoritos
+    _renderCollabProfileTimeCharts();
     const mxD = Math.max(...porDia)||1;
     if (_collabProfileChart2) _collabProfileChart2.destroy();
     _collabProfileChart2 = new Chart(document.getElementById('profile-chart-dias').getContext('2d'),{
@@ -3808,12 +3835,13 @@ function renderChartTiempo() {
 // ── COMPENSAR ALTURA DE GRÁFICOS FIJOS AL HACER ZOOM ──────
 function _fixDashHeights() {
   const zoom = window.innerWidth <= 600 ? window.innerWidth / 900 : 1;
-  [['chart-tiempo-wrap', 130], ['chart-diasmes-wrap', 120]].forEach(([id, base]) => {
+  [['chart-tiempo-wrap', 130], ['chart-unid-tiempo-wrap', 130], ['chart-diasmes-wrap', 120]].forEach(([id, base]) => {
     const el = document.getElementById(id);
     if (el) el.style.height = Math.round(base / zoom) + 'px';
   });
-  if (_chartTiempo)  _chartTiempo.resize();
-  if (_chartDiasMes) _chartDiasMes.resize();
+  if (_chartTiempo)     _chartTiempo.resize();
+  if (_chartUnidTiempo) _chartUnidTiempo.resize();
+  if (_chartDiasMes)    _chartDiasMes.resize();
 }
 window.addEventListener('resize', _fixDashHeights);
 

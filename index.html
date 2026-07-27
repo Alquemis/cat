@@ -1382,6 +1382,12 @@ async function doQuickLogin() {
   if (!cedula) { errEl.textContent = 'Ingresa tu número de cédula.'; errEl.classList.add('show'); return; }
   if (cedula.includes('-')) { errEl.textContent = 'Ingresa solo números, sin guiones.'; errEl.classList.add('show'); return; }
 
+  if (cedula.replace(/\D/g, '').length < 9) {
+    errEl.textContent = 'El número de cédula está incompleto, revisa que no falten ceros e inténtalo de nuevo.';
+    errEl.classList.add('show');
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Buscando…';
 
   const { data: perfil } = await sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle();
@@ -1436,6 +1442,10 @@ function doLogin() {
   if (apellidos.some(a => a.length < 3)) { showLoginError('Los apellidos deben ser completos.'); return; }
   if (!cedula)  { showLoginError('Por favor ingresa tu número de cédula.'); return; }
   if (cedula.includes('-')) { showLoginError('La cédula debe ser solo números, sin guiones.'); return; }
+  if (cedula.replace(/\D/g, '').length < 9) {
+    showLoginError('El número de cédula está incompleto, revisa que no falten ceros e inténtalo de nuevo.');
+    return;
+  }
   if (!depto)   { showLoginError('Por favor ingresa tu departamento.'); return; }
   if (!lugar)   { showLoginError('Selecciona tu lugar de trabajo.'); return; }
 

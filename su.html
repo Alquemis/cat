@@ -2171,7 +2171,7 @@ function filterAdminEliminados() {
   const lugar = document.getElementById('eliminados-lugar').value;
   const desde = document.getElementById('eliminados-desde').value;
   let list = allAdminHist.filter(o =>
-    (o.estado === 'eliminado' || o.estado === 'sin_inventario') &&
+    (o.estado === 'eliminado' || o.estado === 'sin_inventario' || o.estado === 'cancelado') &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
@@ -2747,7 +2747,7 @@ function renderSuUsers(list) {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
     return `<tr>
-      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span></div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>

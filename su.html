@@ -1407,7 +1407,7 @@ let _adminDupMap = {};
 function _rebuildAdminDupMap() {
   const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
   const all = [...allAdminPend, ...allAdminHist].filter(o =>
-    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
+    o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario' && new Date(o.fecha).getTime() >= cutoff
   );
   const groups = {};
   for (const o of all) {
@@ -1877,7 +1877,7 @@ function getMoraThreshold(fecha) {
 
 // Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
 async function _autoDeleteExactDups() {
-  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado' && o.estado !== 'devuelto' && o.estado !== 'sin_inventario' && o.estado !== 'eliminado');
+  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario' && o.estado !== 'devuelto' && o.estado !== 'sin_inventario' && o.estado !== 'eliminado');
   const groups = {};
   for (const o of all) {
     const fp = _dupFingerprint(o);
@@ -2922,7 +2922,7 @@ function _suFilterByYearMonth(data, yearSelId, monthSelId) {
 
 function renderSuDashboard() {
   const data     = _suDashData;
-  const activos  = data.filter(o => o.estado !== 'cancelado');
+  const activos  = data.filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const now_sdk  = Date.now();
   const sdkNuevos = data.filter(o => o.estado === 'pendiente' && o.usuario_email !== OWNER_CEDULA);
   const sdkFact   = data.filter(o => o.estado === 'facturado' && !o.exento_pago);
@@ -3014,7 +3014,7 @@ function renderSuRankProductos() {
 let _suAllProdsFullList = [];
 
 function openSuAllProds() {
-  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _suFilterByYearMonth(base, 'sf-prod-year', 'sf-prod-month');
   const map = {};
   const names = {};
@@ -3058,7 +3058,7 @@ function filterSuAllProds() {
 let _suAllUnidadesFullList = [];
 
 function openSuAllUnidades() {
-  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _suFilterByYearMonth(base, 'sf-unid-year', 'sf-unid-month');
   const map  = {};
   data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; if(!k) return; map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
@@ -3097,7 +3097,7 @@ function filterSuAllUnidades() {
 let _suAllMontoFullList = [];
 
 function openSuAllMonto() {
-  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _suFilterByYearMonth(base, 'sf-monto-year', 'sf-monto-month');
   const map  = {};
   data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; if(!k) return; map[k]=(map[k]||0)+(o.total||0); });
@@ -3657,7 +3657,7 @@ function setSuUnidChartType(t) {
   renderSuChartUnidTiempo();
 }
 function renderSuChartUnidTiempo() {
-  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const y = document.getElementById('sf-unid-tiempo-year')?.value;
   const data = y ? base.filter(o => new Date(o.fecha).getFullYear() == y) : base;
   const map = {};
@@ -3704,7 +3704,7 @@ function setSuChartType(t) {
 }
 
 function renderSuChartTiempo() {
-  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_suDashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _suFilterByYearMonth(base,'sf-tiempo-year',null); if (!data.length) return;
   const map = {};
   data.forEach(o => {

@@ -1338,7 +1338,7 @@ let _adminDupMap = {};
 function _rebuildAdminDupMap() {
   const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
   const all = [...allAdminPend, ...allAdminHist].filter(o =>
-    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
+    o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario' && new Date(o.fecha).getTime() >= cutoff
   );
   const groups = {};
   for (const o of all) {
@@ -1840,7 +1840,7 @@ function getMoraThreshold(fecha) {
 
 // Auto-elimina duplicados exactos (mismo usuario, mismo contenido, misma fecha al segundo)
 async function _autoDeleteExactDups() {
-  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado' && o.estado !== 'devuelto' && o.estado !== 'sin_inventario');
+  const all = [...allAdminPend, ...allAdminHist].filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario' && o.estado !== 'devuelto' && o.estado !== 'sin_inventario');
   const groups = {};
   for (const o of all) {
     const fp = _dupFingerprint(o);
@@ -2880,7 +2880,7 @@ function _filterByYearMonth(data, yearSelId, monthSelId) {
 
 function renderDashboard() {
   const data   = _dashData;
-  const activos = data.filter(o => o.estado !== 'cancelado');
+  const activos = data.filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const facturados = data.filter(o => o.estado === 'facturado' || o.estado === 'pagado');
 
   // ── Poblar filtros de año (solo primera vez) ──
@@ -2935,7 +2935,7 @@ function renderDashboard() {
 }
 
 function renderChartDias() {
-  const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data  = _filterByYearMonth(base, 'f-dias-year', 'f-dias-month');
   const month = document.getElementById('f-dias-month')?.value;
   const ctxDias = document.getElementById('chart-dias').getContext('2d');
@@ -2971,7 +2971,7 @@ function renderChartDias() {
 }
 
 function renderRankProductos() {
-  const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base  = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data  = _filterByYearMonth(base, 'f-prod-year', 'f-prod-month');
   const map   = {};
   const names = {};
@@ -2996,7 +2996,7 @@ function renderRankProductos() {
 let _allProdsFullList = [];
 
 function openAllProds() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _filterByYearMonth(base, 'f-prod-year', 'f-prod-month');
   const map = {};
   const names = {};
@@ -3040,7 +3040,7 @@ function filterAllProds() {
 let _allUnidadesFullList = [];
 
 function openAllUnidades() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _filterByYearMonth(base, 'f-unid-year', 'f-unid-month');
   const map  = {};
   data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; if(!k) return; map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
@@ -3079,7 +3079,7 @@ function filterAllUnidades() {
 let _allMontoFullList = [];
 
 function openAllMonto() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _filterByYearMonth(base, 'f-monto-year', 'f-monto-month');
   const map  = {};
   data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; if(!k) return; map[k]=(map[k]||0)+(o.total||0); });
@@ -3265,7 +3265,7 @@ function closeProdDetail() {
 }
 
 function renderRankUnidades() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _filterByYearMonth(base, 'f-unid-year', 'f-unid-month');
   const map  = {};
   data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0); });
@@ -3374,7 +3374,7 @@ async function openCollabProfile(cedulaOrNombre) {
     o.usuario_email === user.cedula || o.usuario_nombre === user.nombre
   ).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-  const activos = pedidos.filter(o => o.estado !== 'cancelado');
+  const activos = pedidos.filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const totalMonto = activos.reduce((s,o)=>s+(o.total||0),0);
   const totalUnid  = activos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
   const avgPedido  = activos.length ? Math.round(totalMonto/activos.length) : 0;
@@ -3700,7 +3700,7 @@ function closeUserDetail() {
 }
 
 function renderRankMonto() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _filterByYearMonth(base, 'f-monto-year', 'f-monto-month');
   const map  = {};
   data.forEach(o => { const k=o.usuario_nombre||o.usuario_email; map[k]=(map[k]||0)+(o.total||0); });
@@ -3727,7 +3727,7 @@ function setUnidChartType(t) {
   renderChartUnidTiempo();
 }
 function renderChartUnidTiempo() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const y = document.getElementById('f-unid-tiempo-year')?.value;
   const data = y ? base.filter(o => new Date(o.fecha).getFullYear() == y) : base;
   const map = {};
@@ -3778,7 +3778,7 @@ function setDashChartType(t) {
 }
 
 function renderChartTiempo() {
-  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado');
+  const base = (_dashData||[]).filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const data = _filterByYearMonth(base, 'f-tiempo-year', null);
   if (!data.length) return;
 

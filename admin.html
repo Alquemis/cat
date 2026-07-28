@@ -1249,7 +1249,7 @@
 </div>
 
 <!-- ORDER DETAIL MODAL -->
-<div class="modal-overlay" id="order-detail-modal">
+<div class="modal-overlay" id="order-detail-modal" style="z-index:850">
   <div class="modal-card" id="order-detail-card">
   </div>
 </div>
@@ -3464,7 +3464,7 @@ async function openCollabProfile(cedulaOrNombre) {
           <span class="ud-order-units">${unid} u. · <span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</span>
           <span class="ud-order-arrow">›</span>
         </div>
-        <div class="ud-order-body">${lines}</div>
+        <div class="ud-order-body">${lines}<div style="padding-top:8px;margin-top:4px;border-top:1px solid #f3f4f6;"><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openOrderDetail('${o.id}')" style="width:100%;">Ver detalle</button></div></div>
       </div>`;
     }).join('')}
   `;
@@ -3555,7 +3555,7 @@ function renderMontoDetail() {
         <span class="ud-order-units"><span class="col-sign">₡</span>${monto}</span>
         <span class="ud-order-arrow">›</span>
       </div>
-      <div class="ud-order-body">${lines}</div>
+      <div class="ud-order-body">${lines}<div style="padding-top:8px;margin-top:4px;border-top:1px solid #f3f4f6;"><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openOrderDetail('${o.id}')" style="width:100%;">Ver detalle</button></div></div>
     </div>`;
   }).join('');
 }

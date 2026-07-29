@@ -1277,13 +1277,15 @@ async function onLogin(session, isRestore = false) {
         lugar:        perfil.lugar        || session.lugar
       };
     } else if (!isRestore) {
-      // Primer login fresco → crear registro
-      await sb.from('usuarios').insert({
-        cedula:       session.cedula,
-        nombre:       session.nombre,
-        departamento: session.departamento,
-        lugar:        session.lugar
-      });
+      // Primer login fresco → crear registro (solo si cédula tiene ≥9 dígitos)
+      if (session.cedula.replace(/\D/g, '').length >= 9) {
+        await sb.from('usuarios').insert({
+          cedula:       session.cedula,
+          nombre:       session.nombre,
+          departamento: session.departamento,
+          lugar:        session.lugar
+        });
+      }
     }
     localStorage.setItem('catalogo_session', JSON.stringify(session));
   } catch(e) { /* si falla se usa lo que digitó */ }

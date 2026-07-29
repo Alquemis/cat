@@ -2168,16 +2168,15 @@ async function submitOrder() {
     }
   }
 
-  // Verificar mora: pedidos facturados con más de 7 días sin pago
-  const MS7 = 7 * 24 * 60 * 60 * 1000;
+  // Verificar mora: pedidos facturados con más de 10 días sin pago (misma lógica que el dashboard)
   const now  = Date.now();
   const { data: pedidosMora } = await sb
     .from('pedidos')
-    .select('id, facturado_at')
+    .select('id, fecha, facturado_at')
     .eq('estado', 'facturado')
     .eq('usuario_email', currentUser.cedula);
   const enMora = (pedidosMora || []).some(o =>
-    o.facturado_at && (now - new Date(o.facturado_at).getTime()) >= MS7
+    now > getMoraThreshold(o.facturado_at || o.fecha)
   );
   if (enMora) {
     document.getElementById('mora-warn-modal').classList.add('open');

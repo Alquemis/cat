@@ -75,6 +75,9 @@
   .btn-sm { padding:6px 12px;font-size:12px;border-radius:7px; }
   .btn-icon { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;font-size:14px;border-radius:7px;border:none;cursor:pointer;transition:opacity .15s; }
   .btn-icon:hover { opacity:.75; }
+  .tip { position:relative;display:inline-flex;margin-left:4px; }
+  .tip::after { content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:400;letter-spacing:.02em; }
+  .tip:hover::after { opacity:1; }
   .btn-success { background:#d1fae5;color:#065f46; }
   .btn-success:hover { background:#a7f3d0; }
   .btn-purple { background:#ede9fe;color:#5b21b6; }
@@ -2253,13 +2256,13 @@ function renderAdminOrders(tbodyId, list) {
                        pagado    ? 'font-weight:700;color:#047857' : 'font-weight:700';
 
     const btnPagado   = facturado
-      ? `<button class="btn-icon" onclick="markAsPagado('${o.id}')" title="Marcar como pagado" style="margin-left:4px;background:#d1fae5;color:#065f46;">${_SVG.check}</button>`
+      ? `<span class="tip" data-tip="Pagado"><button class="btn-icon" onclick="markAsPagado('${o.id}')" style="background:#d1fae5;color:#065f46;">${_SVG.check}</button></span>`
       : '';
     const btnSinInv  = facturado && !sinInventario && !eliminado
-      ? `<button class="btn-icon" onclick="markAsSinInventario('${o.id}')" title="Sin inventario" style="margin-left:4px;background:#fef3c7;color:#92400e;">${_SVG.box}</button>`
+      ? `<span class="tip" data-tip="Sin inventario"><button class="btn-icon" onclick="markAsSinInventario('${o.id}')" style="background:#fef3c7;color:#92400e;">${_SVG.box}</button></span>`
       : '';
     const btnDevuelto = facturado && !sinInventario && !eliminado
-      ? `<button class="btn-icon" onclick="markAsDevuelto('${o.id}')" title="Marcar como devuelto" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.undo}</button>`
+      ? `<span class="tip" data-tip="Devuelto"><button class="btn-icon" onclick="markAsDevuelto('${o.id}')" style="background:#fee2e2;color:#dc2626;">${_SVG.undo}</button></span>`
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
@@ -2271,8 +2274,8 @@ function renderAdminOrders(tbodyId, list) {
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
-        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" title="Eliminar pedido" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.trash}</button>` : ''}
-        ${eliminado || sinInventario ? `<button class="btn-icon" onclick="confirmDeleteEliminadoRow('${o.id}','${num}')" title="Borrar permanentemente" style="margin-left:4px;background:#fee2e2;color:#dc2626;">${_SVG.trash}</button>` : ''}
+        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<span class="tip" data-tip="Eliminar"><button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" style="background:#fee2e2;color:#dc2626;">${_SVG.trash}</button></span>` : ''}
+        ${eliminado || sinInventario ? `<span class="tip" data-tip="Eliminar"><button class="btn-icon" onclick="confirmDeleteEliminadoRow('${o.id}','${num}')" style="background:#fee2e2;color:#dc2626;">${_SVG.trash}</button></span>` : ''}
       </td>
     </tr>`;
   }).join('');

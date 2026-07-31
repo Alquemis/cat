@@ -3030,8 +3030,8 @@ const LC_LAYOUTS = {
 class LivingCollage {
   constructor(wrap) {
     this.wrap = wrap; this.cells = []; this.fading = new Set();
-    this.recent = []; this.rotTimer = null; this.obs = null;
-    this._build(); this._scheduleRotation(); this._watchResize();
+    this.recent = []; this.obs = null;
+    this._build(); this._watchResize();
   }
   _getLayout() {
     const w = this.wrap.offsetWidth || window.innerWidth;
@@ -3053,7 +3053,7 @@ class LivingCollage {
       const el = document.createElement('div');
       el.className = 'lc-cell'; el.style.flex = String(node.flex || 1);
       if (node.r) el.style.borderRadius = node.r + 'px';
-      this.cells.push({ el, imgEl:null, kbRaf:null, kbType:null, kbDur:0, kbStart:0 });
+      this.cells.push({ el, imgEl:null, kbRaf:null, kbType:null, kbDur:0, kbStart:0, rotTimer:null });
       parent.appendChild(el);
     } else {
       const div = document.createElement('div');
@@ -3080,6 +3080,7 @@ class LivingCollage {
       const show = () => {
         this._startKB(idx, img, Math.random());
         requestAnimationFrame(() => requestAnimationFrame(() => { img.style.opacity = '1'; }));
+        this._scheduleCellRotation(idx);
       };
       if (img.decode) img.decode().then(show).catch(show); else img.onload = show;
     } else { c.el.appendChild(img); this._startKB(idx, img, 0); }
@@ -3117,14 +3118,13 @@ class LivingCollage {
       default:          return 'scale(1)';
     }
   }
-  _scheduleRotation() {
-    this.rotTimer = setTimeout(() => { this._rotateOne(); this._scheduleRotation(); },
-      3000 + Math.random() * 3000);
-  }
-  _rotateOne() {
-    const avail = this.cells.map((_,i)=>i).filter(i => !this.fading.has(i));
-    if (!avail.length) return;
-    this._crossfade(avail[Math.floor(Math.random() * avail.length)]);
+  _scheduleCellRotation(idx) {
+    const c = this.cells[idx]; if (!c) return;
+    if (c.rotTimer) clearTimeout(c.rotTimer);
+    c.rotTimer = setTimeout(() => {
+      if (!this.fading.has(idx)) this._crossfade(idx);
+      else this._scheduleCellRotation(idx); // retry if still fading
+    }, 8000 + Math.random() * 4000); // 8–12 s per cell
   }
   _crossfade(idx) {
     const c = this.cells[idx]; if (!c || !c.imgEl) return;
@@ -3143,6 +3143,7 @@ class LivingCollage {
         if (oldImg.parentNode) oldImg.parentNode.removeChild(oldImg);
         newImg.style.transition = '';
         this.fading.delete(idx);
+        this._scheduleCellRotation(idx);
       }, 1500);
     };
     if (newImg.decode) newImg.decode().then(go).catch(go); else { newImg.onload = go; newImg.onerror = go; }
@@ -3153,8 +3154,8 @@ class LivingCollage {
       const b = this._bp();
       if (b !== last) {
         last = b; clearTimeout(this.rotTimer);
-        this.cells.forEach(c => { if (c.kbRaf) cancelAnimationFrame(c.kbRaf); });
-        this._build(); this._scheduleRotation();
+        this.cells.forEach(c => { if (c.kbRaf) cancelAnimationFrame(c.kbRaf); if (c.rotTimer) clearTimeout(c.rotTimer); });
+        this._build();
       } else { this.wrap.style.height = this._getLayout().h; }
     });
     this.obs.observe(this.wrap);
@@ -3164,7 +3165,6 @@ class LivingCollage {
     return w >= 1024 ? 'd' : w >= 640 ? 't' : 'm';
   }
   destroy() {
-    clearTimeout(this.rotTimer);
     if (this.obs) this.obs.disconnect();
     this.cells.forEach(c => { if (c.kbRaf) cancelAnimationFrame(c.kbRaf); });
     this.wrap.innerHTML = '';

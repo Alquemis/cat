@@ -504,39 +504,23 @@
   }
   .nav-tab.cta:hover { background: #111827; color: #fff; }
 
-  /* ========== HERO CAROUSEL ========== */
+  /* ========== HERO LIVING COLLAGE ========== */
   #banner-area { width: 100%; }
-  .hero-rotator {
-    position: relative; width: 100%;
-    margin: 0; overflow: hidden; background: #f3f4f6;
-    height: clamp(200px, 36vw, 460px);
+  #lc-wrap { width: 100%; overflow: hidden; background: #f0ede8; }
+  .lc-root { display: flex; width: 100%; height: 100%; }
+  .lc-col  { display: flex; flex-direction: column; }
+  .lc-row  { display: flex; flex-direction: row; }
+  .lc-cell {
+    position: relative; overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.12);
+    background: #ddd9d2; flex-shrink: 0;
   }
-  .hero-track { position: relative; width: 100%; height: 100%; }
-  .hero-slide {
-    position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s ease; pointer-events: none;
+  .lc-cell img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; will-change: transform;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
   }
-  .hero-slide.active { opacity: 1; pointer-events: auto; }
-  .hero-slide-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-  .hero-dots {
-    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 10px; z-index: 5;
-  }
-  .hero-dot {
-    width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.25);
-    cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.85);
-  }
-  .hero-dot.active { background: #143c5a; width: 28px; border-radius: 5px; }
-  .hero-arrow {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: 44px; height: 44px; border-radius: 50%;
-    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-    border: 1px solid rgba(0,0,0,0.05); color: #143c5a; font-size: 22px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 5; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  .hero-arrow:hover { background: #fff; transform: translateY(-50%) scale(1.05); }
-  .hero-arrow.prev { left: 20px; }
-  .hero-arrow.next { right: 20px; }
 
   /* ========== TAB BANNER ========== */
   .tab-banner {
@@ -873,11 +857,8 @@
 
     /* Hero */
     #banner-area { width: 100%; }
-    .hero-rotator { width: 100%; height: auto; aspect-ratio: 1200 / 424; margin: 0; }
-    .tab-banner   { width: 100%; height: auto; aspect-ratio: 1200 / 424; }
-    .hero-arrow { width: 36px; height: 36px; font-size: 16px; }
-    .hero-arrow.prev { left: 10px; }
-    .hero-arrow.next { right: 10px; }
+    #lc-wrap { height: auto !important; aspect-ratio: 1200 / 380; }
+    .tab-banner { width: 100%; height: auto; aspect-ratio: 1200 / 424; }
 
     /* Content */
     .section { padding: 24px 16px 16px; }
@@ -1224,7 +1205,431 @@ let _rtChannel = null;
 //  DATOS DEL CATÁLOGO
 // ============================================================
 const PRODUCTS = []; // cargado desde Supabase
-const SLIDES = [{"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Aloe.webp", "alt": "Gel Aloe Vera BioLand", "bg": "#e8f3df"}, {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Hialuronico.webp", "alt": "Hialurónico - Piel Radiante", "bg": "#deeefb"}, {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Infusion%20de%20romero.webp", "alt": "Infusión de Romero", "bg": "#ede4f5"}];
+const IMAGES = [
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_001.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_002.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_003.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_004.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_005.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_006.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_007.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_008.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_009.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_010.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_011.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_012.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_013.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_014.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_015.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_016.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_017.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_018.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_019.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_020.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_021.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_022.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_023.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_024.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_025.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_026.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_027.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_028.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_029.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_030.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_031.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_032.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_033.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_034.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_035.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_036.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_037.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_038.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_039.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_040.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_041.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_042.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_043.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_044.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_045.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_046.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_047.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_048.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_049.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_050.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_051.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_052.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_053.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_054.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_055.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_056.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_057.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_058.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_059.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_060.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_061.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_062.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_063.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_064.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_065.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_066.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_067.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_068.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_069.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_070.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_071.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_072.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_073.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_074.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_075.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_076.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_077.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_078.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_079.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_080.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_081.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_082.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_083.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_084.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_085.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_086.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_087.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_088.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_089.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_090.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_091.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_092.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_093.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_094.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_095.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_096.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_097.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_098.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_099.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_100.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_101.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_102.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_103.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_104.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_105.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_106.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_107.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_108.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_109.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_110.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_111.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_112.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_113.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_114.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_115.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_116.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_117.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_118.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_119.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_120.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_121.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_122.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_123.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_124.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_125.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_126.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_127.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_128.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_129.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_130.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_131.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_132.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_133.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_134.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_135.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_136.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_137.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_138.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_139.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_140.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_141.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_142.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_143.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_144.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_145.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_146.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_147.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_148.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_149.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_150.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_151.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_152.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_153.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_154.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_155.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_156.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_157.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_158.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_159.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_160.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_161.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_162.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_163.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_164.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_165.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_166.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_167.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_168.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_169.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_170.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_171.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_172.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_173.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_174.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_175.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_176.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_177.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_178.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_179.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_180.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_181.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_182.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_183.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_184.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_185.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_186.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_187.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_188.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_189.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_190.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_191.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_192.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_193.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_194.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_195.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_196.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_197.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_198.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_199.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_200.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_201.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_202.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_203.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_204.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_205.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_206.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_207.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_208.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_209.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_210.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_211.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_212.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_213.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_214.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_215.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_216.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_217.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_218.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_219.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/BL_220.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_001.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_002.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_003.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_004.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_005.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_006.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_007.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_008.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_009.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_010.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_011.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_012.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_013.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_014.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_015.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_016.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_017.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_018.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_019.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_020.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_021.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_022.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_023.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_024.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_025.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_026.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_027.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_028.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_029.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_030.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_031.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_032.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_033.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_034.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_035.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_036.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_037.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_038.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_039.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_040.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_041.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_042.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_043.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_044.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_045.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_046.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_047.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_048.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_049.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_050.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_051.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_052.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_053.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_054.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_055.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_056.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_057.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_058.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_059.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_060.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_061.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_062.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_063.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_064.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_065.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_066.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_067.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_068.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_069.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_070.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_071.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_072.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_073.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_074.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_075.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_076.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_077.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_078.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_079.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_080.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_081.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_082.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_083.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_084.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_085.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_086.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_087.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_088.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_089.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_090.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_091.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_092.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_093.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_094.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_095.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_096.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_097.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_098.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_099.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_100.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_101.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_102.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_103.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_104.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_105.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_106.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_107.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_108.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_109.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_110.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_111.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_112.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_113.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_114.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_115.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_116.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_117.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_118.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_119.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_120.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_121.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_122.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_123.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_124.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_125.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_126.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_127.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_128.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_129.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_130.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_131.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_132.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_133.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_134.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_135.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_136.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_137.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_138.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_139.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_140.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_141.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_142.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_143.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_144.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_145.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_146.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_147.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_148.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_149.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_150.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_151.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_152.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_153.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_154.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_155.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_156.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/SE_157.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_001.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_002.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_003.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_004.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_005.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_006.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_007.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_008.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_009.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_010.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_011.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_012.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_013.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_014.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_015.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_016.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_017.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_018.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_019.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_020.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_021.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_022.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_023.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_024.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_025.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_026.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_027.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_028.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_029.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_030.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_031.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_032.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_033.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_034.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_035.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_036.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_037.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_038.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_039.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_040.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_041.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_042.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_043.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_044.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_045.webp",
+  "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/TDV_046.webp"
+];
 const BANNERS = {"ALIMENTOS": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Palito%20.webp", "alt": "Palitos Seed", "bg": "#e7202c"}, "CAPILAR": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Infusion%20de%20romero.webp", "alt": "Infusión de Romero", "bg": "#ede4f5"}, "FACIAL": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Vitamina%20C.webp", "alt": "Vitamina C BioLand", "bg": "#fff3e0"}, "CORPORAL": {"img": "https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Vegetus.webp", "alt": "Vegetus", "bg": "#f3f6e8"}, "PACKS": {"img": "", "alt": "Packs Especiales", "bg": "#f4ede0"}};
 const TABS = {"ALIMENTOS": {"type": "category", "label": "Categoría", "options": ["Galletas", "Granolas y Barras", "Loncheras", "Palitos", "Primarios", "Bebida"], "icons": {"Galletas": "🍪", "Granolas y Barras": "🥣", "Loncheras": "🎒", "Palitos": "🥨", "Primarios": "🌽", "Bebida": "🥤"}, "match_field": "c", "spc_filter": "Alimentos"}, "CAPILAR": {"type": "brand", "label": "Marca", "options": ["BIOLAND", "TERRE DE VIE", "RESERVE 11"], "icons": {"BIOLAND": "🌿", "TERRE DE VIE": "🌍", "RESERVE 11": "💎"}, "match_field": "b", "cat_filter": "Capilar"}, "FACIAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Cuidado", "Limpieza", "Hidratante"], "icons": {"Cuidado": "✨", "Limpieza": "🧴", "Hidratante": "💧"}, "match_field": "s", "cat_filter": "Facial"}, "CORPORAL": {"type": "subcategory", "label": "Subcategoría", "options": ["Pastillas", "Líquido", "Solar"], "icons": {"Pastillas": "🧼", "Líquido": "🧴", "Solar": "☀️"}, "match_field": "s", "cat_filter": "Corporal"}, "PACKS": {"type": "category", "label": "Pack", "options": [], "icons": {}, "match_field": "c", "cat_filter": "Packs"}, "PROMOCIONES": {"type": "promo", "label": "Promoción", "options": [], "icons": {}, "match_field": "c", "cat_filter": "Promoción"}};
 
@@ -1237,8 +1642,7 @@ let cart           = [];     // [{product, qty}]
 let activeTab      = null;
 let activeButton   = null;
 let _lastOrder     = null; // guarda último pedido para descarga
-let heroIdx        = 0;
-let heroTimer      = null;
+let _lc            = null;  // LivingCollage instance
 let _homeContent   = null; // loaded from home_content table
 
 // ============================================================
@@ -2542,48 +2946,230 @@ function renderCard(p) {
 }
 
 // ============================================================
-//  HERO CAROUSEL
+//  HERO LIVING COLLAGE
 // ============================================================
 async function loadHomeContent() {
   try {
     const { data } = await sb.from('home_content')
-      .select('slides,welcome_html,footer_html').eq('id', 1).maybeSingle();
+      .select('welcome_html,footer_html').eq('id', 1).maybeSingle();
     if (data) _homeContent = data;
-  } catch(e) { /* silently fallback to hardcoded defaults */ }
+  } catch(e) { /* silently fallback */ }
 }
 
 function renderHomeBanner() {
-  const slides = (_homeContent?.slides?.length) ? _homeContent.slides : SLIDES;
+  if (_lc) { _lc.destroy(); _lc = null; }
   const area = document.getElementById('banner-area');
-  area.innerHTML = `
-    <div class="hero-rotator">
-      <div class="hero-track">
-        ${slides.map((s,i) => `
-          <div class="hero-slide ${i===0?'active':''}" style="background:${s.bg};">
-            <img src="${s.img}" alt="${escAttr(s.alt)}" class="hero-slide-img">
-          </div>`).join('')}
-      </div>
-      <button class="hero-arrow prev" onclick="heroPrev()">‹</button>
-      <button class="hero-arrow next" onclick="heroNext()">›</button>
-      <div class="hero-dots">
-        ${slides.map((_,i) => `<button class="hero-dot ${i===0?'active':''}" onclick="heroGo(${i})"></button>`).join('')}
-      </div>
-    </div>`;
-  heroIdx = 0; startHeroTimer();
+  area.innerHTML = '<div id="lc-wrap"></div>';
+  _lc = new LivingCollage(document.getElementById('lc-wrap'));
 }
-function heroGo(i) {
-  heroIdx = (i + SLIDES.length) % SLIDES.length;
-  document.querySelectorAll('.hero-slide').forEach((el,j) => el.classList.toggle('active', j===heroIdx));
-  document.querySelectorAll('.hero-dot').forEach((el,j) => el.classList.toggle('active', j===heroIdx));
-  startHeroTimer();
+
+// ── LivingCollage class ──────────────────────────────────────
+const KB = ['zoom-in','zoom-out','pan-left','pan-right','pan-up','pan-down',
+            'diag-tl','diag-br','diag-tr','diag-bl'];
+
+const LC_LAYOUTS = {
+  desktop: {
+    h: 'clamp(200px, 36vw, 460px)', gap: 7,
+    tree: { t:'row', children: [
+      { t:'col', flex:'0 0 22%', children: [
+        { t:'cell', flex:'1.9' },
+        { t:'row',  flex:'1',   children: [
+          { t:'cell', flex:1 },
+          { t:'cell', flex:1 },
+        ]},
+      ]},
+      { t:'col', flex:'0 0 33%', children: [
+        { t:'cell', flex:1, r:12 },
+      ]},
+      { t:'col', flex:'1', children: [
+        { t:'row', flex:'1.15', children: [
+          { t:'cell', flex:1.35 },
+          { t:'cell', flex:1    },
+        ]},
+        { t:'row', flex:'1', children: [
+          { t:'cell', flex:1.6 },
+          { t:'cell', flex:1   },
+          { t:'cell', flex:0.8 },
+        ]},
+      ]},
+    ]},
+  },
+  tablet: {
+    h: 'clamp(180px, 40vw, 380px)', gap: 5,
+    tree: { t:'row', children: [
+      { t:'col', flex:'0 0 29%', children: [
+        { t:'cell', flex:1.8 },
+        { t:'cell', flex:1   },
+      ]},
+      { t:'col', flex:'0 0 37%', children: [
+        { t:'cell', flex:1, r:12 },
+      ]},
+      { t:'col', flex:'1', children: [
+        { t:'cell', flex:1.2 },
+        { t:'row',  flex:1,  children: [
+          { t:'cell', flex:1 },
+          { t:'cell', flex:1 },
+        ]},
+      ]},
+    ]},
+  },
+  mobile: {
+    h: 'clamp(150px, 56vw, 280px)', gap: 4,
+    tree: { t:'row', children: [
+      { t:'col', flex:'0 0 47%', children: [
+        { t:'cell', flex:1.9 },
+        { t:'cell', flex:1   },
+      ]},
+      { t:'col', flex:'1', children: [
+        { t:'cell', flex:1, r:12 },
+      ]},
+    ]},
+  },
+};
+
+class LivingCollage {
+  constructor(wrap) {
+    this.wrap = wrap; this.cells = []; this.fading = new Set();
+    this.recent = []; this.rotTimer = null; this.obs = null;
+    this._build(); this._scheduleRotation(); this._watchResize();
+  }
+  _getLayout() {
+    const w = this.wrap.offsetWidth || window.innerWidth;
+    return w >= 1024 ? LC_LAYOUTS.desktop : w >= 640 ? LC_LAYOUTS.tablet : LC_LAYOUTS.mobile;
+  }
+  _build() {
+    const lay = this._getLayout();
+    this.wrap.style.height = lay.h;
+    this.cells = [];
+    const root = document.createElement('div');
+    root.className = 'lc-root';
+    root.style.gap = root.style.padding = lay.gap + 'px';
+    this._buildNode(root, lay.tree, lay.gap);
+    this.wrap.innerHTML = ''; this.wrap.appendChild(root);
+    this.cells.forEach((_, i) => setTimeout(() => this._assignImage(i, true), i * 100));
+  }
+  _buildNode(parent, node, gap) {
+    if (node.t === 'cell') {
+      const el = document.createElement('div');
+      el.className = 'lc-cell'; el.style.flex = String(node.flex || 1);
+      if (node.r) el.style.borderRadius = node.r + 'px';
+      this.cells.push({ el, imgEl:null, kbRaf:null, kbType:null, kbDur:0, kbStart:0 });
+      parent.appendChild(el);
+    } else {
+      const div = document.createElement('div');
+      div.className = node.t === 'row' ? 'lc-row' : 'lc-col';
+      div.style.flex = String(node.flex || 1); div.style.gap = gap + 'px';
+      parent.appendChild(div);
+      (node.children || []).forEach(ch => this._buildNode(div, ch, gap));
+    }
+  }
+  _nextUrl() {
+    let pool = IMAGES.filter(u => !this.recent.includes(u));
+    if (!pool.length) pool = IMAGES;
+    const u = pool[Math.floor(Math.random() * pool.length)];
+    this.recent.push(u); if (this.recent.length > 10) this.recent.shift(); return u;
+  }
+  _assignImage(idx, initial) {
+    const c = this.cells[idx]; if (!c) return;
+    const img = document.createElement('img');
+    img.src = this._nextUrl(); img.alt = ''; img.decoding = 'async';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;';
+    if (initial) {
+      img.style.opacity = '0'; img.style.transition = 'opacity 1s ease';
+      c.el.appendChild(img);
+      const show = () => {
+        this._startKB(idx, img, Math.random());
+        requestAnimationFrame(() => requestAnimationFrame(() => { img.style.opacity = '1'; }));
+      };
+      if (img.decode) img.decode().then(show).catch(show); else img.onload = show;
+    } else { c.el.appendChild(img); this._startKB(idx, img, 0); }
+    c.imgEl = img;
+  }
+  _startKB(idx, img, phase) {
+    const c = this.cells[idx]; if (c.kbRaf) cancelAnimationFrame(c.kbRaf);
+    c.kbType = KB[Math.floor(Math.random() * KB.length)];
+    c.kbDur  = (8 + Math.random() * 7) * 1000;
+    c.kbStart = performance.now() - phase * c.kbDur;
+    const origins = ['30% 30%','50% 50%','70% 70%','30% 70%','70% 30%','45% 55%'];
+    img.style.transformOrigin = origins[Math.floor(Math.random() * origins.length)];
+    const tick = now => {
+      if (!img.isConnected) return;
+      const raw  = ((now - c.kbStart) % c.kbDur) / c.kbDur;
+      const ping = raw < 0.5 ? raw * 2 : (1 - raw) * 2;
+      const p    = ping < 0.5 ? 4*ping*ping*ping : 1 - Math.pow(-2*ping+2,3)/2;
+      img.style.transform = this._kbT(c.kbType, p);
+      c.kbRaf = requestAnimationFrame(tick);
+    };
+    c.kbRaf = requestAnimationFrame(tick);
+  }
+  _kbT(t, p) {
+    switch(t) {
+      case 'zoom-in':   return `scale(${1+0.15*p})`;
+      case 'zoom-out':  return `scale(${1.15-0.15*p})`;
+      case 'pan-left':  return `scale(1.14) translateX(${-6*p}%)`;
+      case 'pan-right': return `scale(1.14) translateX(${6*(p-1)}%)`;
+      case 'pan-up':    return `scale(1.12) translateY(${-6*p}%)`;
+      case 'pan-down':  return `scale(1.12) translateY(${6*(p-1)}%)`;
+      case 'diag-tl':   return `scale(1.16) translate(${-5*p}%,${-4*p}%)`;
+      case 'diag-br':   return `scale(1.16) translate(${5*(p-1)}%,${4*(p-1)}%)`;
+      case 'diag-tr':   return `scale(1.16) translate(${5*(p-1)}%,${-4*p}%)`;
+      case 'diag-bl':   return `scale(1.16) translate(${-5*p}%,${4*(p-1)}%)`;
+      default:          return 'scale(1)';
+    }
+  }
+  _scheduleRotation() {
+    this.rotTimer = setTimeout(() => { this._rotateOne(); this._scheduleRotation(); },
+      3000 + Math.random() * 3000);
+  }
+  _rotateOne() {
+    const avail = this.cells.map((_,i)=>i).filter(i => !this.fading.has(i));
+    if (!avail.length) return;
+    this._crossfade(avail[Math.floor(Math.random() * avail.length)]);
+  }
+  _crossfade(idx) {
+    const c = this.cells[idx]; if (!c || !c.imgEl) return;
+    this.fading.add(idx);
+    const oldImg = c.imgEl;
+    const newImg = document.createElement('img');
+    newImg.src = this._nextUrl(); newImg.alt = ''; newImg.decoding = 'async';
+    newImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;will-change:transform;opacity:0;transition:opacity 1.4s cubic-bezier(0.4,0,0.2,1);backface-visibility:hidden;-webkit-backface-visibility:hidden;';
+    const origins = ['30% 30%','50% 50%','70% 70%','30% 70%','70% 30%'];
+    newImg.style.transformOrigin = origins[Math.floor(Math.random() * origins.length)];
+    c.el.appendChild(newImg); c.imgEl = newImg;
+    const go = () => {
+      this._startKB(idx, newImg, 0.05 + Math.random() * 0.25);
+      requestAnimationFrame(() => requestAnimationFrame(() => { newImg.style.opacity = '1'; }));
+      setTimeout(() => {
+        if (oldImg.parentNode) oldImg.parentNode.removeChild(oldImg);
+        newImg.style.transition = '';
+        this.fading.delete(idx);
+      }, 1500);
+    };
+    if (newImg.decode) newImg.decode().then(go).catch(go); else { newImg.onload = go; newImg.onerror = go; }
+  }
+  _watchResize() {
+    let last = this._bp();
+    this.obs = new ResizeObserver(() => {
+      const b = this._bp();
+      if (b !== last) {
+        last = b; clearTimeout(this.rotTimer);
+        this.cells.forEach(c => { if (c.kbRaf) cancelAnimationFrame(c.kbRaf); });
+        this._build(); this._scheduleRotation();
+      } else { this.wrap.style.height = this._getLayout().h; }
+    });
+    this.obs.observe(this.wrap);
+  }
+  _bp() {
+    const w = this.wrap.offsetWidth || window.innerWidth;
+    return w >= 1024 ? 'd' : w >= 640 ? 't' : 'm';
+  }
+  destroy() {
+    clearTimeout(this.rotTimer);
+    if (this.obs) this.obs.disconnect();
+    this.cells.forEach(c => { if (c.kbRaf) cancelAnimationFrame(c.kbRaf); });
+    this.wrap.innerHTML = '';
+  }
 }
-function heroNext() { heroGo(heroIdx+1); }
-function heroPrev() { heroGo(heroIdx-1); }
-function startHeroTimer() {
-  if (heroTimer) clearInterval(heroTimer);
-  heroTimer = setInterval(heroNext, 6000);
-}
-function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
 
 // ============================================================
 //  NAVEGACIÓN
@@ -2603,7 +3189,7 @@ function goHome() {
   renderHomeBanner(); renderHomeContent();
 }
 function selectTab(tab) {
-  activeTab = tab; activeButton = null; stopHeroTimer();
+  activeTab = tab; activeButton = null;
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
   document.getElementById('home-btn').classList.add('visible');
   if (tab === 'PACKS' || tab === 'PROMOCIONES') document.getElementById('banner-area').innerHTML = '';

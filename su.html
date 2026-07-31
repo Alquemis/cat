@@ -408,8 +408,6 @@
   .notif-reader-chip { background:#d1fae5;color:#065f46;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap; }
 
   /* ── Home Editor ── */
-  .hero-slide-item { display:flex;align-items:center;gap:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:8px;flex-wrap:wrap; }
-  .hero-slide-thumb { width:96px;height:34px;object-fit:cover;border-radius:5px;flex-shrink:0;background:#e5e7eb;border:1px solid #e5e7eb; }
   .home-rich-editor { min-height:120px;border:1.5px solid #e5e7eb;border-top:none;border-bottom-left-radius:9px;border-bottom-right-radius:9px;padding:12px 14px;font-size:14px;line-height:1.6;outline:none;font-family:inherit; }
   .home-rich-editor:focus { border-color:#7c3aed; }
   .home-rich-editor:empty::before { content:attr(placeholder);color:#9ca3af;pointer-events:none; }
@@ -1148,21 +1146,6 @@
 
   <!-- ── PAGE: HOME EDITOR ── -->
   <div id="page-home" style="display:none">
-
-    <!-- Hero Slides -->
-    <div class="su-section" style="margin-bottom:20px;">
-      <div class="su-section-title">🎠 Hero Slides</div>
-      <div class="su-section-sub">Imágenes del carrusel principal. Se recortan automáticamente a <strong>1200×424 px</strong> y se convierten a WebP.</div>
-      <div id="hero-slides-list" style="margin-top:14px;"></div>
-      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <label class="btn btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-          ➕ Agregar slide
-          <input type="file" accept="image/*" style="display:none" onchange="handleHeroUpload(this)">
-        </label>
-        <span style="font-size:11px;color:#9ca3af;">📐 1200×424 px · WebP · cover crop</span>
-        <button class="btn btn-purple" style="margin-left:auto" onclick="saveHomeSlides()">💾 Guardar slides</button>
-      </div>
-    </div>
 
     <!-- Welcome Message -->
     <div class="su-section" style="margin-bottom:20px;">
@@ -4090,7 +4073,7 @@ function notifInsertLink() {
 }
 
 // ── HOME EDITOR ──────────────────────────────────────────
-let _homeEditorData = { slides: [], welcome_html: '', footer_html: '' };
+let _homeEditorData = { welcome_html: '', footer_html: '' };
 let _homeEditorLoaded = false;
 
 async function loadHomeEditor() {
@@ -4099,55 +4082,15 @@ async function loadHomeEditor() {
   const { data, error } = await sb.from('home_content').select('*').eq('id', 1).maybeSingle();
   if (error) { showToast('Error cargando Home: ' + error.message, 'error'); return; }
   if (data) {
-    _homeEditorData.slides       = Array.isArray(data.slides) ? data.slides : [];
     _homeEditorData.welcome_html = data.welcome_html || '';
     _homeEditorData.footer_html  = data.footer_html  || '';
   }
-  renderHeroList();
   document.getElementById('home-welcome').innerHTML = _homeEditorData.welcome_html;
   document.getElementById('home-footer').innerHTML  = _homeEditorData.footer_html;
 }
 
-function renderHeroList() {
-  const wrap = document.getElementById('hero-slides-list');
-  const slides = _homeEditorData.slides;
-  if (!slides.length) {
-    wrap.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;border:1.5px dashed #e5e7eb;border-radius:10px;">No hay slides. Agrega uno con el botón de abajo.</div>';
-    return;
-  }
-  wrap.innerHTML = slides.map((s, i) => `
-    <div class="hero-slide-item">
-      <img src="${s.img}" class="hero-slide-thumb" alt="">
-      <div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;">
-        <input type="text" value="${_escHtml(s.alt || '')}" placeholder="Texto alternativo (alt)"
-          oninput="_homeEditorData.slides[${i}].alt=this.value"
-          style="flex:1;min-width:120px;padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;outline:none;">
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-          <span style="font-size:11px;color:#6b7280;">Fondo:</span>
-          <input type="color" value="${s.bg || '#f3f4f6'}" title="Color de fondo de slide"
-            oninput="_homeEditorData.slides[${i}].bg=this.value"
-            style="width:32px;height:28px;padding:2px;border:1.5px solid #e5e7eb;border-radius:6px;cursor:pointer;">
-        </div>
-      </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button class="btn btn-secondary btn-sm" onclick="moveHeroSlide(${i},-1)" ${i===0?'disabled':''} title="Subir">↑</button>
-        <button class="btn btn-secondary btn-sm" onclick="moveHeroSlide(${i},1)"  ${i===slides.length-1?'disabled':''} title="Bajar">↓</button>
-        <button class="btn btn-danger btn-sm"    onclick="removeHeroSlide(${i})"  title="Eliminar slide">✕</button>
-      </div>
-    </div>`).join('');
-}
 
-function moveHeroSlide(idx, dir) {
-  const s = _homeEditorData.slides, ni = idx + dir;
-  if (ni < 0 || ni >= s.length) return;
-  [s[idx], s[ni]] = [s[ni], s[idx]];
-  renderHeroList();
-}
 
-function removeHeroSlide(idx) {
-  _homeEditorData.slides.splice(idx, 1);
-  renderHeroList();
-}
 
 function _cropImgCover(file, W, H) {
   return new Promise((resolve, reject) => {
@@ -4168,30 +4111,7 @@ function _cropImgCover(file, W, H) {
   });
 }
 
-async function handleHeroUpload(input) {
-  const file = input.files[0]; if (!file) return;
-  input.value = '';
-  showToast('Recortando imagen…', 'ok');
-  try {
-    const blob   = await _cropImgCover(file, 1200, 424);
-    const reader = new FileReader();
-    reader.onload = e => {
-      _homeEditorData.slides.push({ img: e.target.result, alt: '', bg: '#f3f4f6' });
-      renderHeroList();
-      showToast(`✅ Slide agregado (${Math.round(blob.size/1024)}KB · 1200×424 WebP). Guarda para publicar.`, 'ok');
-    };
-    reader.readAsDataURL(blob);
-  } catch(err) { showToast('Error: ' + err.message, 'error'); }
-}
 
-async function saveHomeSlides() {
-  const btn = event.target; btn.disabled = true; btn.textContent = 'Guardando…';
-  const { error } = await sb.from('home_content')
-    .upsert({ id: 1, slides: _homeEditorData.slides }, { onConflict: 'id' });
-  btn.disabled = false; btn.textContent = '💾 Guardar slides';
-  if (error) showToast('Error: ' + error.message, 'error');
-  else showToast('✅ Slides guardados', 'ok');
-}
 
 function homeExecCmd(editorId, cmd, val) {
   document.getElementById(editorId).focus();

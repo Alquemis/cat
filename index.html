@@ -1007,6 +1007,13 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Mi pedido
       <span class="cart-badge" id="cart-badge">0</span>
     </button>
+    <!-- admin broadcast notifications -->
+    <button id="admin-notif-bell-btn" onclick="openUserNotifPanel()" title="Notificaciones"
+      style="display:none;position:relative;background:none;border:none;color:#374151;cursor:pointer;padding:4px 8px;border-radius:8px;font-size:20px;align-items:center;transition:background .15s;"
+      onmouseover="this.style.background='rgba(0,0,0,.06)'" onmouseout="this.style.background='none'">
+      🔔
+      <span id="admin-notif-badge" style="position:absolute;top:0;right:0;background:#ef4444;color:#fff;border-radius:999px;font-size:9px;font-weight:700;min-width:16px;height:16px;display:none;align-items:center;justify-content:center;padding:0 3px;line-height:1;">0</span>
+    </button>
     <!-- campanita notificaciones -->
     <div class="notif-wrap" id="notif-wrap">
       <button class="notif-btn" id="notif-btn" onclick="toggleNotifPanel(event)">
@@ -1232,6 +1239,7 @@ let activeButton   = null;
 let _lastOrder     = null; // guarda último pedido para descarga
 let heroIdx        = 0;
 let heroTimer      = null;
+let _homeContent   = null; // loaded from home_content table
 
 // ============================================================
 //  AUTENTICACIÓN — nombre + cédula, sin registro
@@ -1317,13 +1325,15 @@ async function onLogin(session, isRestore = false) {
   try { if (typeof startNotifPolling === 'function') startNotifPolling(); } catch(e) {}
   try { if (typeof startPromoStockPolling === 'function') startPromoStockPolling(); } catch(e) {}
   try { _updateInstallMenuBtn(); } catch(e) {}
+  try { document.getElementById('admin-notif-bell-btn').style.display = 'inline-flex'; loadUserNotifications(); } catch(e) {}
 
   // Esperar el catálogo (ya se estaba cargando en paralelo desde que abrió la página)
   await ensureCatalog();
   if (!CATALOG.length) { _catalogPromise = null; await ensureCatalog(); } // reintento si falló
   loadCart(); // restaurar carrito guardado (requiere catálogo + usuario)
 
-  // Inicializar catálogo
+  // Inicializar catálogo (home content en paralelo)
+  await loadHomeContent();
   renderHomeBanner();
   renderHomeContent();
 }
@@ -1334,6 +1344,7 @@ function onLogout() {
   stopPromoStockPolling();
   stopRealtime();
   document.getElementById('notif-wrap').classList.remove('visible');
+  try { const b = document.getElementById('admin-notif-bell-btn'); if(b) b.style.display='none'; } catch(e) {}
   currentUser = null;
   cart = [];
   localStorage.removeItem('catalogo_session');
@@ -2533,12 +2544,21 @@ function renderCard(p) {
 // ============================================================
 //  HERO CAROUSEL
 // ============================================================
+async function loadHomeContent() {
+  try {
+    const { data } = await sb.from('home_content')
+      .select('slides,welcome_html,footer_html').eq('id', 1).maybeSingle();
+    if (data) _homeContent = data;
+  } catch(e) { /* silently fallback to hardcoded defaults */ }
+}
+
 function renderHomeBanner() {
+  const slides = (_homeContent?.slides?.length) ? _homeContent.slides : SLIDES;
   const area = document.getElementById('banner-area');
   area.innerHTML = `
     <div class="hero-rotator">
       <div class="hero-track">
-        ${SLIDES.map((s,i) => `
+        ${slides.map((s,i) => `
           <div class="hero-slide ${i===0?'active':''}" style="background:${s.bg};">
             <img src="${s.img}" alt="${escAttr(s.alt)}" class="hero-slide-img">
           </div>`).join('')}
@@ -2546,7 +2566,7 @@ function renderHomeBanner() {
       <button class="hero-arrow prev" onclick="heroPrev()">‹</button>
       <button class="hero-arrow next" onclick="heroNext()">›</button>
       <div class="hero-dots">
-        ${SLIDES.map((_,i) => `<button class="hero-dot ${i===0?'active':''}" onclick="heroGo(${i})"></button>`).join('')}
+        ${slides.map((_,i) => `<button class="hero-dot ${i===0?'active':''}" onclick="heroGo(${i})"></button>`).join('')}
       </div>
     </div>`;
   heroIdx = 0; startHeroTimer();
@@ -2596,16 +2616,16 @@ function selectButton(opt) { activeButton = opt; renderTabContent(); }
 //  RENDERIZADO DE CONTENIDO
 // ============================================================
 function renderHomeContent() {
+  const welcomeHtml = _homeContent?.welcome_html ||
+    'Selecciona una pestaña de arriba para explorar las categorías, o haz clic en <strong>VER TODOS →</strong> para ver el catálogo completo.';
+  const footerHtml = _homeContent?.footer_html ||
+    '<img src="https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Metodo%20de%20pago.webp" alt="Métodos de pago" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">';
   document.getElementById('dynamic-area').innerHTML = `
     <div class="section" style="max-width:100%;padding-left:0;padding-right:0;">
       <div class="welcome-msg" style="border-radius:0;border-left:none;border-right:none;">
-        <div class="welcome-text">
-          Selecciona una pestaña de arriba para explorar las categorías, o haz clic en <strong>VER TODOS →</strong> para ver el catálogo completo.
-        </div>
+        <div class="welcome-text">${welcomeHtml}</div>
       </div>
-      <div style="text-align:center;margin-top:24px;">
-        <img src="https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/Metodo%20de%20pago.webp" alt="Métodos de pago" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-      </div>
+      ${footerHtml ? `<div style="text-align:center;margin-top:24px;">${footerHtml}</div>` : ''}
     </div>`;
 }
 
@@ -3344,6 +3364,134 @@ if (window.visualViewport) {
 
 ensureCatalog(); // arrancar descarga del catálogo de inmediato, en paralelo al login
 initAuth();
+
+/* ═══════════════════════════════════════════════════════════
+   USER NOTIFICATIONS (admin broadcast, index.html)
+═══════════════════════════════════════════════════════════ */
+let _userNotifs = [];
+
+async function loadUserNotifications() {
+  if (!currentUser || !currentUser.cedula) return;
+
+  // Active (non-cancelled) notifications
+  const { data: notifs } = await sb
+    .from('notifications')
+    .select('id, title, subtitle, body, image_url, created_at')
+    .is('cancelled_at', null)
+    .order('created_at', { ascending: false });
+
+  if (!notifs || !notifs.length) { _userNotifs = []; _updateAdminNotifBadge(); return; }
+
+  // Which ones has this user already read?
+  const { data: reads } = await sb
+    .from('notification_reads')
+    .select('notification_id')
+    .eq('user_cedula', currentUser.cedula)
+    .in('notification_id', notifs.map(n => n.id));
+
+  const readSet = new Set((reads || []).map(r => r.notification_id));
+  _userNotifs = notifs.filter(n => !readSet.has(n.id));
+  _updateAdminNotifBadge();
+}
+
+function _updateAdminNotifBadge() {
+  const badge = document.getElementById('admin-notif-badge');
+  if (!badge) return;
+  const count = _userNotifs.length;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+
+function openUserNotifPanel() {
+  if (!_userNotifs.length) return;
+  if (_userNotifs.length === 1) {
+    _markNotifRead(_userNotifs[0]);
+    _openUserNotifModal(_userNotifs[0]);
+    return;
+  }
+  // Multiple: show bottom sheet
+  let panel = document.getElementById('_user-notif-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = '_user-notif-panel';
+    panel.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:850;display:flex;align-items:flex-end;justify-content:center;';
+    document.body.appendChild(panel);
+    panel.addEventListener('click', e => { if (e.target === panel) panel.style.display='none'; });
+  }
+  panel.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:70vh;overflow-y:auto;padding:20px;box-shadow:0 -8px 32px rgba(0,0,0,.2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:700;color:#143c5a;">🔔 Notificaciones (${_userNotifs.length})</div>
+        <button onclick="document.getElementById('_user-notif-panel').style.display='none'"
+          style="border:none;background:#f3f4f6;color:#374151;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;">✕</button>
+      </div>
+      ${_userNotifs.map((n,i) => `
+        <div onclick="_markNotifRead(_userNotifs[${i}]);_openUserNotifModal(_userNotifs[${i}]);document.getElementById('_user-notif-panel').style.display='none';"
+          style="border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s;"
+          onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
+          <div style="font-size:14px;font-weight:700;color:#143c5a;margin-bottom:3px;">${_escHtmlUser(n.title)}</div>
+          ${n.subtitle ? `<div style="font-size:12px;color:#6b7280;margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${n.subtitle}</div>` : ''}
+          <div style="font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span>${new Date(n.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</span>
+            ${n.image_url ? '<span>· 📎 imagen</span>' : ''}
+            <span style="margin-left:auto;color:#7c3aed;font-weight:600;font-size:11px;">Toca para ver →</span>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  panel.style.display = 'flex';
+}
+
+async function _markNotifRead(notif) {
+  if (!currentUser || !currentUser.cedula) return;
+  try {
+    await sb.from('notification_reads').upsert({
+      notification_id: notif.id,
+      user_cedula:     currentUser.cedula,
+      user_nombre:     currentUser.nombre || currentUser.cedula
+    }, { onConflict: 'notification_id,user_cedula', ignoreDuplicates: true });
+  } catch(e) { /* ignore */ }
+  _userNotifs = _userNotifs.filter(n => n.id !== notif.id);
+  _updateAdminNotifBadge();
+}
+
+function _openUserNotifModal(notif) {
+  let modal = document.getElementById('_user-notif-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = '_user-notif-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:860;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:20px;padding:24px;max-width:500px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.25);">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+          <button onclick="document.getElementById('_user-notif-modal').style.display='none'"
+            style="border:none;background:#f3f4f6;color:#374151;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;">✕</button>
+        </div>
+        <div id="_unm-title" style="font-size:18px;font-weight:700;color:#143c5a;line-height:1.4;text-align:center;margin-bottom:6px;"></div>
+        <div id="_unm-subtitle" style="font-size:14px;color:#6b7280;line-height:1.5;text-align:center;margin-bottom:16px;display:none;"></div>
+        <div id="_unm-body" style="font-size:14px;line-height:1.7;color:#374151;text-align:center;margin-bottom:16px;"></div>
+        <div id="_unm-img-wrap" style="display:none;">
+          <img id="_unm-img" style="width:100%;max-height:300px;object-fit:contain;border-radius:10px;border:1px solid #e5e7eb;cursor:zoom-in;" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'300px':'none'">
+        </div>
+        <div id="_unm-date" style="font-size:11px;color:#9ca3af;margin-top:14px;text-align:center;border-top:1px solid #f3f4f6;padding-top:10px;"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display='none'; });
+  }
+  document.getElementById('_unm-title').innerHTML = notif.title;
+  const _unmSub = document.getElementById('_unm-subtitle');
+  _unmSub.innerHTML = notif.subtitle || '';
+  _unmSub.style.display = notif.subtitle ? '' : 'none';
+  document.getElementById('_unm-body').innerHTML = notif.body;
+  document.getElementById('_unm-date').textContent = new Date(notif.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const imgWrap = document.getElementById('_unm-img-wrap');
+  if (notif.image_url) { imgWrap.style.display=''; document.getElementById('_unm-img').src=notif.image_url; }
+  else { imgWrap.style.display='none'; }
+  modal.style.display = 'flex';
+}
+
+function _escHtmlUser(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>

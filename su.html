@@ -413,6 +413,43 @@
   .home-rich-editor:empty::before { content:attr(placeholder);color:#9ca3af;pointer-events:none; }
   .home-rich-editor a { color:#143c5a; }
   .home-rich-editor img { max-width:100%;border-radius:8px;margin:8px 0;display:block; }
+  /* ── HERO PHOTO LIBRARY ── */
+  .hero-drop-zone {
+    border: 2px dashed #d1d5db; border-radius: 12px; padding: 28px 20px;
+    text-align: center; cursor: pointer; transition: all .2s; background: #fafafa;
+    color: #9ca3af; font-size: 14px; margin-top: 14px;
+  }
+  .hero-drop-zone.drag-over { border-color: #7c3aed; background: #f5f3ff; color: #7c3aed; }
+  .hero-drop-zone input[type=file] { display: none; }
+  .hero-photo-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px; margin-top: 14px; max-height: 480px; overflow-y: auto;
+    padding: 2px;
+  }
+  .hero-photo-item {
+    position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+    cursor: pointer; border: 2.5px solid transparent; transition: border-color .15s;
+    background: #e5e7eb;
+  }
+  .hero-photo-item.selected { border-color: #7c3aed; }
+  .hero-photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-photo-item .hp-check {
+    position: absolute; top: 5px; left: 5px; width: 18px; height: 18px;
+    border-radius: 4px; background: rgba(255,255,255,.9); border: 1.5px solid #d1d5db;
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+    pointer-events: none;
+  }
+  .hero-photo-item.selected .hp-check { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .hero-photo-item .hp-name {
+    position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.55);
+    color: #fff; font-size: 9px; padding: 3px 4px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .hero-action-bar {
+    display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .hero-lib-status { font-size: 12px; color: #9ca3af; margin-left: auto; }
+
 </style>
 </head>
 <body>
@@ -1146,6 +1183,49 @@
 
   <!-- ── PAGE: HOME EDITOR ── -->
   <div id="page-home" style="display:none">
+
+    <!-- Hero Photo Library -->
+    <div class="su-section" style="margin-bottom:20px;">
+      <div class="su-section-title">🖼 Fotos del Hero</div>
+      <div class="su-section-sub">
+        Las imágenes se escalan al lado más largo a máx. <strong>800 px</strong> y se convierten a <strong>WebP</strong> automáticamente.
+        Arrastra archivos o carpetas, o usa el botón para seleccionar varios a la vez.
+      </div>
+
+      <!-- Upload drop zone -->
+      <div class="hero-drop-zone" id="hero-drop-zone"
+           onclick="document.getElementById('hero-file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="heroHandleDrop(event)">
+        <div style="font-size:28px;margin-bottom:6px;">📁</div>
+        <div><strong>Arrastra imágenes aquí</strong> o haz clic para seleccionar</div>
+        <div style="font-size:12px;margin-top:4px;">Puedes seleccionar múltiples archivos a la vez</div>
+        <input type="file" id="hero-file-input" accept="image/*" multiple
+               onchange="heroHandleFiles(this.files)">
+      </div>
+
+      <!-- Upload progress -->
+      <div id="hero-upload-progress" style="display:none;margin-top:10px;">
+        <div style="background:#e5e7eb;border-radius:999px;height:6px;overflow:hidden;margin-bottom:6px;">
+          <div id="hero-upload-bar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:999px;transition:width .3s;width:0%"></div>
+        </div>
+        <div id="hero-upload-status" style="font-size:12px;color:#6b7280;"></div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="hero-action-bar" id="hero-action-bar" style="display:none;">
+        <button class="btn btn-secondary btn-sm" onclick="heroSelectAll()">Sel. todo</button>
+        <button class="btn btn-secondary btn-sm" onclick="heroDeselectAll()">Deseleccionar</button>
+        <button class="btn btn-danger btn-sm"    id="hero-delete-btn" onclick="heroDeleteSelected()" style="display:none;">
+          🗑 Eliminar (<span id="hero-sel-count">0</span>)
+        </button>
+        <span class="hero-lib-status" id="hero-lib-status"></span>
+      </div>
+
+      <!-- Thumbnail grid -->
+      <div class="hero-photo-grid" id="hero-photo-grid"></div>
+    </div>
 
     <!-- Welcome Message -->
     <div class="su-section" style="margin-bottom:20px;">
@@ -4087,6 +4167,7 @@ async function loadHomeEditor() {
   }
   document.getElementById('home-welcome').innerHTML = _homeEditorData.welcome_html;
   document.getElementById('home-footer').innerHTML  = _homeEditorData.footer_html;
+  loadHeroPhotos();
 }
 
 
@@ -4112,6 +4193,147 @@ function _cropImgCover(file, W, H) {
 }
 
 
+
+// ── HERO PHOTO LIBRARY ───────────────────────────────────────
+let _heroPhotos   = [];   // [{name, url, path}]
+let _heroSelected = new Set();
+let _heroLibLoaded = false;
+
+async function loadHeroPhotos() {
+  if (_heroLibLoaded) return;
+  _heroLibLoaded = true;
+  const grid = document.getElementById('hero-photo-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:#9ca3af;font-size:13px;">Cargando librería…</div>';
+
+  // List all files in hero/ (flat folder)
+  const { data, error } = await sb.storage.from('imagenes').list('hero', { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+  if (error) { grid.innerHTML = '<div style="color:#dc2626;padding:16px;">Error: ' + error.message + '</div>'; return; }
+
+  _heroPhotos = (data || [])
+    .filter(f => f.name && f.id !== null && !f.name.startsWith('.'))  // skip virtual folders and dot-files
+    .map(f => ({
+      name: f.name,
+      path: 'hero/' + f.name,
+      url:  'https://uzfmpctopzvneykqwxny.supabase.co/storage/v1/object/public/imagenes/hero/' + encodeURIComponent(f.name),
+    }));
+
+  _heroSelected.clear();
+  renderHeroGrid();
+  document.getElementById('hero-action-bar').style.display = _heroPhotos.length ? 'flex' : 'none';
+}
+
+function renderHeroGrid() {
+  const grid = document.getElementById('hero-photo-grid');
+  if (!grid) return;
+  if (!_heroPhotos.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:#9ca3af;font-size:13px;border:1.5px dashed #e5e7eb;border-radius:10px;">No hay fotos en el hero. Sube algunas arriba.</div>';
+    document.getElementById('hero-action-bar').style.display = 'none';
+    return;
+  }
+  document.getElementById('hero-action-bar').style.display = 'flex';
+  document.getElementById('hero-lib-status').textContent = _heroPhotos.length + ' fotos';
+  grid.innerHTML = _heroPhotos.map((p, i) => `
+    <div class="hero-photo-item${_heroSelected.has(i) ? ' selected' : ''}" onclick="heroToggleSelect(${i})" title="${p.name}">
+      <img src="${p.url}" alt="" loading="lazy" onerror="this.style.opacity='.3'">
+      <div class="hp-check">${_heroSelected.has(i) ? '✓' : ''}</div>
+      <div class="hp-name">${p.name}</div>
+    </div>`).join('');
+  _updateHeroDeleteBtn();
+}
+
+function heroToggleSelect(i) {
+  if (_heroSelected.has(i)) _heroSelected.delete(i); else _heroSelected.add(i);
+  renderHeroGrid();
+}
+
+function heroSelectAll()   { _heroPhotos.forEach((_,i) => _heroSelected.add(i)); renderHeroGrid(); }
+function heroDeselectAll() { _heroSelected.clear(); renderHeroGrid(); }
+
+function _updateHeroDeleteBtn() {
+  const btn = document.getElementById('hero-delete-btn');
+  const cnt = document.getElementById('hero-sel-count');
+  if (!btn || !cnt) return;
+  const n = _heroSelected.size;
+  cnt.textContent = n;
+  btn.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+async function heroDeleteSelected() {
+  const n = _heroSelected.size;
+  if (!n) return;
+  showConfirm(
+    `Eliminar ${n} foto${n>1?'s':''}`,
+    `¿Seguro? Esta acción no se puede deshacer.`,
+    async () => {
+      const paths = [..._heroSelected].map(i => _heroPhotos[i].path);
+      const { error } = await sb.storage.from('imagenes').remove(paths);
+      if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
+      showToast(`✅ ${n} foto${n>1?'s':''} eliminada${n>1?'s':''}`, 'ok');
+      _heroLibLoaded = false;
+      await loadHeroPhotos();
+    }, { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
+}
+
+function heroHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('hero-drop-zone').classList.remove('drag-over');
+  const files = e.dataTransfer?.files;
+  if (files?.length) heroHandleFiles(files);
+}
+
+async function heroHandleFiles(files) {
+  if (!files?.length) return;
+  const imgs = [...files].filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) { showToast('No se encontraron imágenes válidas', 'error'); return; }
+
+  const prog  = document.getElementById('hero-upload-progress');
+  const bar   = document.getElementById('hero-upload-bar');
+  const stat  = document.getElementById('hero-upload-status');
+  prog.style.display = 'block';
+
+  let ok = 0, err = 0;
+  for (let i = 0; i < imgs.length; i++) {
+    const file = imgs[i];
+    stat.textContent = `Procesando ${i+1}/${imgs.length}: ${file.name}`;
+    bar.style.width = ((i+1)/imgs.length*100) + '%';
+    try {
+      const blob  = await _resizeToMax800(file);
+      const ext   = '.webp';
+      const stem  = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const fname = stem + ext;
+      const { error } = await sb.storage.from('imagenes')
+        .upload('hero/' + fname, blob, { contentType: 'image/webp', upsert: true });
+      if (error) err++; else ok++;
+    } catch(e) { err++; }
+  }
+
+  stat.textContent = `✅ ${ok} subidas${err ? ' · ❌ ' + err + ' errores' : ''}`;
+  setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 3000);
+  if (ok) { _heroLibLoaded = false; await loadHeroPhotos(); }
+}
+
+function _resizeToMax800(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(), objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      const MAX = 800;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Conversión fallida')), 'image/webp', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('No se pudo leer la imagen')); };
+    img.src = objUrl;
+  });
+}
 
 function homeExecCmd(editorId, cmd, val) {
   document.getElementById(editorId).focus();

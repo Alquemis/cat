@@ -571,6 +571,10 @@
         style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
         Devueltos
       </button>
+      <button id="otab-exentos" onclick="showOrdersTab('exentos')"
+        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+        Exentos
+      </button>
       <button id="otab-eliminados" onclick="showOrdersTab('eliminados')"
         style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
         Eliminados
@@ -693,6 +697,37 @@
             <th>Acciones</th>
           </tr></thead>
           <tbody id="devueltos-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Exentos -->
+    <div id="opage-exentos" style="display:none">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="exentos-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminExentos()">
+        </div>
+        <select id="exentos-lugar" onchange="filterAdminExentos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <input type="date" id="exentos-desde" onchange="filterAdminExentos()" title="Desde fecha"
+          style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('exentos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortExentos('fecha')"                id="exth-fecha">Fecha <span class="sort-icon">↕</span></th>
+            <th>Pedido #</th>
+            <th class="th-sort" onclick="sortExentos('usuario_nombre')"       id="exth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortExentos('usuario_departamento')" id="exth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortExentos('usuario_lugar')"        id="exth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortExentos('total')"                id="exth-total">Total <span class="sort-icon">↕</span></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="exentos-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1058,6 +1093,38 @@
           </div>
 
         </div><!-- /su-panels-grid -->
+      </div>
+
+      <!-- Usuarios Exentos de Pago -->
+      <div class="su-section">
+        <div class="su-section-title">🚫 Usuarios Exentos de Pago</div>
+        <div class="su-section-sub">Estos usuarios no suman a los totales de ventas. Sus pedidos aparecen en el tab "Exentos". El dueño siempre está exento y no se puede eliminar.</div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;">Número de cédula</label>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="text" id="exempt-cedula-input" placeholder="Ej. 185800008631"
+              style="flex:1;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;"
+              oninput="lookupExemptUser()" onkeydown="if(event.key==='Enter') addExemptCedula()">
+            <button class="btn btn-primary" onclick="addExemptCedula()" id="exempt-add-btn" disabled
+              style="padding:10px 20px;white-space:nowrap;opacity:.45;">+ Agregar</button>
+          </div>
+          <!-- Preview del usuario encontrado -->
+          <div id="exempt-preview" style="display:none;margin-top:8px;padding:10px 14px;border:1.5px solid #d1fae5;border-radius:9px;background:#f0fdf4;display:none;align-items:center;gap:10px;">
+            <div id="exempt-preview-avatar" class="collab-avatar" style="width:34px;height:34px;font-size:13px;flex-shrink:0;"></div>
+            <div>
+              <div id="exempt-preview-name" style="font-size:14px;font-weight:700;color:#111827;"></div>
+              <div id="exempt-preview-sub"  style="font-size:12px;color:#6b7280;"></div>
+            </div>
+          </div>
+          <div id="exempt-notfound" style="display:none;margin-top:8px;padding:9px 13px;border:1.5px solid #fca5a5;border-radius:9px;background:#fef2f2;font-size:13px;color:#dc2626;"></div>
+        </div>
+
+        <div id="exempt-msg" style="display:none;padding:9px 13px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+
+        <div id="exempt-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="color:#9ca3af;font-size:13px;padding:12px 0;">Cargando…</div>
+        </div>
       </div>
 
       <!-- Eliminar colaboradores — 1 columna completa -->
@@ -1651,13 +1718,15 @@ let allAdminHist   = [];
 let _moraUsersMap  = {};  // key (email||nombre) → mora orders[]
 let _moraNombreMap = {};  // nombre → key in _moraUsersMap
 const OWNER_CEDULA = '116000127'; // Dueño — exento de pago, no suma a ventas
+const EXEMPT_CEDULAS = new Set(['116000127', '185800008631']); // Usuarios exentos de pago
+const isExemptOrder = o => o.exento_pago || EXEMPT_CEDULAS.has(o.usuario_email);
 
 function _rebuildMoraMap() {
   const now = Date.now();
   _moraUsersMap  = {};
   _moraNombreMap = {};
   allAdminHist.forEach(o => {
-    if (o.estado === 'facturado' && !o.exento_pago && now > getMoraThreshold(o.facturado_at || o.fecha)) {
+    if (o.estado === 'facturado' && !isExemptOrder(o) && now > getMoraThreshold(o.facturado_at || o.fecha)) {
       const key = o.usuario_email || o.usuario_nombre;
       if (!_moraUsersMap[key]) _moraUsersMap[key] = [];
       _moraUsersMap[key].push(o);
@@ -1681,7 +1750,7 @@ function moraUserChip(nombre, email) {
 }
 
 function moraOrderBadge(o) {
-  if (!o || o.estado !== 'facturado' || o.exento_pago) return '';
+  if (!o || o.estado !== 'facturado' || isExemptOrder(o)) return '';
   if (Date.now() <= getMoraThreshold(o.facturado_at || o.fecha)) return '';
   return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
 }
@@ -2258,19 +2327,19 @@ async function loadOrders() {
   _rebuildMoraMap();
   const now        = Date.now();
   const cancelados    = allAdminHist.filter(o => o.estado === 'cancelado');
-  const facturados    = allAdminHist.filter(o => o.estado === 'facturado' && !o.exento_pago);
-  const pagados       = allAdminHist.filter(o => o.estado === 'pagado'    && !o.exento_pago);
+  const facturados    = allAdminHist.filter(o => o.estado === 'facturado' && !isExemptOrder(o));
+  const pagados       = allAdminHist.filter(o => o.estado === 'pagado'    && !isExemptOrder(o));
   const devueltos     = allAdminHist.filter(o => o.estado === 'devuelto');
   const enMora        = facturados.filter(o => now > getMoraThreshold(o.facturado_at || o.fecha));
-  const totalNuevos    = allAdminPend.filter(o => o.usuario_email !== OWNER_CEDULA).reduce((s,o) => s + (o.total||0), 0);
+  const totalNuevos    = allAdminPend.filter(o => !isExemptOrder(o)).reduce((s,o) => s + (o.total||0), 0);
   const totalFact      = facturados.reduce((s,o) => s + (o.total||0), 0);
   const totalPag       = pagados.reduce((s,o) => s + (o.total||0), 0);
   const totalMora      = enMora.reduce((s,o) => s + (o.total||0), 0);
   const totalDevueltos = devueltos.reduce((s,o) => s + (o.total||0), 0);
   const granTotal      = totalNuevos + totalFact + totalPag;
   const fmt = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
-  document.getElementById('stat-orders').textContent            = allAdminPend.length;
-  document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
+  document.getElementById('stat-orders').textContent            = allAdminPend.filter(o => !isExemptOrder(o)).length;
+  document.getElementById('stat-orders-total').textContent      = allAdminPend.filter(o => !isExemptOrder(o)).length + allAdminHist.filter(o => !isExemptOrder(o)).length;
   document.getElementById('stat-orders-cancelados').textContent  = cancelados.length;
   document.getElementById('stat-orders-devueltos').textContent   = devueltos.length;
   document.getElementById('stat-gran-total').textContent         = granTotal.toLocaleString('es-CR');
@@ -2280,10 +2349,10 @@ async function loadOrders() {
   document.getElementById('stat-gt-mora').innerHTML              = fmt(totalMora);
   document.getElementById('stat-gt-devueltos').innerHTML         = fmt(totalDevueltos);
   const badgePend = document.getElementById('obadge-pend');
-  if (badgePend) { badgePend.textContent = allAdminPend.length; badgePend.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
+  if (badgePend) { const _pCount = allAdminPend.filter(o => !isExemptOrder(o)).length; badgePend.textContent = _pCount; badgePend.style.display = _pCount ? 'inline-flex' : 'none'; }
   const badgeFact = document.getElementById('obadge-fact');
   if (badgeFact) { badgeFact.textContent = facturados.length; badgeFact.style.display = facturados.length ? 'inline-flex' : 'none'; }
-  filterAdminPend(); filterAdminHist(); filterAdminPagados(); filterAdminDevueltos(); filterAdminEliminados();
+  filterAdminPend(); filterAdminHist(); filterAdminPagados(); filterAdminDevueltos(); filterAdminExentos(); filterAdminEliminados();
   // Re-render collab list if visible so mora chips appear
   if (document.getElementById('page-users')?.style.display !== 'none' && allUsers.length > 0) filterUsers();
   requestAnimationFrame(_fitOrdersTable);
@@ -2292,7 +2361,7 @@ async function loadOrders() {
 function _fitOrdersTable() {
   const ordersPage = document.getElementById('page-orders');
   if (!ordersPage || ordersPage.style.display === 'none') return;
-  const panes = ['pend','hist','pagados','devueltos','eliminados'];
+  const panes = ['pend','hist','pagados','devueltos','exentos','eliminados'];
   for (const t of panes) {
     const pane = document.getElementById('opage-' + t);
     if (!pane || pane.style.display === 'none') continue;
@@ -2309,7 +2378,7 @@ function _fitOrdersTable() {
 window.addEventListener('resize', _fitOrdersTable);
 
 function showOrdersTab(tab) {
-  ['pend','hist','pagados','devueltos','eliminados'].forEach(t => {
+  ['pend','hist','pagados','devueltos','exentos','eliminados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('otab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
@@ -2358,6 +2427,7 @@ function filterAdminPend() {
   const q = (document.getElementById('pend-search').value || '').toLowerCase();
   const lugar = document.getElementById('pend-lugar').value;
   let list = allAdminPend.filter(o =>
+    !isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar)
   );
@@ -2371,7 +2441,7 @@ function filterAdminHist() {
   const lugar = document.getElementById('hist-lugar').value;
   const desde = document.getElementById('hist-desde').value;
   let list = allAdminHist.filter(o =>
-    o.estado === 'facturado' &&
+    o.estado === 'facturado' && !isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
@@ -2437,7 +2507,7 @@ function filterAdminDevueltos() {
   const lugar = document.getElementById('devueltos-lugar').value;
   const desde = document.getElementById('devueltos-desde').value;
   let list = allAdminHist.filter(o =>
-    o.estado === 'devuelto' &&
+    o.estado === 'devuelto' && !isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
@@ -2453,12 +2523,54 @@ function sortEliminados(col) {
   else { _eliminadosSort.col = col; _eliminadosSort.dir = 'asc'; }
   filterAdminEliminados();
 }
+// ── EXENTOS ────────────────────────────────────────────────
+let _exentosSort        = { col: 'fecha', dir: 'desc' };
+let _exentosDisplayList = [];
+
+function sortExentos(col) {
+  if (_exentosSort.col === col) _exentosSort.dir = _exentosSort.dir === 'asc' ? 'desc' : 'asc';
+  else { _exentosSort.col = col; _exentosSort.dir = col === 'total' ? 'desc' : 'asc'; }
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c => {
+    const th = document.getElementById('exth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _exentosSort.col) th.classList.add(_exentosSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  filterAdminExentos();
+}
+
+function filterAdminExentos() {
+  const q     = (document.getElementById('exentos-search')?.value || '').toLowerCase();
+  const lugar = document.getElementById('exentos-lugar')?.value || '';
+  const desde = document.getElementById('exentos-desde')?.value || '';
+  const allOrders = [...(allAdminPend||[]), ...(allAdminHist||[])];
+  let list = allOrders.filter(o =>
+    isExemptOrder(o) &&
+    (!q || (o.usuario_nombre||'').toLowerCase().includes(q) ||
+           (o.usuario_departamento||'').toLowerCase().includes(q) ||
+           o.id.slice(0,8).toLowerCase().includes(q)) &&
+    (!lugar || (o.usuario_lugar||'') === lugar) &&
+    (!desde || (o.fecha||'').slice(0,10) >= desde)
+  );
+  const { col, dir } = _exentosSort;
+  list = [...list].sort((a, b) => {
+    let va = a[col] ?? '', vb = b[col] ?? '';
+    if (col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  _exentosDisplayList = list;
+  renderAdminOrders('exentos-tbody', list);
+}
+
+
 function filterAdminEliminados() {
   const q     = (document.getElementById('eliminados-search').value || '').toLowerCase();
   const lugar = document.getElementById('eliminados-lugar').value;
   const desde = document.getElementById('eliminados-desde').value;
   let list = allAdminHist.filter(o =>
-    (o.estado === 'eliminado' || o.estado === 'sin_inventario' || o.estado === 'cancelado') &&
+    (o.estado === 'eliminado' || o.estado === 'sin_inventario' || o.estado === 'cancelado') && !isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
@@ -2473,7 +2585,7 @@ function filterAdminPagados() {
   const lugar = document.getElementById('pagados-lugar').value;
   const desde = document.getElementById('pagados-desde').value;
   let list = allAdminHist.filter(o =>
-    (o.estado === 'pagado' || o.estado === 'cancelado') &&
+    o.estado === 'pagado' && !isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar) &&
     (!desde || (o.fecha||'').slice(0,10) >= desde)
@@ -2507,11 +2619,11 @@ function renderAdminOrders(tbodyId, list) {
     const devuelto   = o.estado === 'devuelto';
     const sinInventario = o.estado === 'sin_inventario';
     const eliminado    = o.estado === 'eliminado';
-    const exento     = !!o.exento_pago;
+    const exento     = isExemptOrder(o);
     const mora       = facturado && !exento && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha          = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
     const fechaPago      = (pagado && o.pagado_at) ? new Date(o.pagado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
-    const fechaFacturado = (facturado && o.facturado_at) ? new Date(o.facturado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
+    const fechaFacturado = o.facturado_at ? new Date(o.facturado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
     const num        = o.id.slice(0,8).toUpperCase();
 
     const dupColor  = (!cancelado && !devuelto && !sinInventario && !eliminado) ? (_adminDupMap[o.id] || '') : '';
@@ -2550,7 +2662,7 @@ function renderAdminOrders(tbodyId, list) {
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
-      <td style="${(pagado || facturado) ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : facturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : fecha}${dupChip}</td>
+      <td style="${(pagado || facturado || exento) ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : facturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : exento ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
@@ -2702,7 +2814,7 @@ function openMoraModal(userKey, nombre) {
   const _cr = new Date(Date.now() - 6 * 3600000); _cr.setUTCHours(0, 0, 0, 0);
   const now  = _cr.getTime() + 6 * 3600000; // medianoche CR hoy
   const pedidosMora = allAdminHist.filter(o =>
-    o.estado === 'facturado' && !o.exento_pago &&
+    o.estado === 'facturado' && !isExemptOrder(o) &&
     now > getMoraThreshold(o.facturado_at || o.fecha) &&
     (o.usuario_email === userKey || o.usuario_nombre === userKey)
   );
@@ -2861,7 +2973,7 @@ function _renderSuUsersPage() {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
     const pedidosMora = (allAdminHist || []).filter(o =>
-      o.estado === 'facturado' && !o.exento_pago &&
+      o.estado === 'facturado' && !isExemptOrder(o) &&
       now > getMoraThreshold(o.facturado_at || o.fecha) &&
       (o.usuario_email === u.cedula || o.usuario_nombre === u.nombre)
     );
@@ -2954,7 +3066,7 @@ async function loadSuPage() {
   ['admin','fact','su','gr','tr','he'].forEach(t => {
     document.getElementById('su-msg-' + t).style.display = 'none';
   });
-  await loadSuUsers();
+  await Promise.all([loadSuUsers(), loadExemptCedulas()]);
 }
 
 async function saveSuCred(type) {
@@ -2987,6 +3099,160 @@ async function saveSuCred(type) {
     if (type === 'su') localStorage.setItem('su_session', newToken);
     showMsg('✅ Guardado. Otros dispositivos deberán iniciar sesión de nuevo.', true);
   }
+}
+
+// ── SUPERUSUARIO — USUARIOS EXENTOS ──────────────────────────
+let _exemptLookupUser  = null; // usuario encontrado en el lookup
+let _exemptLookupTimer = null;
+
+async function loadExemptCedulas() {
+  const { data } = await sb.from('app_config').select('value').eq('key', 'exempt_cedulas').maybeSingle();
+  let list = [];
+  if (data?.value) { try { list = JSON.parse(data.value); } catch(e) {} }
+  if (!list.includes(OWNER_CEDULA)) list = [OWNER_CEDULA, ...list];
+  EXEMPT_CEDULAS.clear();
+  list.forEach(c => EXEMPT_CEDULAS.add(c));
+  // Cargar datos de nombre para cada cédula
+  const { data: users } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar').in('cedula', list);
+  const usersMap = {};
+  (users || []).forEach(u => { usersMap[u.cedula] = u; });
+  renderExemptList(list, usersMap);
+  return list;
+}
+
+function _exemptInitials(nombre) {
+  return (nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+}
+
+function renderExemptList(list, usersMap) {
+  const el = document.getElementById('exempt-list');
+  if (!el) return;
+  if (!list || list.length === 0) {
+    el.innerHTML = '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">No hay usuarios exentos.</div>';
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const isOwner = c === OWNER_CEDULA;
+    const u = usersMap?.[c];
+    const nombre = u?.nombre || c;
+    const ini    = _exemptInitials(u?.nombre);
+    const sub    = [u?.departamento, u?.lugar].filter(Boolean).join(' · ');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1.5px solid ${isOwner ? '#ddd6fe' : '#e5e7eb'};border-radius:9px;background:${isOwner ? '#faf5ff' : '#fff'};">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="collab-avatar" onclick="openSuCollabProfile('${c}')" title="Ver ficha" style="width:36px;height:36px;font-size:13px;flex-shrink:0;cursor:pointer;${isOwner ? 'background:#7c3aed;' : 'background:#374151;'}">${ini}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:${isOwner ? '#5b21b6' : '#111827'};">
+            ${esc(u?.nombre || '—')}
+            ${isOwner ? '<span style="margin-left:6px;font-size:10px;background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:999px;font-weight:700;vertical-align:middle;">DUEÑO</span>' : ''}
+          </div>
+          <div style="font-size:12px;color:#6b7280;font-family:monospace;">${c}${sub ? ' · <span style="font-family:sans-serif;">'+esc(sub)+'</span>' : ''}</div>
+        </div>
+      </div>
+      ${isOwner
+        ? '<span style="font-size:12px;color:#9ca3af;white-space:nowrap;">Permanente</span>'
+        : `<button onclick="removeExemptCedula('${c}')" style="border:none;background:#fee2e2;color:#dc2626;font-size:12px;font-weight:600;padding:6px 13px;border-radius:7px;cursor:pointer;white-space:nowrap;">Eliminar</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+// Lookup en tiempo real mientras se escribe la cédula
+function lookupExemptUser() {
+  clearTimeout(_exemptLookupTimer);
+  _exemptLookupUser = null;
+  const btn      = document.getElementById('exempt-add-btn');
+  const preview  = document.getElementById('exempt-preview');
+  const notfound = document.getElementById('exempt-notfound');
+  const cedula   = (document.getElementById('exempt-cedula-input')?.value || '').trim().replace(/\D/g,'');
+
+  preview.style.display  = 'none';
+  notfound.style.display = 'none';
+  if (btn) { btn.disabled = true; btn.style.opacity = '.45'; }
+
+  if (cedula.length < 5) return; // esperar al menos 5 dígitos
+
+  _exemptLookupTimer = setTimeout(async () => {
+    const { data } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar').eq('cedula', cedula).maybeSingle();
+    if (!data) {
+      notfound.textContent  = `No existe ningún colaborador con cédula ${cedula}.`;
+      notfound.style.display = 'block';
+      return;
+    }
+    if (EXEMPT_CEDULAS.has(cedula)) {
+      notfound.textContent  = `${data.nombre} ya está en la lista de exentos.`;
+      notfound.style.display = 'block';
+      return;
+    }
+    _exemptLookupUser = data;
+    const avEl = document.getElementById('exempt-preview-avatar');
+    avEl.textContent = _exemptInitials(data.nombre);
+    avEl.onclick     = () => openSuCollabProfile(data.cedula);
+    avEl.style.cursor = 'pointer';
+    avEl.title        = 'Ver ficha';
+    document.getElementById('exempt-preview-name').textContent = data.nombre;
+    document.getElementById('exempt-preview-sub').textContent  = [data.departamento, data.lugar].filter(Boolean).join(' · ');
+    preview.style.display = 'flex';
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }, 350);
+}
+
+function _showExemptMsg(text, ok) {
+  const el = document.getElementById('exempt-msg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+  el.style.background = ok ? '#f0fdf4' : '#fef2f2';
+  el.style.border     = `1px solid ${ok ? '#86efac' : '#fca5a5'}`;
+  el.style.color      = ok ? '#166534' : '#dc2626';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+async function addExemptCedula() {
+  if (!_exemptLookupUser) return;
+  const cedula = _exemptLookupUser.cedula;
+  if (EXEMPT_CEDULAS.has(cedula)) { _showExemptMsg('Esa cédula ya está en la lista.', false); return; }
+  const updated = [...EXEMPT_CEDULAS, cedula];
+  const ok = await _saveExemptCedulas(updated);
+  if (ok) {
+    const nombre = _exemptLookupUser?.nombre || cedula;
+    _exemptLookupUser = null;
+    const input = document.getElementById('exempt-cedula-input');
+    if (input) input.value = '';
+    document.getElementById('exempt-preview').style.display  = 'none';
+    document.getElementById('exempt-notfound').style.display = 'none';
+    const btn = document.getElementById('exempt-add-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.45'; }
+    _showExemptMsg(`✅ ${nombre} agregado como exento.`, true);
+  }
+}
+
+async function removeExemptCedula(cedula) {
+  if (cedula === OWNER_CEDULA) return;
+  // Buscar nombre si disponible
+  const u = allUsers?.find(u => u.cedula === cedula);
+  const label = u?.nombre ? `a ${u.nombre}` : `la cédula ${cedula}`;
+  showConfirm('Eliminar exención', `¿Quitar ${label} de usuarios exentos?`, async () => {
+    const updated = [...EXEMPT_CEDULAS].filter(c => c !== cedula);
+    const ok = await _saveExemptCedulas(updated);
+    if (ok) _showExemptMsg('✅ Exención eliminada.', true);
+  }, { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' });
+}
+
+async function _saveExemptCedulas(list) {
+  if (!list.includes(OWNER_CEDULA)) list = [OWNER_CEDULA, ...list];
+  const { error } = await sb.from('app_config').upsert(
+    [{ key: 'exempt_cedulas', value: JSON.stringify(list) }],
+    { onConflict: 'key' }
+  );
+  if (error) { _showExemptMsg('Error: ' + error.message, false); return false; }
+  EXEMPT_CEDULAS.clear();
+  list.forEach(c => EXEMPT_CEDULAS.add(c));
+  // Recargar lista con nombres actualizados
+  const { data: users } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar').in('cedula', list);
+  const usersMap = {};
+  (users || []).forEach(u => { usersMap[u.cedula] = u; });
+  renderExemptList(list, usersMap);
+  return true;
 }
 
 // ── SUPERUSUARIO — ELIMINAR COLABORADORES ────────────────────
@@ -3212,9 +3478,9 @@ function renderSuDashboard() {
   const data     = _suDashData;
   const activos  = data.filter(o => o.estado !== 'cancelado' && o.estado !== 'eliminado' && o.estado !== 'sin_inventario');
   const now_sdk  = Date.now();
-  const sdkNuevos = data.filter(o => o.estado === 'pendiente' && o.usuario_email !== OWNER_CEDULA);
-  const sdkFact   = data.filter(o => o.estado === 'facturado' && !o.exento_pago);
-  const sdkPag    = data.filter(o => o.estado === 'pagado'    && !o.exento_pago);
+  const sdkNuevos = data.filter(o => o.estado === 'pendiente' && !isExemptOrder(o));
+  const sdkFact   = data.filter(o => o.estado === 'facturado' && !isExemptOrder(o));
+  const sdkPag    = data.filter(o => o.estado === 'pagado'    && !isExemptOrder(o));
   const sdkMora   = sdkFact.filter(o => now_sdk > getMoraThreshold(o.facturado_at || o.fecha));
   const sdkDev    = data.filter(o => o.estado === 'devuelto');
   const sdkTotNuevos = sdkNuevos.reduce((s,o) => s+(o.total||0), 0);

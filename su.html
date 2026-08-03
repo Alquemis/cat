@@ -2338,8 +2338,8 @@ async function loadOrders() {
   const totalDevueltos = devueltos.reduce((s,o) => s + (o.total||0), 0);
   const granTotal      = totalNuevos + totalFact + totalPag;
   const fmt = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
-  document.getElementById('stat-orders').textContent            = allAdminPend.filter(o => !isExemptOrder(o)).length;
-  document.getElementById('stat-orders-total').textContent      = allAdminPend.filter(o => !isExemptOrder(o)).length + allAdminHist.filter(o => !isExemptOrder(o)).length;
+  document.getElementById('stat-orders').textContent            = allAdminPend.length;
+  document.getElementById('stat-orders-total').textContent      = allAdminPend.length + allAdminHist.length;
   document.getElementById('stat-orders-cancelados').textContent  = cancelados.length;
   document.getElementById('stat-orders-devueltos').textContent   = devueltos.length;
   document.getElementById('stat-gran-total').textContent         = granTotal.toLocaleString('es-CR');
@@ -2349,7 +2349,7 @@ async function loadOrders() {
   document.getElementById('stat-gt-mora').innerHTML              = fmt(totalMora);
   document.getElementById('stat-gt-devueltos').innerHTML         = fmt(totalDevueltos);
   const badgePend = document.getElementById('obadge-pend');
-  if (badgePend) { const _pCount = allAdminPend.filter(o => !isExemptOrder(o)).length; badgePend.textContent = _pCount; badgePend.style.display = _pCount ? 'inline-flex' : 'none'; }
+  if (badgePend) { badgePend.textContent = allAdminPend.length; badgePend.style.display = allAdminPend.length ? 'inline-flex' : 'none'; }
   const badgeFact = document.getElementById('obadge-fact');
   if (badgeFact) { badgeFact.textContent = facturados.length; badgeFact.style.display = facturados.length ? 'inline-flex' : 'none'; }
   filterAdminPend(); filterAdminHist(); filterAdminPagados(); filterAdminDevueltos(); filterAdminExentos(); filterAdminEliminados();
@@ -2427,7 +2427,6 @@ function filterAdminPend() {
   const q = (document.getElementById('pend-search').value || '').toLowerCase();
   const lugar = document.getElementById('pend-lugar').value;
   let list = allAdminPend.filter(o =>
-    !isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) || (o.usuario_departamento||'').toLowerCase().includes(q) || o.id.slice(0,8).toLowerCase().includes(q)) &&
     (!lugar || (o.usuario_lugar||'') === lugar)
   );
@@ -2542,7 +2541,7 @@ function filterAdminExentos() {
   const q     = (document.getElementById('exentos-search')?.value || '').toLowerCase();
   const lugar = document.getElementById('exentos-lugar')?.value || '';
   const desde = document.getElementById('exentos-desde')?.value || '';
-  const allOrders = [...(allAdminPend||[]), ...(allAdminHist||[])];
+  const allOrders = [...(allAdminHist||[])];
   let list = allOrders.filter(o =>
     isExemptOrder(o) &&
     (!q || (o.usuario_nombre||'').toLowerCase().includes(q) ||

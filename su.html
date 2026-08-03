@@ -3132,18 +3132,14 @@ function renderExemptList(list, usersMap) {
   }
   el.innerHTML = list.map(c => {
     const isOwner = c === OWNER_CEDULA;
-    const u = usersMap?.[c];
-    const nombre = u?.nombre || c;
-    const ini    = _exemptInitials(u?.nombre);
-    const sub    = [u?.departamento, u?.lugar].filter(Boolean).join(' · ');
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1.5px solid ${isOwner ? '#ddd6fe' : '#e5e7eb'};border-radius:9px;background:${isOwner ? '#faf5ff' : '#fff'};">
+    const u   = usersMap?.[c];
+    const ini = _exemptInitials(u?.nombre);
+    const sub = [u?.departamento, u?.lugar].filter(Boolean).join(' · ');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;background:#fff;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="collab-avatar" onclick="openSuCollabProfile('${c}')" title="Ver ficha" style="width:36px;height:36px;font-size:13px;flex-shrink:0;cursor:pointer;${isOwner ? 'background:#7c3aed;' : 'background:#374151;'}">${ini}</div>
+        <div class="collab-avatar" onclick="openSuCollabProfile('${c}')" title="Ver ficha" style="width:36px;height:36px;font-size:13px;flex-shrink:0;cursor:pointer;">${ini}</div>
         <div>
-          <div style="font-size:14px;font-weight:700;color:${isOwner ? '#5b21b6' : '#111827'};">
-            ${esc(u?.nombre || '—')}
-            ${isOwner ? '<span style="margin-left:6px;font-size:10px;background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:999px;font-weight:700;vertical-align:middle;">DUEÑO</span>' : ''}
-          </div>
+          <div style="font-size:14px;font-weight:700;color:#111827;">${esc(u?.nombre || '—')}</div>
           <div style="font-size:12px;color:#6b7280;font-family:monospace;">${c}${sub ? ' · <span style="font-family:sans-serif;">'+esc(sub)+'</span>' : ''}</div>
         </div>
       </div>

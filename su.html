@@ -112,7 +112,7 @@
   /* ── TABLE ── */
   .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
   table { width:100%;border-collapse:collapse; }
-  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:2; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:2;white-space:nowrap; }
   tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
   tbody tr:last-child td { border-bottom:none; }
   tbody tr:hover { background:#fafafa; }
@@ -2432,7 +2432,7 @@ function filterAdminPend() {
   );
   const _suPendSorted = _sortOrderList(list, _suPendSort.col, _suPendSort.dir);
   _pendDisplayList = _suPendSorted;
-  renderAdminOrders('pend-tbody', _suPendSorted);
+  renderAdminOrders('pend-tbody', _suPendSorted, 'pend');
 }
 
 function filterAdminHist() {
@@ -2602,7 +2602,7 @@ const _SVG = {
   trash:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
 };
 
-function renderAdminOrders(tbodyId, list) {
+function renderAdminOrders(tbodyId, list, tab) {
   _rebuildAdminDupMap();
   const tbody = document.getElementById(tbodyId);
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin pedidos</td></tr>'; return; }
@@ -2619,6 +2619,7 @@ function renderAdminOrders(tbodyId, list) {
     const sinInventario = o.estado === 'sin_inventario';
     const eliminado    = o.estado === 'eliminado';
     const exento     = isExemptOrder(o);
+    const showExento = exento && tab !== 'pend'; // suprimir estilo exento en Nuevos
     const mora       = facturado && !exento && now > getMoraThreshold(o.facturado_at || o.fecha);
     const fecha          = new Date(o.fecha).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'});
     const fechaPago      = (pagado && o.pagado_at) ? new Date(o.pagado_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : null;
@@ -2628,12 +2629,12 @@ function renderAdminOrders(tbodyId, list) {
     const dupColor  = (!cancelado && !devuelto && !sinInventario && !eliminado) ? (_adminDupMap[o.id] || '') : '';
     const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
 
-    const rowClass  = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : sinInventario ? 'row-cancelado' : eliminado ? 'row-cancelado' : exento ? 'row-pagado' : pagado ? 'row-pagado' : '';
-    const rowStyle  = dupColor && !mora && !cancelado && !devuelto && !sinInventario && !eliminado && !pagado && !exento ? `background:${dupColor};` : '';
+    const rowClass  = mora ? 'row-mora' : cancelado ? 'row-cancelado' : devuelto ? 'row-cancelado' : sinInventario ? 'row-cancelado' : eliminado ? 'row-cancelado' : showExento ? 'row-pagado' : pagado ? 'row-pagado' : '';
+    const rowStyle  = dupColor && !mora && !cancelado && !devuelto && !sinInventario && !eliminado && !pagado && !showExento ? `background:${dupColor};` : '';
 
     let badgeHtml = '';
     if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
-    if (exento)    badgeHtml = '<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EXENTO</span>';
+    if (showExento) badgeHtml = '<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EXENTO</span>';
     else if (pagado) badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
     if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
     if (devuelto)  badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">DEVUELTO</span>';
@@ -2661,7 +2662,7 @@ function renderAdminOrders(tbodyId, list) {
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
-      <td style="${(pagado || facturado || exento) ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : facturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : exento ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : fecha}${dupChip}</td>
+      <td style="${(pagado || facturado || showExento) ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : facturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : showExento ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
       <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>

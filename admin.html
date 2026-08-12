@@ -1697,7 +1697,7 @@ function moraUserChip(nombre, email) {
 function moraOrderBadge(o) {
   if (!o || o.estado !== 'facturado' || isExemptOrder(o)) return '';
   if (Date.now() <= getMoraThreshold(o.facturado_at || o.fecha)) return '';
-  return '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
+  return '<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>';
 }
 
 /* ── Mapa de duplicados para tabla de pedidos ── */
@@ -1761,9 +1761,34 @@ async function onLogin() {
   document.getElementById('topbar-user').textContent = 'Administrador';
   await loadStats();
   await loadProducts();
+  _startRealtime();
+}
+
+// ── REALTIME ─────────────────────────────────────────────
+let _realtimeChannel = null;
+let _rtOrdersTimer   = null;
+let _rtProdsTimer    = null;
+
+function _startRealtime() {
+  if (_realtimeChannel) { sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+  _realtimeChannel = sb.channel('admin-rt')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
+      clearTimeout(_rtOrdersTimer);
+      _rtOrdersTimer = setTimeout(() => { loadOrders(); loadStats(); }, 1500);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lineas_pedido' }, () => {
+      clearTimeout(_rtOrdersTimer);
+      _rtOrdersTimer = setTimeout(() => { loadOrders(); loadStats(); }, 1500);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, () => {
+      clearTimeout(_rtProdsTimer);
+      _rtProdsTimer = setTimeout(() => loadProducts(), 1500);
+    })
+    .subscribe();
 }
 
 function onLogout() {
+  if (_realtimeChannel) { sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
   currentUser = null;
   localStorage.removeItem('admin_session');
   document.getElementById('login-overlay').classList.remove('hidden');
@@ -2619,8 +2644,8 @@ function renderAdminOrders(tbodyId, list, tab) {
     if (cancelado) badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">CANCELADO</span>';
     if (showExento) badgeHtml = '<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EXENTO</span>';
     else if (pagado) badgeHtml = '<span style="background:#bbf7d0;color:#065f46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">PAGADO</span>';
-    if (mora)      badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
-    if (devuelto)  badgeHtml = '<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">DEVUELTO</span>';
+    if (mora)      badgeHtml = '<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">EN MORA</span>';
+    if (devuelto)  badgeHtml = '<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">DEVUELTO</span>';
     if (sinInventario) badgeHtml = '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">SIN INVENTARIO</span>';
     if (eliminado)    badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">ELIMINADO</span>';
 
@@ -2640,7 +2665,7 @@ function renderAdminOrders(tbodyId, list, tab) {
       ? `<span class="tip" data-tip="Sin inventario"><button class="btn-icon" onclick="markAsSinInventario('${o.id}')" style="background:#fef3c7;color:#92400e;">${_SVG.box}</button></span>`
       : '';
     const btnDevuelto = facturado && !sinInventario && !eliminado
-      ? `<span class="tip" data-tip="Devuelto"><button class="btn-icon" onclick="markAsDevuelto('${o.id}')" style="background:#fee2e2;color:#dc2626;">${_SVG.undo}</button></span>`
+      ? `<span class="tip" data-tip="Devuelto"><button class="btn-icon" onclick="markAsDevuelto('${o.id}')" style="background:#16a34a;color:#fff;">${_SVG.undo}</button></span>`
       : '';
 
     return `<tr class="${rowClass}" style="${rowStyle}">
@@ -2652,7 +2677,7 @@ function renderAdminOrders(tbodyId, list, tab) {
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
-        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<span class="tip" data-tip="Eliminar"><button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" style="background:#fee2e2;color:#dc2626;">${_SVG.trash}</button></span>` : ''}
+        ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<span class="tip" data-tip="Eliminar"><button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" style="background:#16a34a;color:#fff;">${_SVG.trash}</button></span>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -2838,7 +2863,7 @@ function openOrderDetail(id) {
             <tr>
               <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
               <td style="text-align:center;font-weight:600">${l.cantidad}</td>
-              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</td>
+              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</td>
               <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
               <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
             </tr>`;
@@ -3639,7 +3664,7 @@ function toggleProdDetailOrders(row, idx) {
     const pedidos = (typeof _suProdDetailRowData!=='undefined'&&_suProdDetailRowData[idx])||_prodDetailRowData[idx]||[];
     wrap.innerHTML = pedidos.map(p=>`
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
-        <span style="font-family:monospace;font-weight:700;color:#143c5a;">#${p.num}${p.mora?'<span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>':''}</span>
+        <span style="font-family:monospace;font-weight:700;color:#143c5a;">#${p.num}${p.mora?'<span style="background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;white-space:nowrap;margin-left:4px;">EN MORA</span>':''}</span>
         <span style="color:#9ca3af;">${p.fecha}</span>
         <span style="font-weight:700;color:#143c5a;white-space:nowrap;">${p.qty} u.</span>
       </div>`).join('');

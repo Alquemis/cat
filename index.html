@@ -77,6 +77,31 @@
   .lugar-opt:hover { border-color: #9ca3af; background: #f9fafb; }
   .lugar-opt.selected { background: #143c5a; color: #fff; border-color: #143c5a; }
 
+  /* ── Registro: tipo de documento ── */
+  .reg-tipo-opts { display:flex; gap:10px; }
+  .reg-tipo-opt { flex:1; }
+  .reg-tipo-opt input[type="radio"] { display:none; }
+  .reg-tipo-opt span {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:10px 12px; border:1.5px solid #e5e7eb; border-radius:10px;
+    font-size:13px; font-weight:600; color:#6b7280; background:#fff;
+    cursor:pointer; transition:all 0.18s; user-select:none; white-space:nowrap;
+  }
+  .reg-tipo-opt span::before {
+    content:''; width:15px; height:15px; border-radius:3px;
+    border:2px solid #d1d5db; background:#fff; flex-shrink:0; transition:all 0.15s;
+  }
+  .reg-tipo-opt input:checked + span { background:#eff6ff; border-color:#143c5a; color:#143c5a; }
+  .reg-tipo-opt input:checked + span::before { background:#143c5a; border-color:#143c5a; box-shadow:inset 0 0 0 2.5px #fff; }
+  .reg-verify-btn {
+    flex:none; padding:11px 14px; background:#f3f4f6; color:#374151;
+    border:1.5px solid #e5e7eb; border-radius:10px; font-size:14px;
+    font-weight:600; cursor:pointer; white-space:nowrap; transition:all 0.18s; font-family:inherit;
+  }
+  .reg-verify-btn:hover { background:#e5e7eb; }
+  .reg-verify-btn:disabled { opacity:0.55; cursor:wait; }
+  .reg-verified-input { background:#f8fafc !important; border-color:#cbd5e1 !important; color:#374151 !important; cursor:default !important; }
+
   /* ========== TOPBAR ========== */
   .sticky-header {
     position: sticky; top: 0; z-index: 100;
@@ -931,20 +956,43 @@
 
     <!-- PANTALLA B: Registro completo -->
     <div id="login-screen-b" style="display:none;">
+      <!-- Tipo de identificación -->
       <div class="login-field">
-        <label for="login-nombre">Nombre y dos apellidos</label>
-        <input type="text" id="login-nombre" placeholder="" autocomplete="name" autocapitalize="words">
+        <label>Tipo de identificación</label>
+        <div class="reg-tipo-opts">
+          <label class="reg-tipo-opt">
+            <input type="radio" name="reg-tipo" value="cedula" checked onchange="onRegTipo()">
+            <span>Cédula</span>
+          </label>
+          <label class="reg-tipo-opt">
+            <input type="radio" name="reg-tipo" value="dimex" onchange="onRegTipo()">
+            <span>DIMEX</span>
+          </label>
+        </div>
       </div>
+      <!-- Número + Verificar -->
       <div class="login-field">
-        <label for="login-cedula">Número de cédula</label>
-        <input type="text" id="login-cedula" placeholder="" autocomplete="off" inputmode="numeric" oninput="checkCedulaDash(this)">
-        <span id="cedula-dash-warn" style="display:none;font-size:12px;color:#dc2626;margin-top:4px;">Ingresa solo números, sin guiones.</span>
+        <label id="reg-num-label">Número de cédula <small id="reg-digit-hint" style="font-weight:400;color:#9ca3af;">(9 dígitos)</small></label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="login-cedula" maxlength="9" inputmode="numeric"
+                 oninput="onRegNumInput(this)" autocomplete="off"
+                 style="flex:1;min-width:0;">
+          <button type="button" class="reg-verify-btn" id="reg-verify-btn" onclick="doVerifyCedula()">Verificar</button>
+        </div>
+        <div id="reg-verify-status" style="font-size:12px;margin-top:4px;"></div>
       </div>
-      <div class="login-field">
+      <!-- Nombre (readonly, auto-llenado por Hacienda) -->
+      <div class="login-field" id="reg-nombre-field" style="display:none;">
+        <label>Nombre</label>
+        <input type="text" id="login-nombre" class="reg-verified-input" readonly autocomplete="off">
+      </div>
+      <!-- Departamento -->
+      <div class="login-field" id="reg-depto-field" style="display:none;">
         <label for="login-depto">Departamento</label>
         <input type="text" id="login-depto" placeholder="" autocomplete="organization-title" autocapitalize="words">
       </div>
-      <div class="login-field">
+      <!-- Lugar de trabajo -->
+      <div class="login-field" id="reg-lugar-field" style="display:none;">
         <label>Lugar de trabajo</label>
         <div class="lugar-options">
           <div class="lugar-opt" data-lugar="Tres Ríos" onclick="selectLugar(this)">Tres Ríos</div>
@@ -1774,12 +1822,10 @@ function onLogout() {
   document.getElementById('login-error').classList.remove('show');
   document.getElementById('login-error-quick').classList.remove('show');
   document.getElementById('login-cedula-quick').value = '';
-  document.getElementById('login-nombre').value = '';
   document.getElementById('login-cedula').value = '';
   document.getElementById('login-depto').value  = '';
-  document.querySelectorAll('.lugar-opt').forEach(o => o.classList.remove('selected'));
-  document.getElementById('cedula-dash-warn').style.display = 'none';
   document.getElementById('cedula-quick-dash-warn').style.display = 'none';
+  if (typeof _resetRegVerify === 'function') _resetRegVerify();
   showLoginScreen();
   closeMyOrders();
   updateCartBadge();
@@ -1790,6 +1836,95 @@ function checkCedulaDash(input) {
   const warnId = input.id === 'login-cedula-quick' ? 'cedula-quick-dash-warn' : 'cedula-dash-warn';
   const warn = document.getElementById(warnId);
   if (warn) warn.style.display = input.value.includes('-') ? 'block' : 'none';
+}
+
+// ── CEDULA/DIMEX VERIFICATION (Screen B) ─────────────────
+let _cedulaVerified = false;
+
+function onRegTipo() {
+  _resetRegVerify();
+  const tipo = document.querySelector('input[name="reg-tipo"]:checked').value;
+  const inp  = document.getElementById('login-cedula');
+  const hint = document.getElementById('reg-digit-hint');
+  const label = document.getElementById('reg-num-label');
+  if (tipo === 'dimex') {
+    inp.maxLength = 12;
+    hint.textContent = '(12 dígitos)';
+    label.childNodes[0].textContent = 'Número de DIMEX ';
+  } else {
+    inp.maxLength = 9;
+    hint.textContent = '(9 dígitos)';
+    label.childNodes[0].textContent = 'Número de cédula ';
+  }
+  inp.value = '';
+  inp.focus();
+}
+
+function onRegNumInput(inp) {
+  inp.value = inp.value.replace(/\D/g, '');
+  if (_cedulaVerified) _resetRegVerify();
+}
+
+function _resetRegVerify() {
+  _cedulaVerified = false;
+  document.getElementById('login-nombre').value = '';
+  document.getElementById('reg-nombre-field').style.display = 'none';
+  document.getElementById('reg-depto-field').style.display  = 'none';
+  document.getElementById('reg-lugar-field').style.display  = 'none';
+  document.getElementById('reg-verify-status').textContent  = '';
+  document.getElementById('reg-verify-status').style.color  = '';
+  document.getElementById('reg-verify-btn').disabled        = false;
+  document.getElementById('reg-verify-btn').textContent     = 'Verificar';
+  // clear lugar selection
+  document.querySelectorAll('.lugar-opt').forEach(el => el.classList.remove('selected'));
+}
+
+async function doVerifyCedula() {
+  const tipo  = document.querySelector('input[name="reg-tipo"]:checked').value;
+  const num   = document.getElementById('login-cedula').value.trim();
+  const maxLen = tipo === 'dimex' ? 12 : 9;
+  const statusEl = document.getElementById('reg-verify-status');
+  const btn   = document.getElementById('reg-verify-btn');
+
+  statusEl.style.color = '#6b7280';
+  if (!num || num.length < maxLen) {
+    statusEl.textContent = `Ingresa los ${maxLen} dígitos completos.`;
+    statusEl.style.color = '#dc2626';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando…';
+  statusEl.textContent = '';
+
+  try {
+    const res  = await fetch('https://api.hacienda.go.cr/fe/ae?identificacion=' + encodeURIComponent(num));
+    const data = await res.json();
+    if (!data || !data.nombre) throw new Error('no_name');
+    // Check if cedula already registered
+    const { data: existing } = await sb.from('usuarios').select('cedula').eq('cedula', num).maybeSingle();
+    if (existing) {
+      statusEl.textContent = 'Este número de cédula ya se encuentra registrado. Usa la opción "Ya tengo cuenta".';
+      statusEl.style.color = '#dc2626';
+      btn.disabled = false;
+      btn.textContent = 'Verificar';
+      return;
+    }
+    // Success
+    _cedulaVerified = true;
+    document.getElementById('login-nombre').value = data.nombre;
+    document.getElementById('reg-nombre-field').style.display = 'block';
+    document.getElementById('reg-depto-field').style.display  = 'block';
+    document.getElementById('reg-lugar-field').style.display  = 'block';
+    statusEl.textContent = '';
+    btn.textContent = 'Verificado ✓';
+  } catch(e) {
+    _cedulaVerified = false;
+    statusEl.textContent = 'No se encontró el número. Verifícalo e inténtalo de nuevo.';
+    statusEl.style.color = '#dc2626';
+    btn.disabled = false;
+    btn.textContent = 'Verificar';
+  }
 }
 
 function showLoginScreen() {
@@ -1803,6 +1938,10 @@ function showRegisterScreen() {
   document.getElementById('login-screen-a').style.display = 'none';
   document.getElementById('login-screen-b').style.display = 'block';
   document.getElementById('login-error-quick').classList.remove('show');
+  _resetRegVerify();
+  // reset radio to cédula
+  const cedOpt = document.querySelector('input[name="reg-tipo"][value="cedula"]');
+  if (cedOpt) { cedOpt.checked = true; onRegTipo(); }
 }
 
 async function doQuickLogin() {
@@ -1859,7 +1998,6 @@ function getSelectedLugar() {
 }
 
 function doLogin() {
-  const nombre = toTitleCase(document.getElementById('login-nombre').value.trim());
   const cedula = document.getElementById('login-cedula').value.trim();
   const depto  = document.getElementById('login-depto').value.trim();
   const lugar  = getSelectedLugar();
@@ -1867,17 +2005,9 @@ function doLogin() {
 
   document.getElementById('login-error').classList.remove('show');
 
-  if (!nombre) { showLoginError('Por favor ingresa tu nombre y dos apellidos.'); return; }
-  const partes = nombre.trim().split(/\s+/);
-  if (partes.length < 3) { showLoginError('Debes ingresar nombre y dos apellidos.'); return; }
-  const apellidos = partes.slice(-2);
-  if (apellidos.some(a => a.length < 3)) { showLoginError('Los apellidos deben ser completos.'); return; }
-  if (!cedula)  { showLoginError('Por favor ingresa tu número de cédula.'); return; }
-  if (cedula.includes('-')) { showLoginError('La cédula debe ser solo números, sin guiones.'); return; }
-  if (cedula.replace(/\D/g, '').length < 9) {
-    showLoginError('El número de cédula está incompleto, revisa que no falten ceros e inténtalo de nuevo.');
-    return;
-  }
+  if (!_cedulaVerified) { showLoginError('Primero verifica tu número de identificación.'); return; }
+  const nombre = document.getElementById('login-nombre').value.trim();
+  if (!nombre) { showLoginError('No se pudo obtener el nombre. Verifica el número de identificación.'); return; }
   if (!depto)   { showLoginError('Por favor ingresa tu departamento.'); return; }
   if (!lugar)   { showLoginError('Selecciona tu lugar de trabajo.'); return; }
 
@@ -2216,11 +2346,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-cedula-quick').addEventListener('keydown', e => {
     if (e.key === 'Enter') doQuickLogin();
   });
-  document.getElementById('login-nombre').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('login-cedula').focus();
-  });
   document.getElementById('login-cedula').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('login-depto').focus();
+    if (e.key === 'Enter') doVerifyCedula();
   });
   document.getElementById('login-depto').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();

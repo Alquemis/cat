@@ -1854,9 +1854,34 @@ async function onLogin() {
   document.getElementById('topbar-user').textContent = 'Superusuario';
   await loadStats();
   await loadProducts();
+  _startRealtime();
+}
+
+// ── REALTIME ─────────────────────────────────────────────
+let _realtimeChannel = null;
+let _rtOrdersTimer   = null;
+let _rtProdsTimer    = null;
+
+function _startRealtime() {
+  if (_realtimeChannel) { sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+  _realtimeChannel = sb.channel('su-rt')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
+      clearTimeout(_rtOrdersTimer);
+      _rtOrdersTimer = setTimeout(() => { loadOrders(); loadStats(); }, 1500);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lineas_pedido' }, () => {
+      clearTimeout(_rtOrdersTimer);
+      _rtOrdersTimer = setTimeout(() => { loadOrders(); loadStats(); }, 1500);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, () => {
+      clearTimeout(_rtProdsTimer);
+      _rtProdsTimer = setTimeout(() => loadProducts(), 1500);
+    })
+    .subscribe();
 }
 
 function onLogout() {
+  if (_realtimeChannel) { sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
   currentUser = null;
   localStorage.removeItem('su_session');
   document.getElementById('login-overlay').classList.remove('hidden');

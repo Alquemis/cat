@@ -102,12 +102,13 @@
   .modal-card { background:#fff;border-radius:20px;padding:36px;width:100%;max-width:780px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
   .modal-title { font-size:19px;font-weight:700;color:#143c5a;margin-bottom:20px; }
   .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
-  .form-field { display:flex;flex-direction:column;gap:5px; }
+  .form-field { display:flex;flex-direction:column;gap:5px;min-width:0; }
   .form-field.full { grid-column:1/-1; }
   .form-field label { font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px; }
   .form-field input,.form-field select,.form-field textarea {
     padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;
     font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;
+    width:100%;box-sizing:border-box;min-width:0;
   }
   .form-field input:focus,.form-field select:focus,.form-field textarea:focus { border-color:#143c5a; }
   .form-field textarea { resize:vertical;min-height:60px; }
@@ -261,9 +262,9 @@
     .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     table { min-width:520px; }
 
-    /* Modal desliza desde abajo */
-    .modal-overlay { align-items:flex-end; padding:0; }
-    .modal-card { border-radius:20px 20px 0 0; max-height:92vh; padding:28px 20px; max-width:100% !important; }
+    /* Modal centrado en móvil */
+    .modal-overlay { align-items:center; padding:12px; }
+    .modal-card { border-radius:20px; max-height:92vh; padding:24px 16px; max-width:100% !important; }
 
     /* Form */
     .form-grid { grid-template-columns:1fr; }
@@ -1485,7 +1486,7 @@
 <div class="modal-overlay" id="product-modal">
   <div class="modal-card">
     <div class="modal-title" id="product-modal-title">Nuevo Producto</div>
-    <div class="form-grid">
+    <div class="form-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
       <div class="form-field">
         <label>Código *</label>
         <input type="text" id="f-codigo" placeholder="PP088001">
@@ -1509,27 +1510,82 @@
         <label>Nombre completo *</label>
         <input type="text" id="f-nombre" placeholder="Nombre del producto" autocomplete="off">
       </div>
-      <div class="form-field">
+      <!-- Fila compacta: Promoción · Descuento · Límite -->
+      <div class="form-field full">
+        <div style="display:flex;flex-wrap:nowrap;gap:16px;align-items:flex-start;padding-right:8px;">
+
+          <!-- Promoción + Stock -->
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+              <input type="checkbox" id="f-promocion" onchange="togglePromoStyle(this)"
+                style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;">
+              <span id="f-promocion-label" style="font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;">En promoción</span>
+            </label>
+            <div id="f-stock-wrap" style="display:none;">
+              <input type="number" id="f-stock" min="0" step="1" placeholder="stock"
+                style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+            </div>
+          </div>
+
+          <!-- Separador vertical -->
+          <div style="width:1px;flex-shrink:0;background:#e5e7eb;align-self:stretch;margin:2px 0;"></div>
+
+          <!-- Descuento + % -->
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+              <input type="checkbox" id="f-descuento" onchange="toggleDescuentoStyle(this)"
+                style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;">
+              <span id="f-descuento-label" style="font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;">Descuento</span>
+            </label>
+            <div id="f-desc-pct-wrap" style="display:none;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="number" id="f-desc-pct" min="1" max="99" step="1" placeholder="%"
+                  style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;min-width:0;">
+                <span style="font-size:12px;color:#6b7280;flex-shrink:0;">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Separador vertical -->
+          <div style="width:1px;flex-shrink:0;background:#e5e7eb;align-self:stretch;margin:2px 0;"></div>
+
+          <!-- Límite por usuario -->
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+              <input type="checkbox" id="f-limite-check" onchange="toggleLimiteStyle(this)"
+                style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;">
+              <span id="f-limite-label" style="font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;">Límite por usuario</span>
+            </label>
+            <div id="f-limite-wrap" style="display:none;">
+              <input type="number" id="f-limite" min="1" step="1" placeholder="máx. unidades"
+                style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+            </div>
+          </div>
+
+        </div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:8px;">Promoción y Descuento son mutuamente exclusivos. El límite por usuario se resetea al facturar.</div>
+      </div>
+      <div class="form-field" style="grid-column:span 2;">
         <label>Marca</label>
         <div class="cb-wrap">
           <input type="text" id="f-marca" placeholder="BIOLAND" autocomplete="off">
           <div class="cb-list" id="dd-marca"></div>
         </div>
       </div>
-      <div class="form-field">
+      <div class="form-field" style="grid-column:span 2;">
         <label>Línea</label>
         <div class="cb-wrap">
           <input type="text" id="f-spc" readonly style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;">
         </div>
       </div>
-      <div class="form-field">
+      <div class="form-field" style="grid-column:span 2;">
         <label>Categoría</label>
         <div class="cb-wrap cb-select">
           <input type="text" id="f-categoria" readonly style="cursor:pointer;">
           <div class="cb-list" id="dd-categoria"></div>
         </div>
       </div>
-      <div class="form-field">
+      <div class="form-field" style="grid-column:span 2;">
         <label>Subcategoría</label>
         <div class="cb-wrap">
           <input type="text" id="f-subcategoria" placeholder="Shampoo, Cuidado…" autocomplete="off">
@@ -1548,23 +1604,6 @@
         <div id="img-upload-status" style="font-size:12px;margin-top:6px;display:none;"></div>
         <div id="img-preview-wrap" style="margin-top:10px;display:none;">
           <img id="img-preview" style="max-width:120px;max-height:120px;border-radius:8px;border:1.5px solid #e5e7eb;object-fit:cover;">
-        </div>
-      </div>
-      <!-- Checkbox Promoción + Stock -->
-      <div class="form-field full">
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;">
-          <input type="checkbox" id="f-promocion" onchange="togglePromoStyle(this)"
-            style="width:18px;height:18px;cursor:pointer;accent-color:#dc2626;">
-          <span id="f-promocion-label" style="font-size:13px;font-weight:600;color:#6b7280;">
-            En promoción
-          </span>
-        </label>
-        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Al activar, el producto aparece en la sección PROMOCIONES.</div>
-        <div id="f-stock-wrap" style="display:none;margin-top:10px;">
-          <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Unidades disponibles (stock)</label>
-          <input type="number" id="f-stock" min="0" step="1" placeholder="ej. 50"
-            style="width:140px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
-          <span style="font-size:11px;color:#9ca3af;margin-left:8px;">Dejar vacío para sin límite</span>
         </div>
       </div>
     </div>
@@ -2068,6 +2107,14 @@ function openProductModal(product) {
   promoCheck.checked = !!product?.promocion;
   togglePromoStyle(promoCheck);
   document.getElementById('f-stock').value = product?.stock != null ? product.stock : '';
+  const descCheck = document.getElementById('f-descuento');
+  descCheck.checked = !!product?.descuento;
+  toggleDescuentoStyle(descCheck);
+  document.getElementById('f-desc-pct').value = product?.porcentaje_descuento || '';
+  const limCheck = document.getElementById('f-limite-check');
+  limCheck.checked = product?.limite_por_usuario != null;
+  toggleLimiteStyle(limCheck);
+  document.getElementById('f-limite').value = product?.limite_por_usuario != null ? product.limite_por_usuario : '';
   // Resetear estado del upload de imagen
   document.getElementById('img-upload-status').style.display = 'none';
   document.getElementById('img-preview-wrap').style.display  = 'none';
@@ -2106,6 +2153,9 @@ async function saveProduct() {
     activo:       document.getElementById('f-activo').value === 'Activo',
     promocion:    document.getElementById('f-promocion').checked,
     stock:        (() => { const v = document.getElementById('f-stock').value.trim(); return (document.getElementById('f-promocion').checked && v !== '') ? parseInt(v) : null; })(),
+    descuento:    document.getElementById('f-descuento').checked,
+    porcentaje_descuento: (() => { const v = document.getElementById('f-desc-pct').value.trim(); return (document.getElementById('f-descuento').checked && v !== '') ? parseFloat(v) : 0; })(),
+    limite_por_usuario: (() => { const v = document.getElementById('f-limite').value.trim(); return (document.getElementById('f-limite-check').checked && v !== '') ? parseInt(v) : null; })(),
     updated_at:   new Date().toISOString()
   };
 
@@ -2762,6 +2812,8 @@ function openOrderDetail(id) {
   const fecha  = new Date(o.fecha).toLocaleString('es-CR');
   const lineas = (o.lineas_pedido || []);
   const total  = o.total || 0;
+  // Calcular descuento total como diferencia entre precio original × cantidad y subtotal pagado
+  const totalDescuento = lineas.reduce((s, l) => s + ((l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0)), 0);
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
   document.getElementById('order-detail-card').innerHTML = `
@@ -2780,18 +2832,25 @@ function openOrderDetail(id) {
       <table>
         <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th style="white-space:nowrap">Precio u.</th><th>Subtotal</th></tr></thead>
         <tbody>
-          ${lineas.map(l => `
+          ${lineas.map(l => {
+            const descAmt = (l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0);
+            return `
             <tr>
               <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
               <td style="text-align:center;font-weight:600">${l.cantidad}</td>
-              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</td>
+              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</td>
               <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
               <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>
     <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      ${totalDescuento > 0 ? `
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio bruto</span><span><span class="col-sign">₡</span>${(total + totalDescuento).toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
+      <div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>` : ''}
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span></div>
@@ -3214,7 +3273,7 @@ async function loadDashboard() {
 
   const [resPed, resUsers] = await Promise.all([
     sb.from('pedidos')
-      .select('id, fecha, facturado_at, total, estado, exento_pago, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario)')
+      .select('id, fecha, facturado_at, total, estado, exento_pago, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario, descuento_porcentaje)')
       .order('fecha', { ascending: true }),
     sb.from('usuarios').select('cedula', { count: 'exact', head: true })
   ]);
@@ -4243,10 +4302,45 @@ initAuth();
 function togglePromoStyle(cb) {
   const label = document.getElementById('f-promocion-label');
   if (!label) return;
+  // Exclusión mutua con descuento
+  if (cb.checked) {
+    const descCb = document.getElementById('f-descuento');
+    if (descCb && descCb.checked) {
+      cb.checked = false;
+      showToast('Un producto no puede tener Promoción y Descuento al mismo tiempo.', 'warn');
+      return;
+    }
+  }
   label.style.color = cb.checked ? '#dc2626' : '#6b7280';
   label.textContent = cb.checked ? '¡En promoción!' : 'En promoción';
   const stockWrap = document.getElementById('f-stock-wrap');
   if (stockWrap) stockWrap.style.display = cb.checked ? 'block' : 'none';
+}
+
+function toggleDescuentoStyle(cb) {
+  const label = document.getElementById('f-descuento-label');
+  if (!label) return;
+  // Exclusión mutua con promoción
+  if (cb.checked) {
+    const promoCb = document.getElementById('f-promocion');
+    if (promoCb && promoCb.checked) {
+      cb.checked = false;
+      showToast('Un producto no puede tener Descuento y Promoción al mismo tiempo.', 'warn');
+      return;
+    }
+  }
+  label.style.color = cb.checked ? '#dc2626' : '#6b7280';
+  label.textContent = cb.checked ? '¡Con descuento!' : 'Descuento';
+  const pctWrap = document.getElementById('f-desc-pct-wrap');
+  if (pctWrap) pctWrap.style.display = cb.checked ? 'block' : 'none';
+}
+
+function toggleLimiteStyle(cb) {
+  const label = document.getElementById('f-limite-label');
+  if (!label) return;
+  label.style.color = cb.checked ? '#dc2626' : '#6b7280';
+  const wrap = document.getElementById('f-limite-wrap');
+  if (wrap) wrap.style.display = cb.checked ? 'block' : 'none';
 }
 
 // ── EXPORTAR PRODUCTOS A EXCEL ────────────────────────────

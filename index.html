@@ -562,6 +562,19 @@
   .promo-grid .product-card .product-code { font-size: 19px; }
   .promo-grid .product-card .card-name { font-size: 17px; }
   .promo-grid .product-card .card-price { font-size: 22px; }
+  /* Descuento card */
+  .product-card.desc-card { border: 2px solid #dc2626; }
+  .product-card.desc-card:hover { border-color: #b91c1c; }
+  .desc-tag { display:inline-block;background:#dc2626;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.4px; }
+  .desc-original-price { font-size:70%;color:#9ca3af;text-decoration:line-through;line-height:1.2; }
+  .desc-limit-chip { font-size:10px;color:#dc2626;font-weight:600;margin-top:3px; }
+  /* Límite popup overlay */
+  #limite-popup { display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);align-items:center;justify-content:center; }
+  #limite-popup.open { display:flex; }
+  #limite-popup-card { background:#fff;border-radius:16px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  #limite-popup-icon { font-size:40px;margin-bottom:10px; }
+  #limite-popup-msg { font-size:15px;font-weight:600;color:#1f2937;margin-bottom:20px;line-height:1.45; }
+  #limite-popup-btn { background:#dc2626;color:#fff;border:none;border-radius:9px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer; }
 
   .product-card {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
@@ -1152,6 +1165,15 @@
 <!-- ========== QUICK-ADD POPUP ========== -->
 <div class="qadd-overlay" id="qadd-overlay" onclick="closeQadd()">
   <div class="qadd-card" id="qadd-card" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- ========== LÍMITE POPUP ========== -->
+<div id="limite-popup" onclick="closeLimitePopup()">
+  <div id="limite-popup-card" onclick="event.stopPropagation()">
+    <div id="limite-popup-icon">🚫</div>
+    <div id="limite-popup-msg"></div>
+    <button id="limite-popup-btn" onclick="closeLimitePopup()">Entendido</button>
+  </div>
 </div>
 
 <!-- ========== ORDER MODAL ========== -->
@@ -2052,9 +2074,11 @@ function openPedidoDet(idx) {
   statusEl.textContent = statusLabel[o.estado] || o.estado || '';
   statusEl.style.cssText = sColor;
 
-  const subtotalSinIva = Math.round((o.total || 0) / 1.13);
-  const iva = (o.total || 0) - subtotalSinIva;
-  const total = (o.total || 0).toLocaleString('es-CR');
+  const totalAmt = o.total || 0;
+  const totalDescuento = (o.lineas_pedido || []).reduce((s, l) => s + ((l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0)), 0);
+  const subtotalSinIva = Math.round(totalAmt / 1.13);
+  const iva = totalAmt - subtotalSinIva;
+  const total = totalAmt.toLocaleString('es-CR');
 
   const linesHtml = (o.lineas_pedido || []).map(l => {
     const prod = CATALOG.find(p => p.id === l.producto_codigo);
@@ -2062,12 +2086,13 @@ function openPedidoDet(idx) {
     const imgHtml = imgSrc
       ? `<img src="${escAttr(imgSrc)}" class="mpd-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="mpd-img-ph" style="display:none">📦</div>`
       : `<div class="mpd-img-ph">📦</div>`;
-    const unitPrice = l.cantidad > 0 ? Math.round((l.subtotal || 0) / l.cantidad) : 0;
+    const effPrice = l.cantidad > 0 ? Math.round((l.subtotal || 0) / l.cantidad) : 0;
+    const descBadge = (l.descuento_porcentaje > 0) ? ` <span class="desc-tag" style="font-size:9px;">-${l.descuento_porcentaje}%</span>` : '';
     return `<div class="mpd-line">
       ${imgHtml}
       <div class="mpd-line-info">
-        <div class="mpd-line-name">${escHtml(prod?.n || l.producto_nombre || '')}</div>
-        <div class="mpd-line-qty">Cant: ${l.cantidad} &nbsp;·&nbsp; <span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
+        <div class="mpd-line-name">${escHtml(prod?.n || l.producto_nombre || '')}${descBadge}</div>
+        <div class="mpd-line-qty">Cant: ${l.cantidad} &nbsp;·&nbsp; <span class="col-sign">₡</span>${effPrice.toLocaleString('es-CR')} c/u</div>
       </div>
       <div class="mpd-line-sub"><span class="col-sign">₡</span>${(l.subtotal || 0).toLocaleString('es-CR')}</div>
     </div>`;
@@ -2080,6 +2105,10 @@ function openPedidoDet(idx) {
     </div>
     ${linesHtml}
     <div class="mpd-totals">
+      ${totalDescuento > 0 ? `
+      <div class="mpd-total-row" style="color:#6b7280"><span>Precio bruto</span><span><span class="col-sign">₡</span>${(totalAmt + totalDescuento).toLocaleString('es-CR')}</span></div>
+      <div class="mpd-total-row" style="color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
+      <hr style="border:none;border-top:1px dashed #e5e7eb;margin:4px 0;">` : ''}
       <div class="mpd-total-row"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
       <div class="mpd-total-row"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
       <div class="mpd-total-final"><span>TOTAL</span><span><span class="col-sign">₡</span>${total}</span></div>
@@ -2213,10 +2242,13 @@ async function loadProductsFromDB() {
         pr: r.precio, img: r.imagen,
         iva: r.iva != null ? r.iva : 13,
         promo: !!r.promocion,
-        stock: r.stock != null ? r.stock : null
+        stock: r.stock != null ? r.stock : null,
+        descuento: !!r.descuento,
+        descPct: r.porcentaje_descuento || 0,
+        limite: r.limite_por_usuario != null ? r.limite_por_usuario : null
       }));
       const tabPromo = document.getElementById('tab-promociones');
-      if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo));
+      if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
       positionConfetti();
     }
   } catch(e) {
@@ -2281,17 +2313,49 @@ function loadCart() {
 // ============================================================
 //  CARRITO
 // ============================================================
-function addToCart(productId) {
+async function addToCart(productId) {
   const product = CATALOG.find(p => p.id === productId);
   if (!product) return;
   const existing = cart.find(i => i.product.id === productId);
+
+  // Si el producto tiene límite y NO está ya en carrito, verificar pendientes
+  if (product.limite != null && !existing && currentUser?.cedula) {
+    const pendingQty = await fetchPendingQtyForProduct(productId);
+    if (pendingQty >= product.limite) {
+      showLimitPopup(product.limite);
+      return;
+    }
+  }
+
   if (existing) {
-    // Ya está en el carrito: solo abrir popup, sin agregar unidad extra
     openQadd(productId, false);
   } else {
     cart.push({ product, qty: 1 });
-    openQadd(productId, true); // recién agregado: ✕ lo quitará
+    openQadd(productId, true);
   }
+}
+
+async function fetchPendingQtyForProduct(productId) {
+  if (!currentUser?.cedula) return 0;
+  try {
+    const { data: pedidos } = await sb.from('pedidos')
+      .select('id').eq('usuario_email', currentUser.cedula).eq('estado', 'pendiente');
+    const ids = (pedidos || []).map(p => p.id);
+    if (!ids.length) return 0;
+    const { data: lineas } = await sb.from('lineas_pedido')
+      .select('cantidad').eq('producto_codigo', productId).in('pedido_id', ids);
+    return (lineas || []).reduce((s, l) => s + (l.cantidad || 0), 0);
+  } catch(e) { return 0; }
+}
+
+function showLimitPopup(limite) {
+  document.getElementById('limite-popup-msg').textContent =
+    `No se pueden pedir más de ${limite} unidad${limite !== 1 ? 'es' : ''} de este producto hasta la siguiente facturación.`;
+  document.getElementById('limite-popup').classList.add('open');
+}
+
+function closeLimitePopup() {
+  document.getElementById('limite-popup').classList.remove('open');
 }
 
 function removeFromCart(productId) {
@@ -2349,17 +2413,23 @@ function closeCart() {
 // ============================================================
 var _qaddId = null;
 var _qaddWasNew = false; // true si el producto fue recién agregado en este popup
-
 var _qaddOrigQty = null;
+var _qaddPendingQty = 0; // unidades ya en pedidos pendientes (para verificar límite)
 
-function openQadd(productId, wasNew) {
+async function openQadd(productId, wasNew) {
   closeCart();
   _qaddId = productId;
   _qaddWasNew = wasNew === true;
+  _qaddPendingQty = 0;
   const _existingItem = cart.find(i => i.product.id === productId);
   _qaddOrigQty = (_existingItem && !_qaddWasNew) ? _existingItem.qty : null;
   renderQadd();
   document.getElementById('qadd-overlay').classList.add('open');
+  // Cargar pendientes en background para verificación de límite
+  const p = CATALOG.find(x => x.id === productId);
+  if (p && p.limite != null && currentUser?.cedula) {
+    _qaddPendingQty = await fetchPendingQtyForProduct(productId);
+  }
 }
 
 function closeQadd() {
@@ -2394,8 +2464,20 @@ function updateQaddQty(delta) {
   if (!_qaddId) return;
   const item = cart.find(i => i.product.id === _qaddId);
   if (!item) return;
-  const maxQty = item.product.stock != null ? item.product.stock : Infinity;
-  item.qty = Math.min(maxQty, Math.max(1, item.qty + delta));
+  const p = item.product;
+  const newQty = item.qty + delta;
+
+  // Verificar límite por usuario (solo al incrementar)
+  if (delta > 0 && p.limite != null) {
+    const maxFromLimit = p.limite - _qaddPendingQty;
+    if (newQty > maxFromLimit) {
+      showLimitPopup(p.limite);
+      return;
+    }
+  }
+
+  const maxStock = p.stock != null ? p.stock : Infinity;
+  item.qty = Math.min(maxStock, Math.max(1, newQty));
   renderQadd();
 }
 
@@ -2404,11 +2486,19 @@ function renderQadd() {
   const item = cart.find(i => i.product.id === _qaddId);
   if (!item) return;
   const p = item.product;
-  const pIva       = priceIva(p);
-  const priceLabel = p.pr > 0 ? '<span class="col-sign">₡</span>' + pIva.toLocaleString('es-CR') : 'Consultar';
-  const subtotal   = p.pr > 0 ? (pIva * item.qty).toLocaleString('es-CR') : '—';
+  const pEff    = priceEffective(p);
+  const pOrig   = priceIva(p);
+  const hasDisc = p.descuento && p.descPct;
+  const priceLabel = p.pr > 0
+    ? (hasDisc
+        ? '<span style="font-size:70%;color:#9ca3af;text-decoration:line-through;margin-right:4px;"><span class="col-sign">₡</span>' + pOrig.toLocaleString('es-CR') + '</span><span class="col-sign">₡</span>' + pEff.toLocaleString('es-CR')
+        : '<span class="col-sign">₡</span>' + pEff.toLocaleString('es-CR'))
+    : 'Consultar';
+  const subtotal = p.pr > 0 ? (pEff * item.qty).toLocaleString('es-CR') : '—';
   const emoji = (p.b === 'SEED' || p.b === 'SODIET') ? '🍪' : '🧴';
-  const totalItems = cart.reduce(function(s, i) { return s + i.qty; }, 0);
+  const limiteInfo = (p.limite != null)
+    ? '<div style="font-size:11px;color:#dc2626;font-weight:600;text-align:center;margin-bottom:6px;">Límite: ' + p.limite + ' unidades por facturación</div>'
+    : '';
 
   var imgHtml = p.img
     ? '<img src="' + escAttr(p.img) + '" alt="" class="qadd-img" onerror="this.style.display=\'none\';this.parentElement.querySelector(\'.qadd-img-placeholder\').style.display=\'block\'">'
@@ -2423,12 +2513,14 @@ function renderQadd() {
     '<div class="qadd-body">' +
       (p.b ? '<div class="qadd-brand">' + escHtml(p.b) + '</div>' : '') +
       '<div class="qadd-name">' + escHtml(p.n) + '</div>' +
+      (hasDisc ? '<div style="text-align:center;margin-bottom:4px;"><span class="desc-tag">DESCUENTO ' + p.descPct + '%</span></div>' : '') +
       '<div class="qadd-price-unit">' + priceLabel + ' por unidad · ' + escHtml(p.id) + '</div>' +
       '<div class="qadd-qty-row">' +
         '<button class="qadd-qty-btn" onclick="updateQaddQty(-1)">−</button>' +
         '<span class="qadd-qty-val">' + item.qty + '</span>' +
         '<button class="qadd-qty-btn" onclick="updateQaddQty(1)">+</button>' +
       '</div>' +
+      limiteInfo +
       '<div class="qadd-subtotal" style="margin-bottom:4px;text-align:center;">Subtotal</div>' +
       '<div style="font-size:26px;font-weight:800;color:#143c5a;margin-bottom:16px;text-align:center;">' + (subtotal === '—' ? '—' : '<span class="col-sign">₡</span>' + subtotal) + '</div>' +
       '<div class="qadd-btns">' +
@@ -2446,13 +2538,14 @@ function renderCartItems() {
   }
   footer.style.display = 'block';
   const activeItems = cart.filter(i => !i.product.agotado);
-  const total = activeItems.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const total = activeItems.reduce((s, i) => s + priceEffective(i.product) * i.qty, 0);
   document.getElementById('cart-total').innerHTML = '<span class="col-sign">₡</span>' + total.toLocaleString('es-CR');
 
   container.innerHTML = cart.map(item => {
     const p = item.product;
     const agotado = !!p.agotado;
-    const unitPrice = priceIva(p);
+    const unitPrice = priceEffective(p);
+    const origPrice = priceIva(p);
     const sub = (unitPrice * item.qty).toLocaleString('es-CR');
     const imgHtml = p.img
       ? `<img src="${escAttr(p.img)}" alt="" onerror="this.style.display='none'">`
@@ -2476,8 +2569,8 @@ function renderCartItems() {
       <div class="cart-item">
         <div class="cart-item-img">${imgHtml}</div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${escHtml(p.n)}</div>
-          <div class="cart-item-price"><span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
+          <div class="cart-item-name">${escHtml(p.n)}${p.descuento ? ` <span class="desc-tag" style="font-size:10px;">-${p.descPct}%</span>` : ''}</div>
+          <div class="cart-item-price">${p.descuento ? `<span style="font-size:80%;color:#9ca3af;text-decoration:line-through;margin-right:3px;"><span class="col-sign">₡</span>${origPrice.toLocaleString('es-CR')}</span>` : ''}<span class="col-sign">₡</span>${unitPrice.toLocaleString('es-CR')} c/u</div>
           <div class="cart-qty-row">
             <button class="qty-btn" onclick="updateQty('${p.id}',-1)">−</button>
             <span class="qty-val">${item.qty}</span>
@@ -2509,14 +2602,16 @@ function openOrderModal() {
 
 function showOrderForm() {
   const activeCart = cart.filter(i => !i.product.agotado);
-  const total = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const total = activeCart.reduce((s, i) => s + priceEffective(i.product) * i.qty, 0);
+  const totalBruto = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const totalDescuento = totalBruto - total;
   const subtotalSinIva = Math.round(total / 1.13);
   const ivaAmt = total - subtotalSinIva;
 
   const itemsHtml = activeCart.map(item => `
     <div class="modal-summary-item">
-      <span>${escHtml(item.product.n)} × ${item.qty}</span>
-      <span><span class="col-sign">₡</span>${(priceIva(item.product) * item.qty).toLocaleString('es-CR')}</span>
+      <span>${escHtml(item.product.n)} × ${item.qty}${item.product.descuento ? ` <span class="desc-tag" style="font-size:9px;">-${item.product.descPct}%</span>` : ''}</span>
+      <span><span class="col-sign">₡</span>${(priceEffective(item.product) * item.qty).toLocaleString('es-CR')}</span>
     </div>`).join('');
 
   document.getElementById('modal-card').innerHTML = `
@@ -2526,6 +2621,14 @@ function showOrderForm() {
     </div>
     <div class="modal-items">${itemsHtml}</div>
     <div class="modal-ft">
+      ${totalDescuento > 0 ? `
+      <div class="modal-summary-item" style="color:#6b7280;">
+        <span>Precio bruto</span><span><span class="col-sign">₡</span>${totalBruto.toLocaleString('es-CR')}</span>
+      </div>
+      <div class="modal-summary-item" style="color:#16a34a;font-weight:600;">
+        <span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span>
+      </div>
+      <hr style="border:none;border-top:1px dashed #e5e7eb;margin:4px 0;">` : ''}
       <div class="modal-summary-item" style="color:#6b7280;">
         <span>Subtotal (sin IVA)</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span>
       </div>
@@ -2599,7 +2702,7 @@ async function submitOrder() {
 
   const notas      = (document.getElementById('order-notes')?.value || '').trim();
   const activeCart = cart.filter(i => !i.product.agotado);
-  const total      = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const total      = activeCart.reduce((s, i) => s + priceEffective(i.product) * i.qty, 0);
 
   // Insertar pedido (sin usuario_id — auth libre)
   const { data: pedido, error: pedErr } = await sb.from('pedidos').insert({
@@ -2621,12 +2724,13 @@ async function submitOrder() {
 
   // Insertar líneas (solo ítems activos)
   const lineas = activeCart.map(item => ({
-    pedido_id:        pedido.id,
-    producto_codigo:  item.product.id,
-    producto_nombre:  item.product.n,
-    cantidad:         item.qty,
-    precio_unitario:  priceIva(item.product),
-    subtotal:         priceIva(item.product) * item.qty
+    pedido_id:            pedido.id,
+    producto_codigo:      item.product.id,
+    producto_nombre:      item.product.n,
+    cantidad:             item.qty,
+    precio_unitario:      priceIva(item.product),              // precio original sin descuento
+    subtotal:             priceEffective(item.product) * item.qty, // precio final × cantidad
+    descuento_porcentaje: (item.product.descuento && item.product.descPct) ? item.product.descPct : 0
   }));
   await sb.from('lineas_pedido').insert(lineas);
 
@@ -2684,9 +2788,11 @@ async function descargarCopiaRecibo(orderData) {
 
   const { id, fecha, items, total, usuario, estado = 'pendiente' } = data;
   const W = 600, PAD = 36, IMG_S = 48, ROW_H = 68;
+  const totalBrutoV = items.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
+  const totalDescuentoV = totalBrutoV - total;
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
-  const H = 300 + items.length * ROW_H + 190;
+  const H = 300 + items.length * ROW_H + 190 + (totalDescuentoV > 0 ? 44 : 0);
 
   // Cargar imágenes de productos
   const imgEls = await Promise.all(items.map(item => new Promise(res => {
@@ -2821,12 +2927,14 @@ async function descargarCopiaRecibo(orderData) {
     ctx.fillText(name, tx, y + 16);
 
     ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui, sans-serif';
-    ctx.fillText('Cant: ' + item.qty + '   ₡' + priceIva(p).toLocaleString('es-CR') + ' c/u', tx, y + 34);
+    const effP = priceEffective(p);
+    const discLabel = (p.descuento && p.descPct) ? ` (-${p.descPct}%)` : '';
+    ctx.fillText('Cant: ' + item.qty + '   ₡' + effP.toLocaleString('es-CR') + ' c/u' + discLabel, tx, y + 34);
 
     // Subtotal
     ctx.textAlign = 'right'; ctx.fillStyle = '#143c5a';
     ctx.font = 'bold 14px system-ui, sans-serif';
-    ctx.fillText('₡' + (priceIva(p) * item.qty).toLocaleString('es-CR'), W - PAD, y + 26);
+    ctx.fillText('₡' + (effP * item.qty).toLocaleString('es-CR'), W - PAD, y + 26);
     ctx.textAlign = 'left';
 
     y += ROW_H;
@@ -2844,8 +2952,22 @@ async function descargarCopiaRecibo(orderData) {
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
   y += 16;
 
-  // Subtotal sin IVA
+  // Descuento (si aplica)
   ctx.fillStyle = '#6b7280'; ctx.font = '13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  if (totalDescuentoV > 0) {
+    ctx.fillText('Precio bruto', PAD, y);
+    ctx.textAlign = 'right'; ctx.fillText('₡' + totalBrutoV.toLocaleString('es-CR'), W - PAD, y);
+    ctx.textAlign = 'left'; y += 22;
+    ctx.fillStyle = '#16a34a';
+    ctx.fillText('Descuento', PAD, y);
+    ctx.textAlign = 'right'; ctx.fillText('−₡' + totalDescuentoV.toLocaleString('es-CR'), W - PAD, y);
+    ctx.textAlign = 'left'; y += 22;
+    ctx.strokeStyle = '#e5e7eb'; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    ctx.setLineDash([]); y += 10;
+    ctx.fillStyle = '#6b7280';
+  }
+  // Subtotal sin IVA
   ctx.fillText('Subtotal sin IVA', PAD, y);
   ctx.textAlign = 'right'; ctx.fillText('₡' + subtotalSinIva.toLocaleString('es-CR'), W - PAD, y);
   ctx.textAlign = 'left'; y += 22;
@@ -2909,16 +3031,36 @@ async function descargarCopiaRecibo(orderData) {
 //  RENDERIZAR TARJETA DE PRODUCTO (función centralizada)
 // ============================================================
 function renderCard(p) {
-  const priceLabel = p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar';
   const emoji = p.b === 'SEED' || p.b === 'SODIET' ? '🍪' : '🧴';
   const bigChip = p.promo && activeTab === 'PROMOCIONES';
+  const isDescTab = p.descuento && activeTab === 'PROMOCIONES';
+
+  // Price display: descuento takes precedence over promo
+  let priceHtml;
+  if (p.descuento && p.descPct && p.pr > 0) {
+    const orig = priceIva(p);
+    const disc = priceDiscounted(p);
+    priceHtml = `<div class="desc-original-price"><span class="price-symbol">₡</span>${orig.toLocaleString('es-CR')}</div>`
+      + `<div class="product-price"><span class="price-symbol">₡</span>${disc.toLocaleString('es-CR')}</div>`;
+  } else {
+    priceHtml = `<div class="product-price">${p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar'}</div>`;
+  }
+
   const stockChip = (p.stock != null && p.stock > 0)
     ? bigChip
       ? `<div style="margin-top:6px;text-align:center;"><span style="display:inline-block;background:#f5e642;color:#dc2626;font-size:20px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">¡Solo quedan ${p.stock}!</span></div>`
       : `<div style="margin-top:4px;text-align:center;"><span style="display:inline-block;background:#f5e642;color:#dc2626;font-size:15px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap;">¡Solo quedan ${p.stock}!</span></div>`
     : '';
+
+  const descChip = p.descuento
+    ? `<div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="desc-tag">DESCUENTO ${p.descPct}%</span>
+        ${p.limite != null ? `<span class="desc-limit-chip">máx. ${p.limite} unidades</span>` : ''}
+       </div>`
+    : '';
+
   return `
-    <div class="product-card">
+    <div class="product-card${p.descuento ? ' desc-card' : ''}">
       <div class="product-img-wrap">
         ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" loading="lazy" decoding="async" onclick="event.stopPropagation();openLightbox('${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='block'">` : ''}
         <div class="product-img-placeholder" style="${p.img?'display:none':''}"> ${emoji}</div>
@@ -2928,8 +3070,9 @@ function renderCard(p) {
         <div class="product-name">${escHtml(p.n)}</div>
         <div class="product-meta-row">
           <div class="product-code">${escHtml(p.id)}</div>
-          <div class="product-price">${priceLabel}</div>
+          <div>${priceHtml}</div>
         </div>
+        ${descChip}
         ${stockChip}
         <button class="add-btn" data-product-id="${escAttr(p.id)}" onclick="addToCart('${p.id.replace(/'/g,"\'")}')">
           Agregar
@@ -3220,7 +3363,7 @@ function getFilteredProducts() {
   if (!activeTab) return [];
   const cfg = TABS[activeTab];
   if (cfg.type === 'packs') return _sortProducts(CATALOG.filter(p => cfg.product_ids.includes(p.id)));
-  if (cfg.type === 'promo') return _sortProducts(CATALOG.filter(p => p.promo));
+  if (cfg.type === 'promo') return _sortProducts(CATALOG.filter(p => p.promo || p.descuento));
   let pool = CATALOG;
   if (cfg.spc_filter) pool = pool.filter(p => p.spc === cfg.spc_filter);
   if (cfg.cat_filter) pool = pool.filter(p => p.c === cfg.cat_filter);
@@ -3314,6 +3457,18 @@ function priceIva(p) {
   // Precio con IVA incluido (redondeado al entero más cercano)
   var rate = p.iva != null ? p.iva : 13;
   return Math.round((p.pr || 0) * (1 + rate / 100));
+}
+
+function priceDiscounted(p) {
+  // Precio con descuento + IVA (solo si tiene descuento activo)
+  if (!p.descuento || !p.descPct) return priceIva(p);
+  var rate = p.iva != null ? p.iva : 13;
+  return Math.round((p.pr || 0) * (1 - p.descPct / 100) * (1 + rate / 100));
+}
+
+function priceEffective(p) {
+  // Precio real que paga el usuario (descuento si aplica, si no precio normal con IVA)
+  return (p.descuento && p.descPct) ? priceDiscounted(p) : priceIva(p);
 }
 
 function escHtml(s) {
@@ -3698,9 +3853,9 @@ async function pollPromoStock(force = false) {
     if (Date.now() - _lastPromoPoll < minGap) return;
   }
   _lastPromoPoll = Date.now();
-  const promos = CATALOG.filter(p => p.promo);
+  const promos = CATALOG.filter(p => p.promo || p.descuento);
   if (!promos.length) {
-    // No hay promos activas: asegurarse de que el confeti desaparezca
+    // No hay promos/descuentos activos: asegurarse de que el confeti desaparezca
     const tabPromo = document.getElementById('tab-promociones');
     if (tabPromo) tabPromo.classList.remove('has-promo');
     positionConfetti();
@@ -3718,7 +3873,7 @@ async function pollPromoStock(force = false) {
     if (!r.activo) { CATALOG = CATALOG.filter(c => c.id !== r.codigo); changed = true; }
   });
   const tabPromo = document.getElementById('tab-promociones');
-  if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo));
+  if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
   positionConfetti();
   if (changed && activeTab === 'PROMOCIONES') renderTabContent();
   else if (changed) refreshAddButtons();

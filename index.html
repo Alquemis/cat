@@ -592,7 +592,7 @@
   .product-card.desc-card:hover { border-color: #b91c1c; }
   .desc-tag { display:inline-block;background:#dc2626;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.4px; }
   .desc-original-price { font-size:70%;color:#9ca3af;text-decoration:line-through;line-height:1.2; }
-  .desc-limit-chip { font-size:10px;color:#dc2626;font-weight:600;margin-top:3px; }
+  .desc-limit-chip { font-size:12px;color:#dc2626;font-weight:600;margin-top:3px; }
   /* Límite popup overlay */
   #limite-popup { display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);align-items:center;justify-content:center; }
   #limite-popup.open { display:flex; }
@@ -2236,7 +2236,7 @@ function openPedidoDet(idx) {
     ${linesHtml}
     <div class="mpd-totals">
       ${totalDescuento > 0 ? `
-      <div class="mpd-total-row" style="color:#6b7280"><span>Precio bruto</span><span><span class="col-sign">₡</span>${(totalAmt + totalDescuento).toLocaleString('es-CR')}</span></div>
+      <div class="mpd-total-row" style="color:#6b7280"><span>Precio</span><span><span class="col-sign">₡</span>${(totalAmt + totalDescuento).toLocaleString('es-CR')}</span></div>
       <div class="mpd-total-row" style="color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
       <hr style="border:none;border-top:1px dashed #e5e7eb;margin:4px 0;">` : ''}
       <div class="mpd-total-row"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
@@ -2357,23 +2357,59 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 //  CARGAR PRODUCTOS DESDE SUPABASE
 // ============================================================
+// ── PROGRAMACIÓN (vigencia por fecha/hora) ───────────────
+// Como es un sitio estático (sin cron en servidor), la vigencia se
+// evalúa aquí mismo cada vez que se carga o refresca el catálogo,
+// comparando la hora actual contra el rango guardado.
+function isScheduleActive(inicio, fin) {
+  const now = Date.now();
+  if (inicio && now < new Date(inicio).getTime()) return false;
+  if (fin && now > new Date(fin).getTime()) return false;
+  return true;
+}
+
+// Recalcula promo/descuento/límite efectivos según la hora actual,
+// sin necesidad de volver a consultar Supabase. Devuelve true si algo cambió.
+function refreshScheduledFlags() {
+  let changed = false;
+  CATALOG.forEach(p => {
+    const promoActive = p._promoRaw && isScheduleActive(p._promoIni, p._promoFin);
+    const descActive  = p._descRaw  && isScheduleActive(p._descIni,  p._descFin);
+    const limActive   = p._limRaw != null && isScheduleActive(p._limIni, p._limFin);
+    if (p.promo !== promoActive) { p.promo = promoActive; changed = true; }
+    if (p.descuento !== descActive) { p.descuento = descActive; changed = true; }
+    const newLimite = limActive ? p._limRaw : null;
+    if (p.limite !== newLimite) { p.limite = newLimite; changed = true; }
+  });
+  return changed;
+}
+
 async function loadProductsFromDB() {
   try {
     const { data, error } = await sb.from('productos')
       .select('*').eq('activo', true).order('nombre');
     if (error) throw error;
     if (data && data.length > 0) {
-      CATALOG = data.map(r => ({
-        id: r.codigo, n: r.nombre, b: r.marca,
-        spc: r.spc, c: r.categoria, s: r.subcategoria,
-        pr: r.precio, img: r.imagen,
-        iva: r.iva != null ? r.iva : 13,
-        promo: !!r.promocion,
-        stock: r.stock != null ? r.stock : null,
-        descuento: !!r.descuento,
-        descPct: r.porcentaje_descuento || 0,
-        limite: r.limite_por_usuario != null ? r.limite_por_usuario : null
-      }));
+      CATALOG = data.map(r => {
+        const promoRaw = !!r.promocion;
+        const descRaw  = !!r.descuento;
+        const limRaw   = r.limite_por_usuario != null ? r.limite_por_usuario : null;
+        return {
+          id: r.codigo, n: r.nombre, b: r.marca,
+          spc: r.spc, c: r.categoria, s: r.subcategoria,
+          pr: r.precio, img: r.imagen,
+          iva: r.iva != null ? r.iva : 13,
+          promo: promoRaw && isScheduleActive(r.promo_inicio, r.promo_fin),
+          stock: r.stock != null ? r.stock : null,
+          descuento: descRaw && isScheduleActive(r.descuento_inicio, r.descuento_fin),
+          descPct: r.porcentaje_descuento || 0,
+          limite: (limRaw != null && isScheduleActive(r.limite_inicio, r.limite_fin)) ? limRaw : null,
+          // Config cruda + ventanas, para reevaluar vigencia sin volver a consultar la BD
+          _promoRaw: promoRaw, _promoIni: r.promo_inicio, _promoFin: r.promo_fin,
+          _descRaw:  descRaw,  _descIni:  r.descuento_inicio, _descFin: r.descuento_fin,
+          _limRaw:   limRaw,   _limIni:   r.limite_inicio,    _limFin:  r.limite_fin
+        };
+      });
       const tabPromo = document.getElementById('tab-promociones');
       if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
       positionConfetti();
@@ -2750,7 +2786,7 @@ function showOrderForm() {
     <div class="modal-ft">
       ${totalDescuento > 0 ? `
       <div class="modal-summary-item" style="color:#6b7280;">
-        <span>Precio bruto</span><span><span class="col-sign">₡</span>${totalBruto.toLocaleString('es-CR')}</span>
+        <span>Precio</span><span><span class="col-sign">₡</span>${totalBruto.toLocaleString('es-CR')}</span>
       </div>
       <div class="modal-summary-item" style="color:#16a34a;font-weight:600;">
         <span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span>
@@ -3082,7 +3118,7 @@ async function descargarCopiaRecibo(orderData) {
   // Descuento (si aplica)
   ctx.fillStyle = '#6b7280'; ctx.font = '13px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
   if (totalDescuentoV > 0) {
-    ctx.fillText('Precio bruto', PAD, y);
+    ctx.fillText('Precio', PAD, y);
     ctx.textAlign = 'right'; ctx.fillText('₡' + totalBrutoV.toLocaleString('es-CR'), W - PAD, y);
     ctx.textAlign = 'left'; y += 22;
     ctx.fillStyle = '#16a34a';
@@ -3180,9 +3216,9 @@ function renderCard(p) {
     : '';
 
   const descChip = p.descuento
-    ? `<div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    ? `<div style="margin-top:5px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
         <span class="desc-tag">DESCUENTO ${p.descPct}%</span>
-        ${p.limite != null ? `<span class="desc-limit-chip">máx. ${p.limite} unidades</span>` : ''}
+        ${p.limite != null ? `<span class="desc-limit-chip">máximo ${p.limite} unidades</span>` : ''}
        </div>`
     : '';
 
@@ -3447,12 +3483,14 @@ function renderTabBanner(tab) {
 }
 function goHome() {
   activeTab = null; activeButton = null;
+  _lastSearchQuery = '';
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('home-btn').classList.remove('visible');
   renderHomeBanner(); renderHomeContent();
 }
 function selectTab(tab) {
   activeTab = tab; activeButton = null;
+  _lastSearchQuery = '';
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
   document.getElementById('home-btn').classList.add('visible');
   if (tab === 'PACKS' || tab === 'PROMOCIONES') document.getElementById('banner-area').innerHTML = '';
@@ -3533,9 +3571,9 @@ function renderTabContent() {
   refreshAddButtons();
 }
 
-function goToFullCatalog() {
+function goToFullCatalog(silent) {
   activeTab = 'TODOS'; activeButton = null;
-  stopHeroTimer();
+  _lastSearchQuery = '';
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelector('.nav-tab.cta')?.classList.add('active');
   document.getElementById('banner-area').innerHTML = '';
@@ -3545,16 +3583,17 @@ function goToFullCatalog() {
       <div class="products-grid">${filtered.map(renderCard).join('')}</div>
     </div>`;
   refreshAddButtons();
-  window.scrollTo({top:0, behavior:'smooth'});
+  if (!silent) window.scrollTo({top:0, behavior:'smooth'});
 }
 
 // ============================================================
 //  BÚSQUEDA
 // ============================================================
+let _lastSearchQuery = '';
 function runSearch(q) {
   q = (q||'').trim().toLowerCase();
-  if (!q) { goHome(); return; }
-  stopHeroTimer();
+  if (!q) { _lastSearchQuery = ''; goHome(); return; }
+  _lastSearchQuery = q;
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('home-btn').classList.remove('active');
   const results = _sortProducts(CATALOG.filter(p => {
@@ -3980,30 +4019,44 @@ async function pollPromoStock(force = false) {
     if (Date.now() - _lastPromoPoll < minGap) return;
   }
   _lastPromoPoll = Date.now();
+
+  // Reevaluar vigencia por horario (no requiere ir a la BD)
+  const schedChanged = refreshScheduledFlags();
+
   const promos = CATALOG.filter(p => p.promo || p.descuento);
+  const tabPromo = document.getElementById('tab-promociones');
   if (!promos.length) {
-    // No hay promos/descuentos activos: asegurarse de que el confeti desaparezca
-    const tabPromo = document.getElementById('tab-promociones');
+    // No hay promos/descuentos vigentes: asegurarse de que el confeti desaparezca
     if (tabPromo) tabPromo.classList.remove('has-promo');
     positionConfetti();
+    if (schedChanged) reRenderCurrentView();
     return;
   }
   const { data } = await sb.from('productos')
     .select('codigo, stock, activo')
     .in('codigo', promos.map(p => p.id));
   if (!data) return;
-  let changed = false;
+  let changed = schedChanged;
   data.forEach(r => {
     const p = CATALOG.find(c => c.id === r.codigo);
     if (!p) return;
     if (p.stock !== r.stock) { p.stock = r.stock; changed = true; }
     if (!r.activo) { CATALOG = CATALOG.filter(c => c.id !== r.codigo); changed = true; }
   });
-  const tabPromo = document.getElementById('tab-promociones');
   if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
   positionConfetti();
-  if (changed && activeTab === 'PROMOCIONES') renderTabContent();
-  else if (changed) refreshAddButtons();
+  if (changed) reRenderCurrentView();
+}
+
+// Refresca la vista que esté visible en este momento (pestaña, "ver todos"
+// o resultados de búsqueda) sin mover el scroll ni interrumpir al usuario,
+// para que promo/descuento/límite programados desaparezcan de las cards
+// apenas vence su horario, sin esperar a que se navegue a otro lado.
+function reRenderCurrentView() {
+  if (_lastSearchQuery) { runSearch(_lastSearchQuery); return; }
+  if (activeTab === 'TODOS') { goToFullCatalog(true); return; }
+  if (activeTab) { renderTabContent(); return; }
+  refreshAddButtons();
 }
 
 function startPromoStockPolling() {

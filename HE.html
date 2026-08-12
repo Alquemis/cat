@@ -990,7 +990,7 @@ function openOrderDetail(id) {
     </div>
     <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
       ${totalDescuento > 0 ? `
-        <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio bruto</span><span><span class="col-sign">₡</span>${(total + totalDescuento).toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio</span><span><span class="col-sign">₡</span>${(total + totalDescuento).toLocaleString('es-CR')}</span></div>
         <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
         <div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>` : ''}
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>

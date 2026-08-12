@@ -4119,6 +4119,18 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// Respaldo para la app instalada (PWA): en iOS/Android el sistema puede
+// "congelar" la pestaña al pasar a segundo plano y restaurarla luego sin
+// disparar visibilitychange de forma confiable. pageshow con persisted=true
+// (o simplemente al reanudar) cubre ese caso para que las promos/descuentos
+// vencidos se despinten apenas se reabre la app.
+window.addEventListener('pageshow', () => {
+  if (!document.hidden && currentUser) {
+    pollPromoStock(true);
+    checkNotifications(true);
+  }
+});
+
 // ============================================================
 //  INICIO
 // ============================================================

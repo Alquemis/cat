@@ -1,17 +1,24 @@
-// Service Worker — v20260812-17
-const CACHE = 'ventas-20260812-22';
+// Service Worker — v20260812-23
+const CACHE = 'ventas-20260812-23';
 
 const PRECACHE = [
   'index.html', 'su.html', 'admin.html',
-  'TR.html', 'GR.html', 'HE.html', '3R.html', 'fact.html',
+  'TR.html', 'GR.html', 'HE.html', 'fact.html',
   'manifest.json', 'favicon.svg', 'icon-192.png', 'icon-512.png'
 ];
 
-// Precachea los assets al instalar y activa inmediatamente
+// Precachea los assets al instalar y activa inmediatamente.
+// Se cachea cada archivo por separado (no con addAll) para que un solo
+// archivo faltante o bloqueado no impida que el resto del Service Worker
+// se instale y actualice correctamente.
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE))
+    caches.open(CACHE).then(c =>
+      Promise.all(PRECACHE.map(url =>
+        c.add(url).catch(err => console.warn('SW precache falló para', url, err))
+      ))
+    )
   );
 });
 

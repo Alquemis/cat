@@ -218,8 +218,12 @@
     .su-panels-grid { grid-template-columns:1fr; }
     /* product rows en tablet */
     .product-row { flex-wrap:wrap; padding:12px 14px; gap:10px; }
-    .pr-bottom { width:100%; }
+    .pr-bottom { width:100%; flex-direction:row; align-items:center; }
     .pr-actions .btn { flex:1; text-align:center; justify-content:center; }
+    .pr-c-desk { display:none !important; }
+    .pr-c-mob  { display:flex !important; gap:3px; }
+    .sort-filter-bar { flex-wrap:wrap; gap:8px; }
+    .sort-filter-bar > div { width:100%; }
   }
 
   /* Product rows móvil: precio junto al código, toggle en línea de acciones */
@@ -358,8 +362,12 @@
   .pr-code { font-family:monospace;font-size:11px;color:#9ca3af;margin-top:2px; }
   .pr-price     { font-size:16px;font-weight:800;color:#143c5a;white-space:nowrap;flex-shrink:0; }
   .pr-price-mob { display:none;font-size:16px;font-weight:800;color:#143c5a;margin-top:3px; }
-  .pr-actions   { display:flex;gap:8px;flex-shrink:0; }
-  .pr-bottom    { display:flex;align-items:center;gap:8px;flex-shrink:0; }
+  .pr-actions   { display:flex;gap:8px;flex-shrink:0;align-items:center; }
+  .pr-bottom    { display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex-shrink:0; }
+  .pr-c-desk    { display:flex;gap:3px; }
+  .pr-c-mob     { display:none; }
+  .sort-filter-bar { display:flex;gap:16px;align-items:center;flex-wrap:nowrap;margin-bottom:14px; }
+  .sort-filter-bar > div { display:flex;gap:6px;flex-wrap:wrap;align-items:center; }
   .products-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
   .products-empty { text-align:center;padding:60px 20px;color:#9ca3af;background:#fff;border-radius:14px;border:1px solid #e5e7eb; }
   /* ── DASHBOARD ── */
@@ -528,18 +536,20 @@
       <button class="btn btn-secondary" onclick="exportProductsExcel()">⬇ Exportar a Excel</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
-      <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Ordenar:</span>
-      <button id="sort-btn-nombre"  class="sort-chip sort-chip-active" onclick="setSortProd('nombre')">Nombre <span id="sort-dir-nombre">↑</span></button>
-      <button id="sort-btn-precio"  class="sort-chip" onclick="setSortProd('precio')">Precio <span id="sort-dir-precio"></span></button>
-      <button id="sort-btn-activo"  class="sort-chip" onclick="setSortProd('activo')">Estado <span id="sort-dir-activo"></span></button>
-      <button id="sort-btn-created" class="sort-chip" onclick="setSortProd('created_at')">Fecha <span id="sort-dir-created"></span></button>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
-      <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Filtrar:</span>
-      <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')">🏷 Promoción</button>
-      <button id="fc-desc"   class="filter-chip fc-desc"   onclick="toggleFilterChip('desc')">% Descuento</button>
-      <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')">⚑ Límite</button>
+    <div class="sort-filter-bar">
+      <div>
+        <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Ordenar:</span>
+        <button id="sort-btn-nombre"  class="sort-chip" onclick="setSortProd('nombre')">Nombre <span id="sort-dir-nombre"></span></button>
+        <button id="sort-btn-precio"  class="sort-chip" onclick="setSortProd('precio')">Precio <span id="sort-dir-precio"></span></button>
+        <button id="sort-btn-activo"  class="sort-chip" onclick="setSortProd('activo')">Estado <span id="sort-dir-activo"></span></button>
+        <button id="sort-btn-created" class="sort-chip sort-chip-active" onclick="setSortProd('created_at')">Fecha <span id="sort-dir-created"> ↓</span></button>
+      </div>
+      <div>
+        <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Filtrar:</span>
+        <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')">🏷 Promoción</button>
+        <button id="fc-desc"   class="filter-chip fc-desc"   onclick="toggleFilterChip('desc')">% Descuento</button>
+        <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')">⚑ Límite</button>
+      </div>
     </div>
     <div id="products-list-wrap">
       <div class="products-empty">Cargando productos…</div>
@@ -2027,7 +2037,7 @@ async function loadProducts() {
 }
 
 // ── FILTRO + ORDENAMIENTO PRODUCTOS ─────────────────────
-let _prodSort   = { key: 'nombre', dir: 1 };
+let _prodSort   = { key: 'created_at', dir: -1 };
 let _prodFilter = { promo: false, desc: false, limite: false };
 
 function toggleFilterChip(key) {
@@ -2042,7 +2052,7 @@ function setSortProd(key) {
     _prodSort.dir *= -1;
   } else {
     _prodSort.key = key;
-    _prodSort.dir = key === 'activo' ? -1 : 1;
+    _prodSort.dir = (key === 'activo' || key === 'created_at') ? -1 : 1;
   }
   document.querySelectorAll('.sort-chip').forEach(b => b.classList.remove('sort-chip-active'));
   const activeBtn = document.getElementById('sort-btn-' + (key === 'created_at' ? 'created' : key));
@@ -2117,24 +2127,25 @@ function renderProducts(list) {
       chips.push('<span class="tip" data-tip="Descuento −' + p.porcentaje_descuento + '%"><span class="pr-chip pr-chip-desc">%</span></span>');
     if (p.limite_por_usuario != null)
       chips.push('<span class="tip" data-tip="Límite: ' + p.limite_por_usuario + ' por usuario"><span class="pr-chip pr-chip-limite">⊘</span></span>');
-    const chipsHtml = chips.length ? '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">' + chips.join('') + '</div>' : '';
-
     html += '<div class="product-row">';
     html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
     html +=   '<div class="pr-info"><div class="pr-name">' + nombre + '</div>';
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
-    if (chipsHtml) html += chipsHtml;
     html +=   '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">';
     html +=     '<div class="pr-code" style="margin-top:0;">' + codigo + '</div>';
     html +=     '<div class="pr-price-mob"><span class="col-sign">₡</span>' + precio + '</div>';
     html +=   '</div></div>';
     html +=   '<div class="pr-price"><span class="col-sign">₡</span>' + precio + '</div>';
     html +=   '<div class="pr-bottom">';
-    html +=     '<button class="badge ' + badgeClass + '" style="flex-shrink:0;cursor:pointer;border:none;font-family:inherit;font-size:inherit" onclick="toggleActivo(\'' + codigo + '\')" id="badge-activo-' + codigo + '">' + badgeLabel + '</button>';
-    html +=     '<div class="pr-actions">';
-    html +=       '<button class="btn btn-sm btn-secondary" onclick="editProduct(\'' + codigo + '\')">&#9999; Editar</button>';
-    html +=       '<button class="btn btn-sm btn-danger"    onclick="deleteProduct(\'' + codigo + '\',\'' + nombre + '\')">&#128465;</button>';
+    html +=     '<div style="display:flex;align-items:center;gap:8px;">';
+    html +=       '<button class="badge ' + badgeClass + '" style="cursor:pointer;border:none;font-family:inherit;font-size:inherit" onclick="toggleActivo(\'' + codigo + '\')" id="badge-activo-' + codigo + '">' + badgeLabel + '</button>';
+    html +=       '<div class="pr-actions">';
+    html +=         '<button class="btn btn-sm btn-secondary" onclick="editProduct(\'' + codigo + '\')">&#9999; Editar</button>';
+    html +=         '<button class="btn btn-sm btn-danger"    onclick="deleteProduct(\'' + codigo + '\',\'' + nombre + '\')">&#128465;</button>';
+    if (chips.length) html += '<div class="pr-c-mob">' + chips.join('') + '</div>';
+    html +=       '</div>';
     html +=     '</div>';
+    if (chips.length) html += '<div class="pr-c-desk">' + chips.join('') + '</div>';
     html +=   '</div></div>';
   }
   html += '</div></div>';

@@ -2384,38 +2384,65 @@ function refreshScheduledFlags() {
   return changed;
 }
 
+// Convierte una fila cruda de la tabla `productos` al objeto que usa el
+// catálogo, evaluando la vigencia de promo/descuento/límite por horario.
+// Se comparte entre la carga inicial y el refresco puntual al agregar al carrito.
+function mapProductRow(r) {
+  const promoRaw = !!r.promocion;
+  const descRaw  = !!r.descuento;
+  const limRaw   = r.limite_por_usuario != null ? r.limite_por_usuario : null;
+  return {
+    id: r.codigo, n: r.nombre, b: r.marca,
+    spc: r.spc, c: r.categoria, s: r.subcategoria,
+    pr: r.precio, img: r.imagen,
+    iva: r.iva != null ? r.iva : 13,
+    activo: r.activo !== false,
+    promo: promoRaw && isScheduleActive(r.promo_inicio, r.promo_fin),
+    stock: r.stock != null ? r.stock : null,
+    descuento: descRaw && isScheduleActive(r.descuento_inicio, r.descuento_fin),
+    descPct: r.porcentaje_descuento || 0,
+    limite: (limRaw != null && isScheduleActive(r.limite_inicio, r.limite_fin)) ? limRaw : null,
+    // Config cruda + ventanas, para reevaluar vigencia sin volver a consultar la BD
+    _promoRaw: promoRaw, _promoIni: r.promo_inicio, _promoFin: r.promo_fin,
+    _descRaw:  descRaw,  _descIni:  r.descuento_inicio, _descFin: r.descuento_fin,
+    _limRaw:   limRaw,   _limIni:   r.limite_inicio,    _limFin:  r.limite_fin
+  };
+}
+
 async function loadProductsFromDB() {
   try {
     const { data, error } = await sb.from('productos')
       .select('*').eq('activo', true).order('nombre');
     if (error) throw error;
     if (data && data.length > 0) {
-      CATALOG = data.map(r => {
-        const promoRaw = !!r.promocion;
-        const descRaw  = !!r.descuento;
-        const limRaw   = r.limite_por_usuario != null ? r.limite_por_usuario : null;
-        return {
-          id: r.codigo, n: r.nombre, b: r.marca,
-          spc: r.spc, c: r.categoria, s: r.subcategoria,
-          pr: r.precio, img: r.imagen,
-          iva: r.iva != null ? r.iva : 13,
-          promo: promoRaw && isScheduleActive(r.promo_inicio, r.promo_fin),
-          stock: r.stock != null ? r.stock : null,
-          descuento: descRaw && isScheduleActive(r.descuento_inicio, r.descuento_fin),
-          descPct: r.porcentaje_descuento || 0,
-          limite: (limRaw != null && isScheduleActive(r.limite_inicio, r.limite_fin)) ? limRaw : null,
-          // Config cruda + ventanas, para reevaluar vigencia sin volver a consultar la BD
-          _promoRaw: promoRaw, _promoIni: r.promo_inicio, _promoFin: r.promo_fin,
-          _descRaw:  descRaw,  _descIni:  r.descuento_inicio, _descFin: r.descuento_fin,
-          _limRaw:   limRaw,   _limIni:   r.limite_inicio,    _limFin:  r.limite_fin
-        };
-      });
+      CATALOG = data.map(mapProductRow);
       const tabPromo = document.getElementById('tab-promociones');
       if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
       positionConfetti();
     }
   } catch(e) {
     console.error('Error cargando productos:', e);
+  }
+}
+
+// Refresca UN producto directo desde la BD (stock, activo, y vigencia real
+// de promo/descuento/límite) justo antes de dejarlo agregar al carrito, para
+// no depender del último ciclo de sondeo si algo cambió hace pocos segundos.
+async function refreshProductFromDB(productId) {
+  try {
+    const { data, error } = await sb.from('productos').select('*').eq('codigo', productId).maybeSingle();
+    if (error || !data) return CATALOG.find(p => p.id === productId) || null;
+    const fresh = mapProductRow(data);
+    const idx = CATALOG.findIndex(p => p.id === productId);
+    if (!fresh.activo) {
+      // Se desactivó (ej. se agotó el stock desde otro lado): sacarlo del catálogo local
+      if (idx !== -1) CATALOG.splice(idx, 1);
+      return null;
+    }
+    if (idx !== -1) CATALOG[idx] = fresh; else CATALOG.push(fresh);
+    return fresh;
+  } catch(e) {
+    return CATALOG.find(p => p.id === productId) || null;
   }
 }
 
@@ -2477,9 +2504,30 @@ function loadCart() {
 //  CARRITO
 // ============================================================
 async function addToCart(productId) {
-  const product = CATALOG.find(p => p.id === productId);
+  let product = CATALOG.find(p => p.id === productId);
   if (!product) return;
   const existing = cart.find(i => i.product.id === productId);
+
+  // Si el producto tiene alguna restricción (promo, descuento, límite o stock
+  // controlado), revalidar contra la BD antes de agregar: puede que haya
+  // cambiado hace pocos segundos y el último sondeo local no lo haya reflejado.
+  if (product.promo || product.descuento || product.limite != null || product.stock != null) {
+    const before = product;
+    const fresh = await refreshProductFromDB(productId);
+    if (!fresh) {
+      showToast('Este producto ya no está disponible.');
+      reRenderCurrentView();
+      return;
+    }
+    product = fresh;
+    const changed = before.promo !== fresh.promo || before.descuento !== fresh.descuento ||
+                    before.limite !== fresh.limite || before.stock !== fresh.stock;
+    if (changed) reRenderCurrentView();
+    if (fresh.stock != null && fresh.stock <= 0) {
+      showToast(`"${fresh.n}" está agotado.`);
+      return;
+    }
+  }
 
   // Si el producto tiene límite y NO está ya en carrito, verificar pendientes
   if (product.limite != null && !existing && currentUser?.cedula) {

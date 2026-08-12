@@ -4161,9 +4161,9 @@ function stopRealtime() {
 
 // Al volver a la pestaña, refrescar de inmediato (los pollings se pausan en segundo plano)
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && currentUser) {
-    pollPromoStock(true);
-    checkNotifications(true);
+  if (!document.hidden) {
+    checkForAppUpdate();
+    if (currentUser) { pollPromoStock(true); checkNotifications(true); }
   }
 });
 
@@ -4173,9 +4173,9 @@ document.addEventListener('visibilitychange', () => {
 // (o simplemente al reanudar) cubre ese caso para que las promos/descuentos
 // vencidos se despinten apenas se reabre la app.
 window.addEventListener('pageshow', () => {
-  if (!document.hidden && currentUser) {
-    pollPromoStock(true);
-    checkNotifications(true);
+  if (!document.hidden) {
+    checkForAppUpdate();
+    if (currentUser) { pollPromoStock(true); checkNotifications(true); }
   }
 });
 
@@ -4236,8 +4236,27 @@ async function installAppFromMenu() {
 }
 
 // ── PWA: Service Worker + Banner de instalación ───────────
+// Refresco obligatorio de versión: una pestaña que lleva mucho tiempo
+// abierta (o la app instalada, resumida desde segundo plano) sigue
+// corriendo el JS con el que se cargó originalmente — un service worker
+// nuevo no la actualiza solo. checkForAppUpdate() fuerza a revisar si hay
+// una versión nueva de sw.js cada vez que se vuelve a esta pestaña/app; en
+// cuanto esa versión nueva toma control (controllerchange), recargamos la
+// página una sola vez para que quede al día.
+let _swRegistration = null;
+let _swReloading = false;
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js')
+    .then(reg => { _swRegistration = reg; })
+    .catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloading) return;
+    _swReloading = true;
+    window.location.reload();
+  });
+}
+function checkForAppUpdate() {
+  if (_swRegistration) _swRegistration.update().catch(() => {});
 }
 
 let _installPrompt = null;

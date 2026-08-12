@@ -407,7 +407,7 @@
   .filter-chip.fc-desc.on   { background:#16a34a;color:#fff;border-color:#16a34a; }
   .filter-chip.fc-limite.on { background:#7c3aed;color:#fff;border-color:#7c3aed; }
   /* ── ROW INDICATOR CHIPS ── */
-  .pr-chip { display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.3px; }
+  .pr-chip { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;font-size:11px;font-weight:800;cursor:default; }
   .pr-chip-promo  { background:#dbeafe;color:#1e40af; }
   .pr-chip-desc   { background:#dcfce7;color:#15803d; }
   .pr-chip-limite { background:#ede9fe;color:#6d28d9; }
@@ -1996,7 +1996,7 @@ function filterProducts() {
     const matchQ = !q || (p.nombre||'').toLowerCase().includes(q) || (p.codigo||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
     if (!matchQ) return false;
     if (!anyFilter) return true;
-    if (_prodFilter.promo  && p.promo)    return true;
+    if (_prodFilter.promo  && p.promocion) return true;
     if (_prodFilter.desc   && p.descuento) return true;
     if (_prodFilter.limite && p.limite_por_usuario != null) return true;
     return false;
@@ -2041,10 +2041,13 @@ function renderProducts(list) {
     }
 
     const chips = [];
-    if (p.promo)                          chips.push('<span class="pr-chip pr-chip-promo">PROMO</span>');
-    if (p.descuento && p.porcentaje_descuento) chips.push('<span class="pr-chip pr-chip-desc">DESC -' + p.porcentaje_descuento + '%</span>');
-    if (p.limite_por_usuario != null)     chips.push('<span class="pr-chip pr-chip-limite">LÍM. ' + p.limite_por_usuario + '</span>');
-    const chipsHtml = chips.length ? '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' + chips.join('') + '</div>' : '';
+    if (p.promocion)
+      chips.push('<span class="tip" data-tip="En Promoción"><span class="pr-chip pr-chip-promo">🏷</span></span>');
+    if (p.descuento && p.porcentaje_descuento)
+      chips.push('<span class="tip" data-tip="Descuento −' + p.porcentaje_descuento + '%"><span class="pr-chip pr-chip-desc">%</span></span>');
+    if (p.limite_por_usuario != null)
+      chips.push('<span class="tip" data-tip="Límite: ' + p.limite_por_usuario + ' por usuario"><span class="pr-chip pr-chip-limite">⊘</span></span>');
+    const chipsHtml = chips.length ? '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;">' + chips.join('') + '</div>' : '';
 
     html += '<div class="product-row">';
     html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';

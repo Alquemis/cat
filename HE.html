@@ -956,6 +956,7 @@ function openOrderDetail(id) {
   const fecha  = new Date(o.fecha).toLocaleString('es-CR');
   const lineas = (o.lineas_pedido || []);
   const total  = o.total || 0;
+  const totalDescuento = lineas.reduce((s, l) => s + ((l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0)), 0);
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
   document.getElementById('order-detail-card').innerHTML = `
@@ -974,18 +975,24 @@ function openOrderDetail(id) {
       <table>
         <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Subtotal</th></tr></thead>
         <tbody>
-          ${lineas.map(l => `
-            <tr>
+          ${lineas.map(l => {
+            const descAmt = (l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0);
+            return `<tr>
               <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
               <td style="text-align:center;font-weight:600">${l.cantidad}</td>
-              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</td>
+              <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</td>
               <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
               <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>
     <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      ${totalDescuento > 0 ? `
+        <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio bruto</span><span><span class="col-sign">₡</span>${(total + totalDescuento).toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
+        <div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>` : ''}
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span></div>

@@ -400,6 +400,17 @@
   .sort-chip { padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;transition:all .15s; }
   .sort-chip:hover { border-color:#143c5a;color:#143c5a; }
   .sort-chip.sort-chip-active { background:#143c5a;color:#fff;border-color:#143c5a; }
+  /* ── FILTER CHIPS ── */
+  .filter-chip { padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;transition:all .15s; }
+  .filter-chip:hover { border-color:#6b7280; }
+  .filter-chip.fc-promo.on  { background:#1e40af;color:#fff;border-color:#1e40af; }
+  .filter-chip.fc-desc.on   { background:#16a34a;color:#fff;border-color:#16a34a; }
+  .filter-chip.fc-limite.on { background:#7c3aed;color:#fff;border-color:#7c3aed; }
+  /* ── ROW INDICATOR CHIPS ── */
+  .pr-chip { display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.3px; }
+  .pr-chip-promo  { background:#dbeafe;color:#1e40af; }
+  .pr-chip-desc   { background:#dcfce7;color:#15803d; }
+  .pr-chip-limite { background:#ede9fe;color:#6d28d9; }
 
   /* ── PRODUCT ROWS ── */
   .products-list { display:flex;flex-direction:column;gap:0; }
@@ -570,12 +581,18 @@
       <button class="btn btn-secondary" onclick="exportProductsExcel()">⬇ Exportar a Excel</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
       <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Ordenar:</span>
       <button id="sort-btn-nombre"  class="sort-chip sort-chip-active" onclick="setSortProd('nombre')">Nombre <span id="sort-dir-nombre">↑</span></button>
       <button id="sort-btn-precio"  class="sort-chip" onclick="setSortProd('precio')">Precio <span id="sort-dir-precio"></span></button>
       <button id="sort-btn-activo"  class="sort-chip" onclick="setSortProd('activo')">Estado <span id="sort-dir-activo"></span></button>
       <button id="sort-btn-created" class="sort-chip" onclick="setSortProd('created_at')">Fecha <span id="sort-dir-created"></span></button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+      <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Filtrar:</span>
+      <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')">🏷 Promoción</button>
+      <button id="fc-desc"   class="filter-chip fc-desc"   onclick="toggleFilterChip('desc')">% Descuento</button>
+      <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')">⚑ Límite</button>
     </div>
     <div id="products-list-wrap">
       <div class="products-empty">Cargando productos…</div>
@@ -1926,8 +1943,16 @@ async function loadProducts() {
   renderProducts(_sortedProducts(allProducts));
 }
 
-// ── ORDENAMIENTO PRODUCTOS ───────────────────────────────
-let _prodSort = { key: 'nombre', dir: 1 };
+// ── FILTRO + ORDENAMIENTO PRODUCTOS ─────────────────────
+let _prodSort   = { key: 'nombre', dir: 1 };
+let _prodFilter = { promo: false, desc: false, limite: false };
+
+function toggleFilterChip(key) {
+  _prodFilter[key] = !_prodFilter[key];
+  const btn = document.getElementById('fc-' + key);
+  if (btn) btn.classList.toggle('on', _prodFilter[key]);
+  filterProducts();
+}
 
 function setSortProd(key) {
   if (_prodSort.key === key) {
@@ -1966,11 +1991,16 @@ function _sortedProducts(list) {
 
 function filterProducts() {
   const q = document.getElementById('prod-search').value.toLowerCase();
-  const filtered = allProducts.filter(p =>
-    (p.nombre||'').toLowerCase().includes(q) ||
-    (p.codigo||'').toLowerCase().includes(q)  ||
-    (p.marca ||'').toLowerCase().includes(q)
-  );
+  const anyFilter = _prodFilter.promo || _prodFilter.desc || _prodFilter.limite;
+  const filtered = allProducts.filter(p => {
+    const matchQ = !q || (p.nombre||'').toLowerCase().includes(q) || (p.codigo||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
+    if (!matchQ) return false;
+    if (!anyFilter) return true;
+    if (_prodFilter.promo  && p.promo)    return true;
+    if (_prodFilter.desc   && p.descuento) return true;
+    if (_prodFilter.limite && p.limite_por_usuario != null) return true;
+    return false;
+  });
   const sorted = _sortedProducts(filtered);
   const counter = document.getElementById('prod-count');
   if (counter) counter.textContent = filtered.length + ' de ' + allProducts.length + ' productos';
@@ -2010,11 +2040,18 @@ function renderProducts(list) {
       imgHtml = '<div class="pr-thumb-empty">📦</div>';
     }
 
+    const chips = [];
+    if (p.promo)                          chips.push('<span class="pr-chip pr-chip-promo">PROMO</span>');
+    if (p.descuento && p.porcentaje_descuento) chips.push('<span class="pr-chip pr-chip-desc">DESC -' + p.porcentaje_descuento + '%</span>');
+    if (p.limite_por_usuario != null)     chips.push('<span class="pr-chip pr-chip-limite">LÍM. ' + p.limite_por_usuario + '</span>');
+    const chipsHtml = chips.length ? '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' + chips.join('') + '</div>' : '';
+
     html += '<div class="product-row">';
     html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
     html +=   '<div class="pr-info">';
     html +=     '<div class="pr-name">' + nombre + '</div>';
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
+    if (chipsHtml) html += chipsHtml;
     html +=     '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">';
     html +=       '<div class="pr-code" style="margin-top:0;">' + codigo + '</div>';
     html +=       '<div class="pr-price-mob"><span class="col-sign">₡</span>' + precio + '</div>';

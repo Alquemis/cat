@@ -4061,30 +4061,40 @@ let _promoStockTimer = null;
 let _lastPromoPoll = 0;
 async function pollPromoStock(force = false) {
   if (!currentUser) return;
+  if (document.hidden && !force) return; // pestaña en segundo plano: no gastar batería
+
+  // Reevaluar vigencia por horario en CADA tick (cada ~3s), sin ir a la BD:
+  // esto es lo que hace que una promo programada aparezca o desaparezca de
+  // las cards a la hora exacta. Va aparte del bloque de abajo porque ese
+  // bloque sí depende de la red y se espacía a 30s cuando el tiempo real ya
+  // está cubriendo cambios de stock — pero nadie "escribe" en la BD cuando
+  // llega la hora de inicio/fin programada, así que el tiempo real no puede
+  // avisar de eso; solo revisando la hora localmente nos enteramos.
+  const tabPromo = document.getElementById('tab-promociones');
+  const schedChanged = refreshScheduledFlags();
+  if (schedChanged) {
+    if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
+    positionConfetti();
+    reRenderCurrentView();
+  }
+
   if (!force) {
-    if (document.hidden) return; // pestaña en segundo plano: no gastar red/batería
-    const minGap = _rtOk ? 30000 : 3000; // con realtime activo, el polling es solo respaldo
+    const minGap = _rtOk ? 30000 : 3000; // con realtime activo, esta parte (stock/activo) es solo respaldo
     if (Date.now() - _lastPromoPoll < minGap) return;
   }
   _lastPromoPoll = Date.now();
 
-  // Reevaluar vigencia por horario (no requiere ir a la BD)
-  const schedChanged = refreshScheduledFlags();
-
   const promos = CATALOG.filter(p => p.promo || p.descuento);
-  const tabPromo = document.getElementById('tab-promociones');
   if (!promos.length) {
-    // No hay promos/descuentos vigentes: asegurarse de que el confeti desaparezca
     if (tabPromo) tabPromo.classList.remove('has-promo');
     positionConfetti();
-    if (schedChanged) reRenderCurrentView();
     return;
   }
   const { data } = await sb.from('productos')
     .select('codigo, stock, activo')
     .in('codigo', promos.map(p => p.id));
   if (!data) return;
-  let changed = schedChanged;
+  let changed = false;
   data.forEach(r => {
     const p = CATALOG.find(c => c.id === r.codigo);
     if (!p) return;

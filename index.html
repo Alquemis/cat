@@ -1078,6 +1078,12 @@
         </div>
         <div class="notif-list" id="notif-list"></div>
       </div>
+      <div class="notif-panel" id="_user-notif-panel">
+        <div class="notif-panel-hd">
+          <span id="_user-notif-panel-title">Notificaciones</span>
+        </div>
+        <div class="notif-list" id="_user-notif-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -3933,6 +3939,7 @@ async function toggleNotifPanel(e) {
   if (panel.classList.contains('open')) {
     closeNotifPanel();
   } else {
+    closeUserNotifPanel();
     await renderNotifList();
     panel.classList.add('open');
   }
@@ -4160,7 +4167,7 @@ function stopPromoStockPolling() {
 // Cerrar panel al hacer clic fuera
 document.addEventListener('click', e => {
   const wrap = document.getElementById('notif-wrap');
-  if (wrap && !wrap.contains(e.target)) closeNotifPanel();
+  if (wrap && !wrap.contains(e.target)) { closeNotifPanel(); closeUserNotifPanel(); }
 });
 
 // ============================================================
@@ -4467,46 +4474,39 @@ function openUserNotifPanel() {
     _openUserNotifModal(unread[0]);
     return;
   }
-  // Varios: mostrar hoja con tarjetas (incluye las ya leídas, hasta que se borren)
+  // Varios: mostrar panel anclado a la campanita (incluye las ya leídas, hasta que se borren)
+  closeNotifPanel();
   _renderUserNotifSheet();
+  const panel = document.getElementById('_user-notif-panel');
+  if (panel) panel.classList.add('open');
+}
+
+function closeUserNotifPanel() {
+  const panel = document.getElementById('_user-notif-panel');
+  if (panel) panel.classList.remove('open');
 }
 
 function _renderUserNotifSheet() {
-  let panel = document.getElementById('_user-notif-panel');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = '_user-notif-panel';
-    panel.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:850;display:flex;align-items:flex-end;justify-content:center;';
-    document.body.appendChild(panel);
-    panel.addEventListener('click', e => { if (e.target === panel) panel.style.display='none'; });
-  }
+  const titleEl = document.getElementById('_user-notif-panel-title');
+  const list = document.getElementById('_user-notif-list');
+  if (!titleEl || !list) return;
   const sorted = [..._userNotifs].sort((a, b) => (a.read === b.read) ? 0 : (a.read ? 1 : -1));
   const unreadCount = _userNotifs.filter(n => !n.read).length;
-  panel.innerHTML = `
-    <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:70vh;overflow-y:auto;padding:20px;box-shadow:0 -8px 32px rgba(0,0,0,.2);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;">🔔 Notificaciones${unreadCount ? ` (${unreadCount} nuevas)` : ''}</div>
-        <button onclick="document.getElementById('_user-notif-panel').style.display='none'"
-          style="border:none;background:#f3f4f6;color:#374151;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;">✕</button>
+  titleEl.textContent = unreadCount ? `Notificaciones (${unreadCount} nuevas)` : 'Notificaciones';
+  if (!sorted.length) {
+    list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(n => `
+    <div class="notif-item${n.read ? ' read' : ''}" style="cursor:pointer;" onclick="_openUserNotifFromSheet('${n.id}')">
+      <div class="notif-top-row">
+        <div class="notif-meta">
+          <span class="notif-date">${new Date(n.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'})}</span>
+        </div>
+        <button class="notif-close" onclick="event.stopPropagation();_dismissUserNotif('${n.id}')">✕</button>
       </div>
-      ${sorted.map(n => `
-        <div onclick="_openUserNotifFromSheet('${n.id}')"
-          style="position:relative;border:1px solid #e5e7eb;border-radius:12px;padding:12px 40px 12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s;${n.read ? 'opacity:.6;' : ''}"
-          onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-          <button onclick="event.stopPropagation();_dismissUserNotif('${n.id}')"
-            title="Borrar"
-            style="position:absolute;top:8px;right:8px;border:none;background:none;color:#9ca3af;cursor:pointer;font-size:13px;padding:4px 6px;">✕</button>
-          <div style="font-size:14px;font-weight:700;color:#143c5a;margin-bottom:3px;">${_escHtmlUser(n.title)}</div>
-          ${n.subtitle ? `<div style="font-size:12px;color:#6b7280;margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${n.subtitle}</div>` : ''}
-          <div style="font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span>${new Date(n.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</span>
-            ${n.image_url ? '<span>· 📎 imagen</span>' : ''}
-            ${n.read ? '<span>· Leído</span>' : ''}
-            <span style="margin-left:auto;color:#7c3aed;font-weight:600;font-size:11px;">Toca para ver →</span>
-          </div>
-        </div>`).join('')}
-    </div>`;
-  panel.style.display = 'flex';
+      <div class="notif-msg"><strong>${_escHtmlUser(n.title)}</strong>${n.subtitle ? '<br>' + _escHtmlUser(n.subtitle) : ''}</div>
+    </div>`).join('');
 }
 
 function _openUserNotifFromSheet(id) {
@@ -4514,7 +4514,7 @@ function _openUserNotifFromSheet(id) {
   if (!notif) return;
   _markNotifRead(notif);
   _openUserNotifModal(notif);
-  document.getElementById('_user-notif-panel').style.display = 'none';
+  closeUserNotifPanel();
 }
 
 function _dismissUserNotif(id) {
@@ -4522,9 +4522,9 @@ function _dismissUserNotif(id) {
   _userNotifs = _userNotifs.filter(n => String(n.id) !== String(id));
   _updateAdminNotifBadge();
   const panel = document.getElementById('_user-notif-panel');
-  if (panel && panel.style.display === 'flex') {
+  if (panel && panel.classList.contains('open')) {
     if (_userNotifs.length) _renderUserNotifSheet();
-    else panel.style.display = 'none';
+    else closeUserNotifPanel();
   }
   const modal = document.getElementById('_user-notif-modal');
   if (modal && modal.dataset.notifId === String(id)) modal.style.display = 'none';

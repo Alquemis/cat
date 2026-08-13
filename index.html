@@ -404,6 +404,17 @@
   }
   .notif-btn:hover { background:#f3f4f6; }
   .notif-btn.shaking { animation:bell-shake 0.8s ease infinite; }
+  @keyframes notif-ring-pulse {
+    0%   { transform:scale(.5); opacity:.6; }
+    70%  { opacity:0; }
+    100% { transform:scale(1.7); opacity:0; }
+  }
+  .notif-ring {
+    position:absolute; inset:0; border-radius:50%;
+    border:2px solid #dc2626; opacity:0; pointer-events:none;
+  }
+  .notif-btn.shaking .notif-ring-1 { animation:notif-ring-pulse 1.6s ease-out infinite; }
+  .notif-btn.shaking .notif-ring-2 { animation:notif-ring-pulse 1.6s ease-out infinite; animation-delay:.5s; }
   .notif-badge {
     position:absolute; top:1px; right:1px;
     background:#ef4444; color:#fff; border-radius:999px;
@@ -1052,6 +1063,8 @@
     <!-- campanita notificaciones -->
     <div class="notif-wrap" id="notif-wrap">
       <button class="notif-btn" id="notif-btn" onclick="unifiedNotifClick(event)">
+        <span class="notif-ring notif-ring-1"></span>
+        <span class="notif-ring notif-ring-2"></span>
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"/>

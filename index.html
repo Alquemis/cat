@@ -4452,7 +4452,7 @@ function _updateAdminNotifBadge() {
 }
 
 function unifiedNotifClick(e) {
-  if (_broadcastUnread > 0) {
+  if (_userNotifs.length > 0) {
     openUserNotifPanel();
   } else {
     toggleNotifPanel(e);
@@ -4552,9 +4552,7 @@ function _openUserNotifModal(notif) {
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:860;display:flex;align-items:center;justify-content:center;padding:20px;';
     modal.innerHTML = `
       <div style="background:#fff;border-radius:20px;padding:24px;max-width:500px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.25);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <button onclick="_dismissUserNotif(document.getElementById('_user-notif-modal').dataset.notifId)"
-            style="border:none;background:none;color:#9ca3af;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;">🗑 Borrar</button>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
           <button onclick="document.getElementById('_user-notif-modal').style.display='none'"
             style="border:none;background:#f3f4f6;color:#374151;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;">✕</button>
         </div>

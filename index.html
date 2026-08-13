@@ -451,6 +451,7 @@
   .chip-cancelado { background:#fee2e2; color:#dc2626; }
   .chip-pendiente { background:#dc2626; color:#fff; }
   .chip-eliminado { background:#f3f4f6; color:#6b7280; }
+  .chip-aviso     { background:#ede9fe; color:#6d28d9; }
   .notif-msg    { font-size:12px; color:#374151; line-height:1.4; }
   .notif-close  { background:none; border:none; color:#d1d5db; font-size:14px; cursor:pointer; padding:0 2px; line-height:1; flex-shrink:0; transition:color .15s; }
   .notif-close:hover { color:#dc2626; }
@@ -1077,12 +1078,6 @@
           <button onclick="clearAllNotif()" style="font-size:11px;font-weight:600;color:#6b7280;background:none;border:none;cursor:pointer;">Borrar todo</button>
         </div>
         <div class="notif-list" id="notif-list"></div>
-      </div>
-      <div class="notif-panel" id="_user-notif-panel">
-        <div class="notif-panel-hd">
-          <span id="_user-notif-panel-title">Notificaciones</span>
-        </div>
-        <div class="notif-list" id="_user-notif-list"></div>
       </div>
     </div>
   </div>
@@ -3939,12 +3934,13 @@ async function toggleNotifPanel(e) {
   if (panel.classList.contains('open')) {
     closeNotifPanel();
   } else {
-    closeUserNotifPanel();
     await renderNotifList();
     panel.classList.add('open');
   }
 }
 
+// Lista mezclada: notificaciones de pedido (tabla `notificaciones`) + avisos admin
+// (tabla `notifications`, ya cargados en _userNotifs), ordenadas por fecha.
 async function renderNotifList() {
   if (!currentUser) return;
   const list = document.getElementById('notif-list');
@@ -3956,18 +3952,23 @@ async function renderNotifList() {
     .eq('usuario_cedula', currentUser.cedula)
     .order('created_at', { ascending: false });
 
-  const items = data || [];
-  if (!items.length) {
+  const orderItems = (data || []).map(n => ({ ...n, _kind: 'order' }));
+  const adminItems = _userNotifs.map(n => ({ ...n, _kind: 'admin' }));
+  const merged = [...orderItems, ...adminItems].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (!merged.length) {
     list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>'; return;
   }
-  list.innerHTML = items.map(n => {
-    const meta = _notifMeta[n.estado] || { icon: '📋', title: n.estado, sub: '' };
-    const time = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-    const fecha = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
-    const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : n.estado === 'mora' ? '⚠ Pendiente' : n.estado === 'eliminado' ? 'Eliminado' : n.estado === 'sin_inventario' ? 'Sin inventario' : 'Rechazado';
-    const chipClass = n.estado === 'mora' ? 'chip-pendiente' : n.estado === 'sin_inventario' ? 'chip-eliminado' : `chip-${n.estado}`;
-    const msg = typeof meta.title === 'function' ? meta.title(escHtml(n.order_num)) : meta.title;
-    return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}" style="cursor:pointer;" onclick="notifOpenOrder('${n.order_id}','${n.id}')">
+  list.innerHTML = merged.map(n => n._kind === 'admin' ? _renderAdminNotifItem(n) : _renderOrderNotifItem(n)).join('');
+}
+
+function _renderOrderNotifItem(n) {
+  const meta = _notifMeta[n.estado] || { icon: '📋', title: n.estado, sub: '' };
+  const fecha = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
+  const chipLabel = n.estado === 'facturado' ? 'Facturado' : n.estado === 'pagado' ? 'Pagado' : n.estado === 'mora' ? '⚠ Pendiente' : n.estado === 'eliminado' ? 'Eliminado' : n.estado === 'sin_inventario' ? 'Sin inventario' : 'Rechazado';
+  const chipClass = n.estado === 'mora' ? 'chip-pendiente' : n.estado === 'sin_inventario' ? 'chip-eliminado' : `chip-${n.estado}`;
+  const msg = typeof meta.title === 'function' ? meta.title(escHtml(n.order_num)) : meta.title;
+  return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-${n.id}" style="cursor:pointer;" onclick="notifOpenOrder('${n.order_id}','${n.id}')">
       <div class="notif-top-row">
         <div class="notif-meta">
           <span class="notif-date">${fecha}</span>
@@ -3977,7 +3978,20 @@ async function renderNotifList() {
       </div>
       <div class="notif-msg">${msg}</div>
     </div>`;
-  }).join('');
+}
+
+function _renderAdminNotifItem(n) {
+  const fecha = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
+  return `<div class="notif-item${n.read ? ' read' : ''}" id="nitem-admin-${n.id}" style="cursor:pointer;" onclick="_openUserNotifFromList('${n.id}')">
+      <div class="notif-top-row">
+        <div class="notif-meta">
+          <span class="notif-date">${fecha}</span>
+          <span class="notif-chip chip-aviso">Aviso</span>
+        </div>
+        <button class="notif-close" onclick="event.stopPropagation();_dismissUserNotif('${n.id}')">✕</button>
+      </div>
+      <div class="notif-msg"><strong>${_escHtmlUser(n.title)}</strong>${n.subtitle ? '<br>' + _escHtmlUser(n.subtitle) : ''}</div>
+    </div>`;
 }
 
 async function closeNotifPanel() {
@@ -4006,6 +4020,9 @@ async function dismissNotif(id) {
 async function clearAllNotif() {
   if (!currentUser) return;
   await sb.from('notificaciones').delete().eq('usuario_cedula', currentUser.cedula);
+  _userNotifs.forEach(n => _addDismissedNotifId(n.id));
+  _userNotifs = [];
+  _updateAdminNotifBadge();
   const list = document.getElementById('notif-list');
   if (list) list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>';
   await refreshNotifBadge();
@@ -4167,7 +4184,7 @@ function stopPromoStockPolling() {
 // Cerrar panel al hacer clic fuera
 document.addEventListener('click', e => {
   const wrap = document.getElementById('notif-wrap');
-  if (wrap && !wrap.contains(e.target)) { closeNotifPanel(); closeUserNotifPanel(); }
+  if (wrap && !wrap.contains(e.target)) closeNotifPanel();
 });
 
 // ============================================================
@@ -4459,73 +4476,32 @@ function _updateAdminNotifBadge() {
 }
 
 function unifiedNotifClick(e) {
-  if (_userNotifs.length > 0) {
-    openUserNotifPanel();
-  } else {
-    toggleNotifPanel(e);
+  // Si llega exactamente un aviso admin nuevo y no hay notificaciones de pedido
+  // sin leer, se salta la lista y abre el detalle directo (uno a la vez).
+  if (_broadcastUnread === 1 && _orderUnread === 0) {
+    const notif = _userNotifs.find(n => !n.read);
+    if (notif) { _markNotifRead(notif); _openUserNotifModal(notif); return; }
   }
+  toggleNotifPanel(e);
 }
 
-function openUserNotifPanel() {
-  if (!_userNotifs.length) return;
-  const unread = _userNotifs.filter(n => !n.read);
-  if (unread.length === 1) {
-    _markNotifRead(unread[0]);
-    _openUserNotifModal(unread[0]);
-    return;
-  }
-  // Varios: mostrar panel anclado a la campanita (incluye las ya leídas, hasta que se borren)
-  closeNotifPanel();
-  _renderUserNotifSheet();
-  const panel = document.getElementById('_user-notif-panel');
-  if (panel) panel.classList.add('open');
-}
-
-function closeUserNotifPanel() {
-  const panel = document.getElementById('_user-notif-panel');
-  if (panel) panel.classList.remove('open');
-}
-
-function _renderUserNotifSheet() {
-  const titleEl = document.getElementById('_user-notif-panel-title');
-  const list = document.getElementById('_user-notif-list');
-  if (!titleEl || !list) return;
-  const sorted = [..._userNotifs].sort((a, b) => (a.read === b.read) ? 0 : (a.read ? 1 : -1));
-  const unreadCount = _userNotifs.filter(n => !n.read).length;
-  titleEl.textContent = unreadCount ? `Notificaciones (${unreadCount} nuevas)` : 'Notificaciones';
-  if (!sorted.length) {
-    list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>';
-    return;
-  }
-  list.innerHTML = sorted.map(n => `
-    <div class="notif-item${n.read ? ' read' : ''}" style="cursor:pointer;" onclick="_openUserNotifFromSheet('${n.id}')">
-      <div class="notif-top-row">
-        <div class="notif-meta">
-          <span class="notif-date">${new Date(n.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'})}</span>
-        </div>
-        <button class="notif-close" onclick="event.stopPropagation();_dismissUserNotif('${n.id}')">✕</button>
-      </div>
-      <div class="notif-msg"><strong>${_escHtmlUser(n.title)}</strong>${n.subtitle ? '<br>' + _escHtmlUser(n.subtitle) : ''}</div>
-    </div>`).join('');
-}
-
-function _openUserNotifFromSheet(id) {
+function _openUserNotifFromList(id) {
   const notif = _userNotifs.find(n => String(n.id) === String(id));
   if (!notif) return;
   _markNotifRead(notif);
   _openUserNotifModal(notif);
-  closeUserNotifPanel();
+  closeNotifPanel();
 }
 
 function _dismissUserNotif(id) {
   _addDismissedNotifId(id);
   _userNotifs = _userNotifs.filter(n => String(n.id) !== String(id));
   _updateAdminNotifBadge();
-  const panel = document.getElementById('_user-notif-panel');
-  if (panel && panel.classList.contains('open')) {
-    if (_userNotifs.length) _renderUserNotifSheet();
-    else closeUserNotifPanel();
-  }
+  const el = document.getElementById('nitem-admin-' + id);
+  if (el) el.remove();
+  const list = document.getElementById('notif-list');
+  if (list && !list.querySelector('.notif-item'))
+    list.innerHTML = '<div class="notif-empty">Sin notificaciones</div>';
   const modal = document.getElementById('_user-notif-modal');
   if (modal && modal.dataset.notifId === String(id)) modal.style.display = 'none';
 }

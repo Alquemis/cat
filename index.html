@@ -1805,7 +1805,6 @@ async function onLogin(session, isRestore = false) {
   try { if (typeof startNotifPolling === 'function') startNotifPolling(); } catch(e) {}
   try { if (typeof startPromoStockPolling === 'function') startPromoStockPolling(); } catch(e) {}
   try { _updateInstallMenuBtn(); } catch(e) {}
-  try { loadUserNotifications(); } catch(e) {}
 
   // Esperar el catálogo (ya se estaba cargando en paralelo desde que abrió la página)
   await ensureCatalog();
@@ -3894,19 +3893,30 @@ async function checkNotifications(force = false) {
   if (!_notifCache.length || nuevas.length) await refreshNotifBadge();
 }
 
+// Contadores compartidos entre los dos sistemas de notificación
+// (pedidos vía tabla `notificaciones` y avisos admin vía tabla `notifications`),
+// para que ninguno pise el estado de campanita del otro.
+let _orderUnread = 0;
+let _broadcastUnread = 0;
+
+function _syncNotifBell() {
+  const badge = document.getElementById('notif-badge');
+  const btn   = document.getElementById('notif-btn');
+  if (!badge || !btn) return;
+  const total = _orderUnread + _broadcastUnread;
+  badge.textContent = total;
+  badge.classList.toggle('show', total > 0);
+  btn.classList.toggle('shaking', total > 0);
+}
+
 async function refreshNotifBadge() {
   if (!currentUser) return;
   const { data } = await sb.from('notificaciones')
     .select('id, read')
     .eq('usuario_cedula', currentUser.cedula);
   _notifCache = data || [];
-  const unread = _notifCache.filter(n => !n.read).length;
-  const badge = document.getElementById('notif-badge');
-  const btn   = document.getElementById('notif-btn');
-  if (!badge || !btn) return;
-  badge.textContent = unread;
-  badge.classList.toggle('show', unread > 0);
-  btn.classList.toggle('shaking', unread > 0);
+  _orderUnread = _notifCache.filter(n => !n.read).length;
+  _syncNotifBell();
 }
 
 async function notifOpenOrder(orderId, notifId) {
@@ -3996,7 +4006,11 @@ async function clearAllNotif() {
 
 function startNotifPolling() {
   checkNotifications();
-  _notifTimer = setInterval(checkNotifications, 8000);
+  loadUserNotifications();
+  _notifTimer = setInterval(() => {
+    checkNotifications();
+    loadUserNotifications();
+  }, 8000);
 }
 
 function stopNotifPolling() {
@@ -4411,11 +4425,8 @@ async function loadUserNotifications() {
 }
 
 function _updateAdminNotifBadge() {
-  const badge = document.getElementById('notif-badge');
-  if (!badge) return;
-  const count = _userNotifs.length;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'flex' : 'none';
+  _broadcastUnread = _userNotifs.length;
+  _syncNotifBell();
 }
 
 function unifiedNotifClick(e) {

@@ -4476,11 +4476,17 @@ function _updateAdminNotifBadge() {
 }
 
 function unifiedNotifClick(e) {
-  // Si llega exactamente un aviso admin nuevo y no hay notificaciones de pedido
-  // sin leer, se salta la lista y abre el detalle directo (uno a la vez).
-  if (_broadcastUnread === 1 && _orderUnread === 0) {
-    const notif = _userNotifs.find(n => !n.read);
-    if (notif) { _markNotifRead(notif); _openUserNotifModal(notif); return; }
+  // Mientras haya avisos admin sin leer, cada toque de la campanita despliega
+  // el siguiente directo (uno por uno, del más antiguo al más nuevo) hasta
+  // que todos queden marcados como leídos; después, toca la campanita muestra
+  // la lista mezclada de siempre.
+  const pending = _userNotifs
+    .filter(n => !n.read)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  if (pending.length) {
+    _markNotifRead(pending[0]);
+    _openUserNotifModal(pending[0]);
+    return;
   }
   toggleNotifPanel(e);
 }

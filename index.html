@@ -184,6 +184,14 @@
   .user-dropdown-item.danger { color: #dc2626; }
   .user-dropdown-item.danger:hover { background: #fef2f2; }
   .user-dropdown-sep { height: 1px; background: #f3f4f6; margin: 0; }
+  .familia-badge {
+    display: none; position: absolute; top: -6px; right: -6px;
+    background: #dc2626; color: #fff;
+    border-radius: 999px; font-size: 11px; font-weight: 800;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    align-items: center; justify-content: center;
+  }
+  .familia-badge.show { display: flex; }
 
   /* ── Menú desplegable usuario ── MÓVIL: +30% tamaño ── */
   @media (max-width: 768px) {
@@ -503,6 +511,16 @@
   }
   .cart-badge.show { display: flex; }
 
+  /* Familia — botón topbar */
+  .familia-topbar-btn {
+    position: relative; background: #f3f4f6; color: #143c5a;
+    border: none; border-radius: 999px; padding: 9px 14px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+    transition: background 0.2s; white-space: nowrap; flex-shrink: 0;
+  }
+  .familia-topbar-btn:hover { background: #e5e7eb; }
+
   /* ========== NAV TABS ========== */
   .nav-tabs {
     background: #fff; border-bottom: 1px solid #e5e7eb;
@@ -602,7 +620,7 @@
   /* Descuento card */
   .product-card.desc-card { border: 2px solid #dc2626; }
   .product-card.desc-card:hover { border-color: #b91c1c; }
-  .desc-tag { display:inline-block;background:#dc2626;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.4px; }
+  .desc-tag { display:inline-block;background:#dc2626;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.4px;white-space:nowrap;flex-shrink:0; }
   .desc-original-price { font-size:70%;color:#9ca3af;text-decoration:line-through;line-height:1.2; }
   .desc-limit-chip { font-size:12px;color:#dc2626;font-weight:600;margin-top:3px; }
   /* Límite popup overlay */
@@ -662,8 +680,8 @@
   .product-info { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
   .product-name {
     font-size: 13.5px; font-weight: 600; color: #143c5a; line-height: 1.35;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden; min-height: 2.7em;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; min-height: 4.05em;
   }
   .product-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .product-meta { font-size: 11.5px; color: #6b7280; flex: 1; min-width: 0; }
@@ -900,6 +918,14 @@
     .topbar-title { display: none; }
     .topbar-right { gap: 8px; flex: 1; justify-content: flex-end; }
 
+    /* Mi pedido: solo ícono en móvil */
+    .cart-btn { width: 38px; height: 38px; padding: 0; border-radius: 50%; justify-content: center; gap: 0; }
+    .cart-btn-text { display: none; }
+
+    /* Familia: en móvil mantiene ícono + texto */
+    .familia-topbar-btn { padding: 8px 12px; }
+    .familia-topbar-btn .familia-badge { top: -4px; right: -4px; }
+
     /* Nav */
     .nav-tabs { padding: 0; }
     .nav-tab, .home-btn { flex: 1 1 auto; min-width: 0; padding: 11px 2px; font-size: 11px; letter-spacing: 0; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
@@ -1042,6 +1068,16 @@
   </div>
   <div class="topbar-right">
     <!-- campanita notificaciones -->
+    <!-- familia topbar button -->
+    <button class="familia-topbar-btn" onclick="openFamiliaPanel()" id="familia-topbar-btn" style="display:none;" title="Familia">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="5.5" cy="7.2" r="2.1"/><path d="M1.8 18.5v-1.1a2.9 2.9 0 0 1 2.9-2.9h1.6a2.9 2.9 0 0 1 2.9 2.9v1.1"/>
+        <circle cx="18.5" cy="7.2" r="2.1"/><path d="M14.8 18.5v-1.1a2.9 2.9 0 0 1 2.9-2.9h1.6a2.9 2.9 0 0 1 2.9 2.9v1.1"/>
+        <circle cx="12" cy="5.8" r="2.5"/><path d="M7.6 19v-1.6a3.7 3.7 0 0 1 3.7-3.7h1.4a3.7 3.7 0 0 1 3.7 3.7V19"/>
+      </svg>
+      <span class="familia-topbar-text">Familia</span>
+      <span id="familia-badge" class="familia-badge">0</span>
+    </button>
     <!-- user menu -->
     <div class="user-menu-wrap" id="user-chip" style="display:none;">
       <button class="user-chip" onclick="toggleUserMenu(event)">
@@ -1058,7 +1094,8 @@
     </div>
     <!-- cart button -->
     <button class="cart-btn" onclick="openCart()" id="cart-toggle" style="display:none;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Mi pedido
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="cart-btn-text">Mi pedido</span>
       <span class="cart-badge" id="cart-badge">0</span>
     </button>
     <!-- campanita notificaciones -->
@@ -1138,6 +1175,78 @@
       <button class="mpd-btn-dl" id="mpd-btn-dl" onclick="descargarPedidoDetalle()">⬇ Descargar copia</button>
       <button class="mpd-btn-close" onclick="closePedidoDet()">Cerrar</button>
       <button class="mpd-btn-del" id="mpd-btn-del" onclick="pedidoDetDelete()" title="Eliminar de mi historial">🗑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== FAMILIA — LISTA DE DESEOS RECIBIDAS ========== -->
+<div id="modal-familia" class="modal-overlay" onclick="if(event.target===this)closeFamiliaPanel()">
+  <div class="mp-card">
+    <div class="mp-header" style="align-items:flex-start;">
+      <div>
+        <div class="mp-title">👪 Familia</div>
+        <div style="font-size:13px; font-weight:600; color:#143c5a; margin-top:4px;">Recuerda que solo tú puedes hacer el pago de los pedidos</div>
+      </div>
+      <button class="mp-close" onclick="closeFamiliaPanel()">✕</button>
+    </div>
+    <div style="padding:12px 20px 0;">
+      <button onclick="openShareFamilyModal()" style="width:100%; padding:11px; background:#f3f4f6; border:none; border-radius:10px; font-size:13px; font-weight:700; color:#143c5a; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;">🔗 Compartir con familia</button>
+    </div>
+    <div class="mp-body" id="familia-body">
+      <div class="mp-loading">Cargando…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== FAMILIA — DETALLE DE UNA LISTA ========== -->
+<div id="modal-familia-det" class="modal-overlay" onclick="if(event.target===this)closeFamiliaDet()">
+  <div class="mpd-card">
+    <div class="mpd-top">
+      <div class="mpd-top-row">
+        <div>
+          <div class="mpd-num" id="famdet-nombre"></div>
+          <div class="mpd-fecha" id="famdet-fecha"></div>
+        </div>
+        <span class="mpd-status" id="famdet-status"></span>
+      </div>
+    </div>
+    <div class="mpd-body" id="famdet-body"></div>
+    <div class="mpd-footer">
+      <button class="mpd-btn-del" onclick="descartarFamiliaWishlist()" title="Descartar">🗑 Descartar</button>
+      <button class="mpd-btn-dl" onclick="procesarFamiliaWishlist()">🛒 Cargar al carrito</button>
+      <button class="mpd-btn-close" onclick="closeFamiliaDet()">Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== COMPARTIR CON FAMILIA ========== -->
+<div id="modal-share-family" class="modal-overlay" onclick="if(event.target===this)closeShareFamilyModal()">
+  <div class="mp-card" style="max-width:420px;">
+    <div class="mp-header">
+      <div class="mp-title">🔗 Compartir con familia</div>
+      <button class="mp-close" onclick="closeShareFamilyModal()">✕</button>
+    </div>
+    <div class="mp-body" style="padding:4px 20px 22px;">
+      <p style="font-size:13.5px;color:#6b7280;line-height:1.55;margin-bottom:16px;">
+        Envía este link a un familiar para que arme su lista de deseos y te la envíe de vuelta.
+        Cuando la reciba en la sección "Familia" podrás revisarla, ajustarla y convertirla en pedido.
+      </p>
+      <div id="share-family-loading" style="text-align:center;padding:20px;color:#9ca3af;font-size:13px;">Generando link…</div>
+      <div id="share-family-content" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <input type="text" id="share-family-link" readonly
+            style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:12.5px;color:#374151;background:#f9fafb;">
+          <button onclick="copyFamilyLink()" style="flex-shrink:0;padding:10px 14px;border:none;border-radius:9px;background:#f3f4f6;color:#374151;font-size:13px;font-weight:700;cursor:pointer;">Copiar</button>
+        </div>
+        <button onclick="shareFamilyWhatsapp()" style="width:100%;padding:12px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">
+          📱 Enviar por WhatsApp
+        </button>
+        <div style="text-align:center;">
+          <button onclick="regenerateFamilyToken()" style="border:none;background:none;color:#9ca3af;font-size:12px;cursor:pointer;text-decoration:underline;">
+            ¿Lo compartiste por error? Generar un link nuevo, el anterior ya no funcionará
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1789,6 +1898,7 @@ async function onLogin(session, isRestore = false) {
   document.getElementById('user-avatar').textContent = nombre.charAt(0).toUpperCase();
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('cart-toggle').style.display = 'flex';
+  document.getElementById('familia-topbar-btn').style.display = 'flex';
   document.getElementById('search-row').style.display = 'flex';
 
   // Ocultar overlay de login
@@ -1806,6 +1916,7 @@ async function onLogin(session, isRestore = false) {
   try { if (typeof startNotifPolling === 'function') startNotifPolling(); } catch(e) {}
   try { if (typeof startPromoStockPolling === 'function') startPromoStockPolling(); } catch(e) {}
   try { _updateInstallMenuBtn(); } catch(e) {}
+  try { refreshFamiliaBadge(); } catch(e) {}
 
   // Esperar el catálogo (ya se estaba cargando en paralelo desde que abrió la página)
   await ensureCatalog();
@@ -1825,11 +1936,13 @@ function onLogout() {
   stopRealtime();
   document.getElementById('notif-wrap').classList.remove('visible');
   try { _userNotifs = []; _updateAdminNotifBadge(); } catch(e) {}
+  try { _familiaWishlists = []; document.getElementById('familia-badge').classList.remove('show'); } catch(e) {}
   currentUser = null;
   cart = [];
   localStorage.removeItem('catalogo_session');
   document.getElementById('user-chip').style.display = 'none';
   document.getElementById('cart-toggle').style.display = 'none';
+  document.getElementById('familia-topbar-btn').style.display = 'none';
   document.getElementById('search-row').style.display = 'none';
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('login-error').classList.remove('show');
@@ -2352,6 +2465,241 @@ async function descargarPedidoDetalle() {
   const fechaStr = o.fecha ? new Date(o.fecha).toLocaleString('es-CR') : '—';
   await descargarCopiaRecibo({ id: o.id, fecha: fechaStr, items, total: o.total || 0, usuario: currentUser, estado: o.estado || 'pendiente' });
   if (btn) { btn.disabled = false; btn.textContent = '⬇ Descargar copia'; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FAMILIA — listas de deseos enviadas por familiares (tabla
+   `family_wishlists`). El familiar arma su lista en FL.html sin
+   cuenta propia; acá el colaborador la revisa, la ajusta y la
+   carga a su propio carrito para seguir el checkout de siempre.
+═══════════════════════════════════════════════════════════ */
+let _familiaWishlists = [];
+let _familiaDetActual = null; // { wishlist, workingItems: [{codigo,nombre,cantidad,precio_unitario}] }
+
+async function refreshFamiliaBadge() {
+  if (!currentUser) return;
+  const { count } = await sb.from('family_wishlists')
+    .select('id', { count: 'exact', head: true })
+    .eq('colaborador_cedula', currentUser.cedula)
+    .eq('estado', 'pendiente');
+  const badge = document.getElementById('familia-badge');
+  if (!badge) return;
+  badge.textContent = count || 0;
+  badge.classList.toggle('show', !!count);
+}
+
+async function openFamiliaPanel() {
+  closeUserMenu();
+  document.getElementById('modal-familia').classList.add('open');
+  await loadFamiliaWishlists();
+}
+function closeFamiliaPanel() {
+  document.getElementById('modal-familia').classList.remove('open');
+}
+
+async function loadFamiliaWishlists() {
+  const body = document.getElementById('familia-body');
+  body.innerHTML = '<div class="mp-loading">Cargando…</div>';
+  const { data, error } = await sb.from('family_wishlists')
+    .select('*')
+    .eq('colaborador_cedula', currentUser.cedula)
+    .neq('estado', 'descartada')
+    .order('created_at', { ascending: false });
+  if (error) { body.innerHTML = '<div class="mp-empty">No se pudo cargar.</div>'; return; }
+  _familiaWishlists = data || [];
+  renderFamiliaList();
+}
+
+function renderFamiliaList() {
+  const body = document.getElementById('familia-body');
+  if (!_familiaWishlists.length) {
+    body.innerHTML = '<div class="mp-empty">Todavía no te ha llegado ninguna lista de deseos.<br><br>Comparte el catálogo con tu familia desde 🔗 "Compartir con familia".</div>';
+    return;
+  }
+  body.innerHTML = _familiaWishlists.map(w => {
+    const fecha  = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
+    const items  = w.items || [];
+    const nItems = items.reduce((s, i) => s + (i.cantidad || 0), 0);
+    const total  = items.reduce((s, i) => s + (i.precio_unitario || 0) * (i.cantidad || 0), 0);
+    const procesada  = w.estado === 'procesada';
+    const statusStyle = procesada ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e';
+    return `<div class="mpc-row" onclick="openFamiliaDet('${w.id}')">
+      <div class="mpc-left">
+        <div class="mpc-num">Pedido de: ${escHtml(toTitleCase(w.familiar_nombre))}</div>
+        <div class="mpc-date">${fecha} · ${nItems} producto${nItems === 1 ? '' : 's'}</div>
+      </div>
+      <span class="mpc-status" style="${statusStyle}">${procesada ? 'Procesada' : 'Pendiente'}</span>
+      <span class="mpc-total"><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span>
+      <span class="mpc-arrow">›</span>
+    </div>`;
+  }).join('');
+}
+
+function openFamiliaDet(id) {
+  const w = _familiaWishlists.find(x => x.id === id);
+  if (!w) return;
+  _familiaDetActual = { wishlist: w, workingItems: (w.items || []).map(i => ({ ...i })) };
+  document.getElementById('famdet-nombre').textContent = toTitleCase(w.familiar_nombre);
+  document.getElementById('famdet-fecha').textContent = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const procesada = w.estado === 'procesada';
+  const statusEl = document.getElementById('famdet-status');
+  statusEl.textContent = procesada ? 'Procesada' : 'Pendiente';
+  statusEl.style.cssText = procesada ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e';
+  renderFamiliaDet();
+  document.getElementById('modal-familia-det').classList.add('open');
+}
+function closeFamiliaDet() {
+  document.getElementById('modal-familia-det').classList.remove('open');
+  _familiaDetActual = null;
+}
+
+function renderFamiliaDet() {
+  const body  = document.getElementById('famdet-body');
+  const items = _familiaDetActual.workingItems;
+  if (!items.length) {
+    body.innerHTML = '<div class="mp-empty">Esta lista quedó vacía.</div>';
+    return;
+  }
+  body.innerHTML = items.map((it, idx) => {
+    const sub = ((it.precio_unitario || 0) * it.cantidad).toLocaleString('es-CR');
+    const prod = CATALOG.find(p => p.id === it.codigo);
+    const descChip = (prod && prod.descuento) ? ` <span class="desc-tag" style="font-size:10px;">-${prod.descPct}%</span>` : '';
+    return `<div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${escHtml(it.nombre)}${descChip}</div>
+        <div class="cart-item-price"><span class="col-sign">₡</span>${(it.precio_unitario || 0).toLocaleString('es-CR')} c/u</div>
+        <div class="cart-qty-row">
+          <button class="qty-btn" onclick="famUpdateQty(${idx},-1)">−</button>
+          <span class="qty-val">${it.cantidad}</span>
+          <button class="qty-btn" onclick="famUpdateQty(${idx},1)">+</button>
+          <span style="flex:1"></span>
+          <span class="cart-subtotal"><span class="col-sign">₡</span>${sub}</span>
+        </div>
+      </div>
+      <button class="cart-item-remove" onclick="famRemoveItem(${idx})" title="Eliminar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function famUpdateQty(idx, delta) {
+  const items = _familiaDetActual.workingItems;
+  items[idx].cantidad += delta;
+  if (items[idx].cantidad <= 0) items.splice(idx, 1);
+  renderFamiliaDet();
+}
+function famRemoveItem(idx) {
+  _familiaDetActual.workingItems.splice(idx, 1);
+  renderFamiliaDet();
+}
+
+async function descartarFamiliaWishlist() {
+  if (!_familiaDetActual) return;
+  await sb.from('family_wishlists').update({ estado: 'descartada' }).eq('id', _familiaDetActual.wishlist.id);
+  closeFamiliaDet();
+  await loadFamiliaWishlists();
+  refreshFamiliaBadge();
+  showToast('Lista descartada', 'ok');
+}
+
+async function procesarFamiliaWishlist() {
+  if (!_familiaDetActual) return;
+  const items = _familiaDetActual.workingItems;
+  if (!items.length) { showToast('No hay productos para cargar', 'warn'); return; }
+
+  // Revalidar contra el catálogo actual (precio/stock/activo) y sumar al
+  // carrito normal del colaborador — el checkout real (con IVA, descuentos,
+  // exenciones, etc.) sigue siendo el mismo de siempre.
+  await ensureCatalog();
+  let agregados = 0, omitidos = 0;
+  for (const it of items) {
+    const p = CATALOG.find(x => x.id === it.codigo);
+    if (!p) { omitidos++; continue; }
+    const existing = cart.find(c => c.product.id === p.id);
+    if (existing) existing.qty += it.cantidad;
+    else cart.push({ product: p, qty: it.cantidad });
+    agregados++;
+  }
+  saveCart();
+  updateCartBadge();
+  if (typeof refreshAddButtons === 'function') refreshAddButtons();
+
+  await sb.from('family_wishlists')
+    .update({ estado: 'procesada', processed_at: new Date().toISOString() })
+    .eq('id', _familiaDetActual.wishlist.id);
+
+  closeFamiliaDet();
+  closeFamiliaPanel();
+  await loadFamiliaWishlists();
+  refreshFamiliaBadge();
+
+  if (omitidos > 0) {
+    showToast(`${agregados} producto${agregados === 1 ? '' : 's'} cargado${agregados === 1 ? '' : 's'} · ${omitidos} ya no está${omitidos === 1 ? '' : 'n'} disponible${omitidos === 1 ? '' : 's'}`, 'warn');
+  } else {
+    showToast('Productos cargados a tu carrito ✓', 'ok');
+  }
+  openCart();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPARTIR CON FAMILIA — genera/recupera el token del
+   colaborador y arma el link hacia FL.html
+═══════════════════════════════════════════════════════════ */
+async function openShareFamilyModal() {
+  closeUserMenu();
+  document.getElementById('modal-share-family').classList.add('open');
+  document.getElementById('share-family-loading').style.display = 'block';
+  document.getElementById('share-family-content').style.display = 'none';
+  const token = await getOrCreateFamilyToken();
+  renderFamilyShareLink(token);
+}
+function closeShareFamilyModal() {
+  document.getElementById('modal-share-family').classList.remove('open');
+}
+
+async function getOrCreateFamilyToken() {
+  const { data } = await sb.from('usuarios').select('family_token').eq('cedula', currentUser.cedula).maybeSingle();
+  if (data && data.family_token) return data.family_token;
+  return await regenerateFamilyToken(true);
+}
+
+function _genFamilyToken() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '');
+  return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
+async function regenerateFamilyToken(silent) {
+  const token = _genFamilyToken();
+  const { error } = await sb.from('usuarios').update({ family_token: token }).eq('cedula', currentUser.cedula);
+  if (error) { showToast('Error generando el link: ' + error.message); return null; }
+  if (!silent) { renderFamilyShareLink(token); showToast('Link nuevo generado ✓', 'ok'); }
+  return token;
+}
+
+function renderFamilyShareLink(token) {
+  if (!token) return;
+  const url = new URL('FL.html?t=' + token, location.href).href;
+  document.getElementById('share-family-link').value = url;
+  document.getElementById('share-family-loading').style.display = 'none';
+  document.getElementById('share-family-content').style.display = 'block';
+}
+
+function copyFamilyLink() {
+  const input = document.getElementById('share-family-link');
+  input.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(() => showToast('Link copiado ✓', 'ok'))
+      .catch(() => { document.execCommand('copy'); showToast('Link copiado ✓', 'ok'); });
+  } else {
+    document.execCommand('copy');
+    showToast('Link copiado ✓', 'ok');
+  }
+}
+
+function shareFamilyWhatsapp() {
+  const link = document.getElementById('share-family-link').value;
+  const nombre = currentUser ? toTitleCase(currentUser.nombre).split(/\s+/)[0] : '';
+  const text = `¡Hola! Te comparto el catálogo de Martimac para que armes tu lista de deseos${nombre ? ' y me la envíes a mí, ' + nombre : ''}: ${link}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
 }
 
 // Enter key en login
@@ -4031,9 +4379,11 @@ async function clearAllNotif() {
 function startNotifPolling() {
   checkNotifications();
   loadUserNotifications();
+  refreshFamiliaBadge();
   _notifTimer = setInterval(() => {
     checkNotifications();
     loadUserNotifications();
+    refreshFamiliaBadge();
   }, 8000);
 }
 

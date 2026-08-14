@@ -186,12 +186,16 @@
   .user-dropdown-sep { height: 1px; background: #f3f4f6; margin: 0; }
   .familia-badge {
     display: none; position: absolute; top: -6px; right: -6px;
-    background: #dc2626; color: #fff;
+    background: #16a34a; color: #fff;
     border-radius: 999px; font-size: 11px; font-weight: 800;
     min-width: 18px; height: 18px; padding: 0 5px;
     align-items: center; justify-content: center;
   }
-  .familia-badge.show { display: flex; }
+  .familia-badge.show { display: flex; animation: familia-badge-breathe 1.8s ease-in-out infinite; }
+  @keyframes familia-badge-breathe {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22,163,74,.55); }
+    50% { transform: scale(1.15); box-shadow: 0 0 0 4px rgba(22,163,74,0); }
+  }
 
   /* ── Menú desplegable usuario ── MÓVIL: +30% tamaño ── */
   @media (max-width: 768px) {

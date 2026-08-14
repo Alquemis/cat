@@ -2528,7 +2528,7 @@ function renderFamiliaList() {
         <div class="mpc-num">Pedido de: ${escHtml(toTitleCase(w.familiar_nombre))}</div>
         <div class="mpc-date">${fecha} · ${nItems} producto${nItems === 1 ? '' : 's'}</div>
       </div>
-      <span class="mpc-status" style="${statusStyle}">${procesada ? 'Procesada' : 'Pendiente'}</span>
+      <span class="mpc-status" style="${statusStyle}">${procesada ? 'En el carrito' : 'Pendiente'}</span>
       <span class="mpc-total"><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span>
       <span class="mpc-arrow">›</span>
     </div>`;
@@ -2543,7 +2543,7 @@ function openFamiliaDet(id) {
   document.getElementById('famdet-fecha').textContent = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   const procesada = w.estado === 'procesada';
   const statusEl = document.getElementById('famdet-status');
-  statusEl.textContent = procesada ? 'Procesada' : 'Pendiente';
+  statusEl.textContent = procesada ? 'En el carrito' : 'Pendiente';
   statusEl.style.cssText = procesada ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e';
   renderFamiliaDet();
   document.getElementById('modal-familia-det').classList.add('open');

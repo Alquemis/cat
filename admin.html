@@ -479,8 +479,6 @@
   .notif-hist-card.cancelled { opacity:.55;background:#f9fafb; }
   .notif-hist-title { font-size:14px;font-weight:700;color:#143c5a; }
   .notif-hist-meta { font-size:12px;color:#9ca3af;margin:3px 0 8px; }
-  .notif-readers-list { display:flex;flex-wrap:wrap;gap:4px;margin-top:6px; }
-  .notif-reader-chip { background:#d1fae5;color:#065f46;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap; }
 
   /* ── Home Editor ── */
   .home-rich-editor { min-height:120px;border:1.5px solid #e5e7eb;border-top:none;border-bottom-left-radius:9px;border-bottom-right-radius:9px;padding:12px 14px;font-size:14px;line-height:1.6;outline:none;font-family:inherit; }
@@ -1456,6 +1454,25 @@
       </div>
     </div>
     <div id="collab-list-body"></div>
+  </div>
+</div>
+
+<!-- MODAL LECTORES DE NOTIFICACIÓN -->
+<div id="notif-readers-modal" class="collab-modal" style="z-index:775;" onclick="if(event.target===this)closeNotifReaders()">
+  <div class="collab-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="font-size:17px;font-weight:700;color:#143c5a;">Lecturas</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="notif-readers-search" placeholder="Buscar…" oninput="filterNotifReaders()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <button onclick="closeNotifReaders()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #e5e7eb;margin-top:4px;">
+      <div style="width:34px;flex-shrink:0;"></div>
+      <div class="th-sort" onclick="sortNotifReaders('nombre')" style="flex:1;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Nombre <span class="sort-icon" id="nrth-nombre-icon">↕</span></div>
+      <div class="th-sort" onclick="sortNotifReaders('fecha')" style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">Fecha <span class="sort-icon" id="nrth-fecha-icon">↕</span></div>
+    </div>
+    <div id="notif-readers-body"></div>
   </div>
 </div>
 
@@ -5186,16 +5203,15 @@ async function loadNotifications() {
     if (!byNotif[r.notification_id]) byNotif[r.notification_id] = [];
     byNotif[r.notification_id].push(r);
   });
+  _notifReadersMap = byNotif;
 
   wrap.innerHTML = notifs.map(n => {
     const cancelled = !!n.cancelled_at;
     const readers   = byNotif[n.id] || [];
     const dateStr   = new Date(n.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
     const readersHtml = readers.length
-      ? `<div class="notif-readers-list">${readers.map(r =>
-          `<span class="notif-reader-chip" title="${new Date(r.read_at).toLocaleDateString('es-CR')}">${r.user_nombre || r.user_cedula}</span>`
-        ).join('')}</div>`
-      : '<span style="font-size:12px;color:#9ca3af;font-style:italic;">Ningún colaborador lo ha abierto aún.</span>';
+      ? `<b style="color:#143c5a;">${readers.length} lectura${readers.length === 1 ? '' : 's'}</b> <button class="btn btn-secondary btn-sm" onclick="openNotifReaders('${n.id}')" style="margin-left:4px;">Ver detalle</button>`
+      : '<span style="font-style:italic;">Ningún colaborador lo ha abierto aún.</span>';
 
     const chips = [
       cancelled ? `<span class="badge badge-red">CANCELADA</span>` : '',
@@ -5216,8 +5232,85 @@ async function loadNotifications() {
         ${cancelled ? ` · <span style="color:#dc2626;">Cancelada el ${new Date(n.cancelled_at).toLocaleDateString('es-CR')}</span>` : ''}
       </div>
       <div style="font-size:12px;color:#6b7280;">
-        <b style="color:#143c5a;">${readers.length} lectura(s)</b> — ${readersHtml}
+        ${readersHtml}
       </div>
+    </div>`;
+  }).join('');
+}
+
+let _notifReadersMap  = {};
+let _notifReadersData = [];
+let _notifReadersSort = { col: 'fecha', dir: 'asc' };
+
+function openNotifReaders(notifId) {
+  _notifReadersData = (_notifReadersMap[notifId] || []).slice();
+  _notifReadersSort = { col: 'fecha', dir: 'asc' };
+  _updateNotifReadersSortIcons();
+  const search = document.getElementById('notif-readers-search');
+  if (search) search.value = '';
+  filterNotifReaders();
+  document.getElementById('notif-readers-modal').classList.add('open');
+}
+
+function closeNotifReaders() {
+  document.getElementById('notif-readers-modal').classList.remove('open');
+}
+
+function sortNotifReaders(col) {
+  if (_notifReadersSort.col === col) {
+    _notifReadersSort.dir = _notifReadersSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _notifReadersSort = { col, dir: 'asc' };
+  }
+  _updateNotifReadersSortIcons();
+  filterNotifReaders();
+}
+
+function _updateNotifReadersSortIcons() {
+  ['nombre', 'fecha'].forEach(c => {
+    const icon = document.getElementById('nrth-' + c + '-icon');
+    if (!icon) return;
+    if (c === _notifReadersSort.col) {
+      icon.textContent = _notifReadersSort.dir === 'asc' ? '↑' : '↓';
+      icon.style.color = '#143c5a';
+    } else {
+      icon.textContent = '↕';
+      icon.style.color = '#d1d5db';
+    }
+  });
+}
+
+function filterNotifReaders() {
+  const q = (document.getElementById('notif-readers-search').value || '').toLowerCase();
+  let list = _notifReadersData.filter(r =>
+    (r.user_nombre || '').toLowerCase().includes(q) ||
+    (r.user_cedula || '').toLowerCase().includes(q)
+  );
+  const { col, dir } = _notifReadersSort;
+  list = list.sort((a, b) => {
+    let va, vb;
+    if (col === 'fecha') { va = new Date(a.read_at || 0); vb = new Date(b.read_at || 0); }
+    else { va = (a.user_nombre || a.user_cedula || '').toLowerCase(); vb = (b.user_nombre || b.user_cedula || '').toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  const body = document.getElementById('notif-readers-body');
+  if (!list.length) {
+    body.innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>';
+    return;
+  }
+  body.innerHTML = list.map(r => {
+    const nombre = r.user_nombre || r.user_cedula || '—';
+    const ini    = nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const fecha  = new Date(r.read_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+    return `<div class="collab-list-row" style="cursor:default;">
+      <div class="collab-avatar">${ini}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(nombre)}</div>
+        <div style="font-size:11px;color:#9ca3af;">${esc(r.user_cedula || '—')}</div>
+      </div>
+      <div style="font-size:12px;color:#9ca3af;white-space:nowrap;">${fecha}</div>
     </div>`;
   }).join('');
 }

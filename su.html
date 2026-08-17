@@ -555,6 +555,7 @@
   <button class="page-tab" onclick="showPage('promotions')">🏷 Promociones</button>
   <button class="page-tab" onclick="showPage('notifications')">🔔 Notificaciones</button>
   <button class="page-tab" onclick="showPage('home')">🏠 Home Editor</button>
+  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
 </div>
 
 <!-- CONTENT -->
@@ -897,6 +898,17 @@
         </div>
         <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
         <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+      </div>
+
+      <div class="stat-card" style="margin-bottom:24px;">
+        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">🚨 Posibles registros falsos</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
+        <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>Cédulas asociadas</th><th>Nombres</th><th>Eventos</th><th>Última actividad</th></tr></thead>
+            <tbody id="cfg-fraude-tbody"><tr><td colspan="4" class="empty-table">Cargando…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -2135,7 +2147,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── PAGES ────────────────────────────────────────────────
-const ALL_PAGES = ['products','orders','users','dashboard','su','promotions','notifications','home'];
+const ALL_PAGES = ['products','orders','users','dashboard','su','promotions','notifications','home','settings'];
 
 // ── RESPONSIVE ZOOM ──────────────────────────────────────
 function applyZoom() {
@@ -2163,6 +2175,7 @@ function showPage(page) {
   if (page==='promotions') loadPromoRules();
   if (page==='notifications') loadNotifications();
   if (page==='home') loadHomeEditor();
+  if (page==='settings') { loadConfig(); loadFraudDevices(); }
 }
 
 // ── STATS ────────────────────────────────────────────────
@@ -3874,6 +3887,56 @@ function _renderSuUsersPage() {
 function _suUsersGoPage(p) { _suUsersPage = p; _renderSuUsersPage(); }
 function _suUsersSetSize(v) { _suUsersPageSize = parseInt(v); _suUsersPage = 1; _renderSuUsersPage(); }
 
+// ── POSIBLES REGISTROS FALSOS (antifraude por device_id) ───────
+// Un mismo dispositivo (identificado por un id persistente guardado en el
+// localStorage del catálogo) que aparece asociado a más de una cédula en
+// los últimos 30 días es sospechoso: puede ser alguien baneado que intenta
+// registrarse de nuevo con otro número. Solo se agrupa y se muestra — no
+// se toma ninguna acción automática, queda a criterio del administrador.
+async function loadFraudDevices() {
+  const tbody = document.getElementById('cfg-fraude-tbody');
+  if (!tbody) return;
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await sb.from('intentos_acceso')
+    .select('device_id, cedula, nombre, resultado, created_at')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Error al cargar.</td></tr>'; return; }
+
+  const porDispositivo = {};
+  (data || []).forEach(r => {
+    if (!r.cedula) return;
+    if (!porDispositivo[r.device_id]) porDispositivo[r.device_id] = [];
+    porDispositivo[r.device_id].push(r);
+  });
+
+  const sospechosos = Object.values(porDispositivo)
+    .filter(eventos => new Set(eventos.map(e => e.cedula)).size > 1)
+    .sort((a, b) => new Date(b[0].created_at) - new Date(a[0].created_at));
+
+  if (!sospechosos.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin casos detectados en los últimos 30 días.</td></tr>'; return; }
+
+  tbody.innerHTML = sospechosos.map(eventos => {
+    const porCedula = {};
+    eventos.forEach(e => { if (!porCedula[e.cedula]) porCedula[e.cedula] = { nombre: e.nombre, resultados: [] }; porCedula[e.cedula].resultados.push(e.resultado); });
+    const cedulas = Object.keys(porCedula).map(c => esc(c)).join('<br>');
+    const nombres = Object.values(porCedula).map(v => esc(v.nombre || '—')).join('<br>');
+    const badge = r => r === 'bloqueado'
+      ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 bloqueado</span>'
+      : r === 'registro'
+      ? '<span style="font-size:10px;font-weight:700;color:#b45309;background:#fef3c7;padding:2px 6px;border-radius:6px;white-space:nowrap;">🆕 registro</span>'
+      : '<span style="font-size:10px;font-weight:700;color:#374151;background:#f3f4f6;padding:2px 6px;border-radius:6px;white-space:nowrap;">🔑 login</span>';
+    const eventosHtml = Object.entries(porCedula).map(([c, v]) => `${esc(c)}: ${[...new Set(v.resultados)].map(badge).join(' ')}`).join('<br>');
+    const ultima = new Date(eventos[0].created_at).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return `<tr>
+      <td style="font-weight:600">${cedulas}</td>
+      <td>${nombres}</td>
+      <td style="font-size:12px;line-height:1.8">${eventosHtml}</td>
+      <td style="font-size:12px;color:#6b7280;white-space:nowrap">${ultima}</td>
+    </tr>`;
+  }).join('');
+}
+
 // ── CONFIGURACIÓN (Admin) ─────────────────────────────────────
 async function loadConfig() {
   const { data } = await sb.from('app_config').select('key, value').in('key',['admin_user','admin_pass']);
@@ -4186,21 +4249,38 @@ function renderSuUsers(list) {
 async function deleteUser(cedula, nombre) {
   showConfirm(
     '¿Eliminar colaborador?',
-    `Se eliminará a "${nombre}" (${cedula}) y quedará registrado en Usuarios eliminados/baneados. Sus pedidos históricos no se eliminarán.`,
+    `Se eliminará a "${nombre}" (${cedula}). Perderá el acceso de inmediato, quedará baneado (hay que desbanearlo para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.`,
     async () => {
       const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
       if (error) { showToast('Error: ' + error.message); return; }
+      await _detachUserHistory(cedula);
       allSuUsers = allSuUsers.filter(u => u.cedula !== cedula);
       renderSuUsers(allSuUsers);
       allUsers = allUsers.filter(u => u.cedula !== cedula);
       if (document.getElementById('stat-users')) document.getElementById('stat-users').textContent = allUsers.length;
       renderUsers(allUsers);
-      // Se registra automáticamente en "Usuarios eliminados/baneados" (sin
-      // banear todavía) y se muestra esa sección para que quede a la vista.
-      await _suRecordElimination(cedula, nombre);
+      // Eliminar implica banear de inmediato — hay que desbanear explícitamente
+      // para que la cédula pueda volver a registrarse.
+      await _suSetBaneado(cedula, nombre, true);
       showSuUserTab('banear');
     }
   );
+}
+
+// Desvincula (sin borrar) el historial de pedidos de la cédula eliminada,
+// para que si se vuelve a registrar entre en blanco. Los pedidos originales
+// se conservan intactos para reportes de admin — solo se cambia el campo
+// que los liga a la cédula (usuario_email), que es el único que usa el
+// catálogo (index.html) para mostrarle "Mis pedidos" a un usuario.
+// Las notificaciones personales y las listas de deseos de familia recibidas
+// sí se eliminan por completo, ya que no hacen falta para reportes.
+async function _detachUserHistory(cedula) {
+  const marker = cedula + '::eliminado::' + Date.now();
+  try {
+    await sb.from('pedidos').update({ usuario_email: marker }).eq('usuario_email', cedula);
+    await sb.from('notificaciones').delete().eq('usuario_cedula', cedula);
+    await sb.from('family_wishlists').delete().eq('colaborador_cedula', cedula);
+  } catch (e) { console.error('Error desvinculando historial:', e); }
 }
 
 // ── SUPERUSUARIO — USUARIOS ELIMINADOS/BANEADOS ──────────────
@@ -4247,14 +4327,6 @@ function renderSuBannedUsers(list) {
   }).join('');
 }
 
-// Registra la eliminación en el historial, sin banear, salvo que ya exista
-// un registro previo (p.ej. si ya estaba baneado) — en ese caso no se toca.
-async function _suRecordElimination(cedula, nombre) {
-  if (allSuBanned.some(b => b.cedula === cedula)) return;
-  const { error } = await sb.from('usuarios_baneados').insert({ cedula, nombre: nombre || null, baneado: false });
-  if (error) { console.error(error); return; }
-  await loadSuBannedUsers();
-}
 
 async function _suSetBaneado(cedula, nombre, baneado) {
   const { error } = await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado, baneado_at: new Date().toISOString() });

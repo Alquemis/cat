@@ -1893,6 +1893,7 @@ async function onLogin(session, isRestore = false) {
           departamento: session.departamento,
           lugar:        session.lugar
         });
+        _logIntento(session.cedula, session.nombre, 'registro');
       }
     }
     localStorage.setItem('catalogo_session', JSON.stringify(session));
@@ -2015,6 +2016,27 @@ function _resetRegVerify() {
   document.querySelectorAll('.lugar-opt').forEach(el => el.classList.remove('selected'));
 }
 
+// ── Detección de dispositivos con múltiples cédulas (antifraude) ──
+// Genera/reutiliza un identificador de dispositivo persistente en este
+// navegador (localStorage), y registra cada evento de acceso relevante
+// (bloqueo por baneo, login, registro) para que el panel de Superusuario
+// pueda detectar patrones sospechosos: un mismo dispositivo probando varias
+// cédulas distintas en poco tiempo (p.ej. alguien baneado intentando
+// registrarse de nuevo con otro número).
+function getDeviceId() {
+  let id = localStorage.getItem('device_id');
+  if (!id) {
+    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+    localStorage.setItem('device_id', id);
+  }
+  return id;
+}
+async function _logIntento(cedula, nombre, resultado) {
+  try {
+    await sb.from('intentos_acceso').insert({ device_id: getDeviceId(), cedula: cedula || null, nombre: nombre || null, resultado });
+  } catch (e) { console.error('Error registrando intento de acceso:', e); }
+}
+
 async function doVerifyCedula() {
   const tipo  = document.querySelector('input[name="reg-tipo"]:checked').value;
   const num   = document.getElementById('login-cedula').value.trim();
@@ -2044,6 +2066,7 @@ async function doVerifyCedula() {
       statusEl.style.color = '#dc2626';
       btn.disabled = false;
       btn.textContent = 'Verificar';
+      _logIntento(num, data.nombre, 'bloqueado');
       return;
     }
     // Check if cedula already registered
@@ -2116,6 +2139,7 @@ async function doQuickLogin() {
   if (baneo && baneo.baneado) {
     errEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
     errEl.classList.add('show');
+    _logIntento(cedula, perfil ? perfil.nombre : null, 'bloqueado');
     return;
   }
 
@@ -2127,6 +2151,7 @@ async function doQuickLogin() {
 
   const session = { nombre: toTitleCase(perfil.nombre), cedula: perfil.cedula, departamento: perfil.departamento, lugar: perfil.lugar };
   localStorage.setItem('catalogo_session', JSON.stringify(session));
+  _logIntento(session.cedula, session.nombre, 'login');
   showWelcomePopup(session.nombre, session, true);
 }
 

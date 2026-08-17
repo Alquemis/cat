@@ -3775,21 +3775,38 @@ function renderSuUsers(list) {
 async function deleteUser(cedula, nombre) {
   showConfirm(
     '¿Eliminar colaborador?',
-    `Se eliminará a "${nombre}" (${cedula}) y quedará registrado en Usuarios eliminados/baneados. Sus pedidos históricos no se eliminarán.`,
+    `Se eliminará a "${nombre}" (${cedula}). Perderá el acceso de inmediato, quedará baneado (hay que desbanearlo para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.`,
     async () => {
       const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
       if (error) { showToast('Error: ' + error.message); return; }
+      await _detachUserHistory(cedula);
       allSuUsers = allSuUsers.filter(u => u.cedula !== cedula);
       renderSuUsers(allSuUsers);
       allUsers = allUsers.filter(u => u.cedula !== cedula);
       if (document.getElementById('stat-users')) document.getElementById('stat-users').textContent = allUsers.length;
       renderUsers(allUsers);
-      // Se registra automáticamente en "Usuarios eliminados/baneados" (sin
-      // banear todavía) y se muestra esa sección para que quede a la vista.
-      await _suRecordElimination(cedula, nombre);
+      // Eliminar implica banear de inmediato — hay que desbanear explícitamente
+      // para que la cédula pueda volver a registrarse.
+      await _suSetBaneado(cedula, nombre, true);
       showSuUserTab('banear');
     }
   );
+}
+
+// Desvincula (sin borrar) el historial de pedidos de la cédula eliminada,
+// para que si se vuelve a registrar entre en blanco. Los pedidos originales
+// se conservan intactos para reportes de admin — solo se cambia el campo
+// que los liga a la cédula (usuario_email), que es el único que usa el
+// catálogo (index.html) para mostrarle "Mis pedidos" a un usuario.
+// Las notificaciones personales y las listas de deseos de familia recibidas
+// sí se eliminan por completo, ya que no hacen falta para reportes.
+async function _detachUserHistory(cedula) {
+  const marker = cedula + '::eliminado::' + Date.now();
+  try {
+    await sb.from('pedidos').update({ usuario_email: marker }).eq('usuario_email', cedula);
+    await sb.from('notificaciones').delete().eq('usuario_cedula', cedula);
+    await sb.from('family_wishlists').delete().eq('colaborador_cedula', cedula);
+  } catch (e) { console.error('Error desvinculando historial:', e); }
 }
 
 // ── SUPERUSUARIO — USUARIOS ELIMINADOS/BANEADOS ──────────────
@@ -3836,14 +3853,6 @@ function renderSuBannedUsers(list) {
   }).join('');
 }
 
-// Registra la eliminación en el historial, sin banear, salvo que ya exista
-// un registro previo (p.ej. si ya estaba baneado) — en ese caso no se toca.
-async function _suRecordElimination(cedula, nombre) {
-  if (allSuBanned.some(b => b.cedula === cedula)) return;
-  const { error } = await sb.from('usuarios_baneados').insert({ cedula, nombre: nombre || null, baneado: false });
-  if (error) { console.error(error); return; }
-  await loadSuBannedUsers();
-}
 
 async function _suSetBaneado(cedula, nombre, baneado) {
   const { error } = await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado, baneado_at: new Date().toISOString() });

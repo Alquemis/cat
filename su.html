@@ -4329,7 +4329,12 @@ function renderSuBannedUsers(list) {
 
 
 async function _suSetBaneado(cedula, nombre, baneado) {
-  const { error } = await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado, baneado_at: new Date().toISOString() });
+  // Al desbanear se elimina el registro por completo (no se deja con
+  // baneado:false) para que desaparezca de "Usuarios eliminados/baneados":
+  // la cédula queda realmente en blanco, como si nunca se hubiera registrado.
+  const { error } = baneado
+    ? await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() })
+    : await sb.from('usuarios_baneados').delete().eq('cedula', cedula);
   if (error) { showToast('Error: ' + error.message); return false; }
   showToast(baneado ? `${nombre || cedula} baneado ✓` : 'Baneo removido ✓', 'ok');
   await loadSuBannedUsers();

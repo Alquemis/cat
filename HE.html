@@ -1040,16 +1040,34 @@ function renderCfgUsers(list) {
 function deleteCfgUser(cedula, nombre) {
   showConfirm(
     `¿Eliminar a ${nombre}?`,
-    'El colaborador perderá el acceso al catálogo inmediatamente.',
+    'Perderá el acceso al catálogo de inmediato, quedará baneado (se desbanea desde admin/su para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.',
     async () => {
       const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
       if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
+      await _detachUserHistory(cedula);
+      // Eliminar implica banear de inmediato — hay que desbanear desde
+      // admin.html/su.html/blue.html para que la cédula pueda registrarse.
+      await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() });
       showToast(`${nombre} eliminado.`, 'ok');
       allCfgUsers = allCfgUsers.filter(u => u.cedula !== cedula);
       renderCfgUsers(allCfgUsers);
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
   );
+}
+
+// Desvincula (sin borrar) el historial de pedidos de la cédula eliminada,
+// para que si se vuelve a registrar entre en blanco. Los pedidos originales
+// se conservan intactos para reportes de admin — solo se cambia el campo
+// que los liga a la cédula (usuario_email), que es el único que usa el
+// catálogo (index.html) para mostrarle "Mis pedidos" a un usuario.
+async function _detachUserHistory(cedula) {
+  const marker = cedula + '::eliminado::' + Date.now();
+  try {
+    await sb.from('pedidos').update({ usuario_email: marker }).eq('usuario_email', cedula);
+    await sb.from('notificaciones').delete().eq('usuario_cedula', cedula);
+    await sb.from('family_wishlists').delete().eq('colaborador_cedula', cedula);
+  } catch (e) { console.error('Error desvinculando historial:', e); }
 }
 
 // ── CONFIGURACIÓN ─────────────────────────────────────────

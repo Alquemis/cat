@@ -1282,7 +1282,7 @@
         <div class="su-section-sub">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
         <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
           <table>
-            <thead><tr><th>Cédulas asociadas</th><th>Nombres</th><th>Eventos</th><th>Última actividad</th></tr></thead>
+            <thead><tr><th>Cédulas asociadas</th><th>Nombres</th><th>Eventos</th><th>Última actividad</th><th style="width:60px;text-align:center;">Acción</th></tr></thead>
             <tbody id="cfg-fraude-tbody"><tr><td colspan="4" class="empty-table">Cargando…</td></tr></tbody>
           </table>
         </div>
@@ -3949,7 +3949,7 @@ async function loadFraudDevices() {
     .select('device_id, cedula, nombre, resultado, created_at')
     .gte('created_at', since)
     .order('created_at', { ascending: false });
-  if (error) { console.error(error); tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Error al cargar.</td></tr>'; return; }
+  if (error) { console.error(error); tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Error al cargar.</td></tr>'; return; }
 
   const porDispositivo = {};
   (data || []).forEach(r => {
@@ -3962,9 +3962,10 @@ async function loadFraudDevices() {
     .filter(eventos => new Set(eventos.map(e => e.cedula)).size > 1)
     .sort((a, b) => new Date(b[0].created_at) - new Date(a[0].created_at));
 
-  if (!sospechosos.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-table">Sin casos detectados en los últimos 30 días.</td></tr>'; return; }
+  if (!sospechosos.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin casos detectados en los últimos 30 días.</td></tr>'; return; }
 
   tbody.innerHTML = sospechosos.map(eventos => {
+    const deviceId = eventos[0].device_id;
     const porCedula = {};
     eventos.forEach(e => { if (!porCedula[e.cedula]) porCedula[e.cedula] = { nombre: e.nombre, resultados: [] }; porCedula[e.cedula].resultados.push(e.resultado); });
     const cedulas = Object.keys(porCedula).map(c => esc(c)).join('<br>');
@@ -3981,8 +3982,26 @@ async function loadFraudDevices() {
       <td>${nombres}</td>
       <td style="font-size:12px;line-height:1.8">${eventosHtml}</td>
       <td style="font-size:12px;color:#6b7280;white-space:nowrap">${ultima}</td>
+      <td style="text-align:center"><button class="btn btn-danger btn-sm" onclick="deleteFraudCase('${esc(deviceId)}')" title="Eliminar este caso">🗑</button></td>
     </tr>`;
   }).join('');
+}
+
+// Elimina del historial (tabla intentos_acceso) todos los registros de ese
+// dispositivo, para que el caso deje de aparecer en "Posibles registros
+// falsos". No afecta baneos ni usuarios — solo el registro de detección.
+function deleteFraudCase(deviceId) {
+  showConfirm(
+    '¿Eliminar este caso?',
+    'Se borrará el historial de intentos de acceso de este dispositivo. Dejará de aparecer en Posibles registros falsos.',
+    async () => {
+      const { error } = await sb.from('intentos_acceso').delete().eq('device_id', deviceId);
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      showToast('Caso eliminado ✓', 'ok');
+      loadFraudDevices();
+    },
+    { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
 }
 
 // ── CONFIGURACIÓN (Admin) ─────────────────────────────────────

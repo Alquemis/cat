@@ -2766,7 +2766,7 @@ function copyFamilyLink() {
 function shareFamilyWhatsapp() {
   const link = document.getElementById('share-family-link').value;
   const nombre = currentUser ? toTitleCase(currentUser.nombre).split(/\s+/)[0] : '';
-  const text = `¡Hola! Te comparto el catálogo de Martimac para que armes tu lista de deseos${nombre ? ' y me la envíes a mí, ' + nombre : ''}: ${link}`;
+  const text = `¡Hola! Te comparto el catálogo de productos para que armes tu lista de deseos${nombre ? ' y me la envíes a mí, ' + nombre : ''}: ${link}`;
   window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
 }
 

@@ -618,15 +618,18 @@
   .products-grid.promo-grid { grid-template-columns: repeat(auto-fill, minmax(315px, 1fr)); gap: 22px; }
   .promo-grid .product-card { border: 2px solid #f59e0b; }
   .promo-grid .product-card:hover { border-color: #d97706; }
-  .promo-grid .product-card .product-code { font-size: 19px; }
-  .promo-grid .product-card .card-name { font-size: 17px; }
-  .promo-grid .product-card .card-price { font-size: 22px; }
   /* Descuento card */
   .product-card.desc-card { border: 2px solid #dc2626; }
   .product-card.desc-card:hover { border-color: #b91c1c; }
   .desc-tag { display:inline-block;background:#dc2626;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.4px;white-space:nowrap;flex-shrink:0; }
   .desc-original-price { font-size:70%;color:#9ca3af;text-decoration:line-through;line-height:1.2; }
   .desc-limit-chip { font-size:12px;color:#dc2626;font-weight:600;margin-top:3px; }
+  /* Dentro de la card, estos chips escalan con el ancho real de la card (misma lógica de container query que .product-name/.product-price) */
+  .product-card .desc-tag { font-size: clamp(9px, 5cqw, 14px); }
+  .product-card .desc-original-price { font-size: clamp(10px, 5.5cqw, 15px); }
+  .product-card .desc-limit-chip { font-size: clamp(9px, 5cqw, 13px); }
+  .product-card .stock-chip { font-size: clamp(11px, 6cqw, 15px); }
+  .product-card .stock-chip.big { font-size: clamp(14px, 7.5cqw, 20px); }
   /* Límite popup overlay */
   #limite-popup { display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);align-items:center;justify-content:center; }
   #limite-popup.open { display:flex; }
@@ -638,6 +641,7 @@
   .product-card {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
     overflow: hidden; transition: all 0.2s; display: flex; flex-direction: column;
+    container-type: inline-size; container-name: product-card;
   }
   .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); border-color: #d1d5db; }
   .product-img-wrap {
@@ -675,21 +679,21 @@
     text-transform: uppercase; letter-spacing: 0.5px;
   }
   .product-price {
-    font-size: 19px; font-weight: 700; color: #111827;
+    font-size: clamp(15px, 9cqw, 23px); font-weight: 700; color: #111827;
   }
   .product-price .price-symbol {
-    font-size: 11px; font-weight: 600; vertical-align: baseline;
+    font-size: clamp(9px, 5.2cqw, 13px); font-weight: 600; vertical-align: baseline;
   }
   .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
   .product-info { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
   .product-name {
-    font-size: 13.5px; font-weight: 600; color: #143c5a; line-height: 1.35;
+    font-size: clamp(12px, 6.3cqw, 16.5px); font-weight: 600; color: #143c5a; line-height: 1.35;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     overflow: hidden; min-height: 4.05em;
   }
   .product-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .product-meta { font-size: 11.5px; color: #6b7280; flex: 1; min-width: 0; }
-  .product-code { font-size: 11px; font-weight: 700; color: #143c5a; white-space: nowrap; }
+  .product-meta { font-size: clamp(10px, 5.4cqw, 13.5px); color: #6b7280; flex: 1; min-width: 0; }
+  .product-code { font-size: clamp(10px, 5.2cqw, 15px); font-weight: 700; color: #143c5a; white-space: nowrap; }
 
   /* Add-to-cart button */
   .add-btn {
@@ -3688,8 +3692,8 @@ function renderCard(p) {
 
   const stockChip = (p.stock != null && p.stock > 0)
     ? bigChip
-      ? `<div style="margin-top:6px;text-align:center;"><span style="display:inline-block;background:#f5e642;color:#dc2626;font-size:20px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">¡Solo quedan ${p.stock}!</span></div>`
-      : `<div style="margin-top:4px;text-align:center;"><span style="display:inline-block;background:#f5e642;color:#dc2626;font-size:15px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap;">¡Solo quedan ${p.stock}!</span></div>`
+      ? `<div style="margin-top:6px;text-align:center;"><span class="stock-chip big" style="display:inline-block;background:#f5e642;color:#dc2626;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;">¡Solo quedan ${p.stock}!</span></div>`
+      : `<div style="margin-top:4px;text-align:center;"><span class="stock-chip" style="display:inline-block;background:#f5e642;color:#dc2626;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap;">¡Solo quedan ${p.stock}!</span></div>`
     : '';
 
   const descChip = p.descuento

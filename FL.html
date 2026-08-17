@@ -303,7 +303,7 @@ function mapProductRow(r) {
   const promoRaw = !!r.promocion;
   const descRaw = !!r.descuento;
   return {
-    id: r.codigo, n: r.nombre, b: r.marca,
+    id: r.codigo, n: r.nombre_catalogo || r.nombre, b: r.marca,
     spc: r.spc, c: r.categoria, s: r.subcategoria,
     pr: r.precio, img: r.imagen,
     iva: r.iva != null ? r.iva : 13,

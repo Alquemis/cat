@@ -19,7 +19,7 @@
   }
   .fl-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; }
   .fl-header h1 { font-size: 18px; font-weight: 700; }
-  .fl-header .fl-sub { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 3px; }
+  .fl-header .fl-sub { font-size: 16px; color: rgba(255,255,255,.75); margin-top: 3px; }
   .fl-header-cart-btn {
     position: relative; background: rgba(255,255,255,.15); color: #fff;
     border: 1.5px solid rgba(255,255,255,.35); border-radius: 999px;
@@ -273,6 +273,7 @@ let CATALOG = [];
 let flCart  = [];
 let flColaboradorCedula = null;
 let flColaboradorNombre = '';
+let flColaboradorPrimerNombre = '';
 let flActiveTab = 'TODOS';
 
 /* ── Categorías: mismo mapeo que TABS en index.html (solo lo necesario
@@ -595,7 +596,7 @@ async function flSubmitWishlist() {
     items
   });
 
-  btn.disabled = false; btn.textContent = '📤 Enviar lista de deseos';
+  btn.disabled = false; btn.textContent = '📤 Enviar lista a ' + (flColaboradorPrimerNombre || '');
 
   if (error) { flToast('Error al enviar: ' + error.message); return; }
 
@@ -629,7 +630,9 @@ async function flInit() {
 
   flColaboradorCedula = data.cedula;
   flColaboradorNombre = shortName(data.nombre);
+  flColaboradorPrimerNombre = toTitleCase(data.nombre || '').trim().split(/\s+/)[0] || '';
   document.getElementById('fl-header-sub').innerHTML = `Se enviará a: <strong>${escHtml(flColaboradorNombre)}</strong>`;
+  document.getElementById('fl-submit-btn').textContent = '📤 Enviar lista a ' + flColaboradorPrimerNombre;
 
   await loadCatalog();
 

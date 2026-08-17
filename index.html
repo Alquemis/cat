@@ -2088,7 +2088,7 @@ async function doVerifyCedula() {
     btn.textContent = 'Verificado ✓';
   } catch(e) {
     _cedulaVerified = false;
-    statusEl.textContent = 'No se encontró el número. Verifícalo e inténtalo de nuevo.';
+    statusEl.textContent = 'En este momento no hay respuesta al verificar tu cédula, inténtalo de nuevo en unos minutos';
     statusEl.style.color = '#dc2626';
     btn.disabled = false;
     btn.textContent = 'Verificar';

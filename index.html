@@ -1849,14 +1849,14 @@ async function initAuth() {
         // Verificar en segundo plano: si el usuario fue eliminado o baneado, cerrar sesión
         Promise.all([
           sb.from('usuarios').select('cedula').eq('cedula', session.cedula).maybeSingle(),
-          sb.from('usuarios_baneados').select('cedula').eq('cedula', session.cedula).maybeSingle()
+          sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', session.cedula).maybeSingle()
         ]).then(([userRes, banRes]) => {
           if (!userRes.data) {
             localStorage.removeItem('catalogo_session');
             doLogout();
             return;
           }
-          if (banRes.data) {
+          if (banRes.data && banRes.data.baneado) {
             localStorage.removeItem('catalogo_session');
             kickBannedUser();
           }
@@ -2038,8 +2038,8 @@ async function doVerifyCedula() {
     const data = await res.json();
     if (!data || !data.nombre) throw new Error('no_name');
     // Chequear baneo antes que nada: una cédula baneada no puede registrarse de nuevo
-    const { data: baneo } = await sb.from('usuarios_baneados').select('cedula').eq('cedula', num).maybeSingle();
-    if (baneo) {
+    const { data: baneo } = await sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', num).maybeSingle();
+    if (baneo && baneo.baneado) {
       statusEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
       statusEl.style.color = '#dc2626';
       btn.disabled = false;
@@ -2108,12 +2108,12 @@ async function doQuickLogin() {
 
   const [{ data: perfil }, { data: baneo }] = await Promise.all([
     sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle(),
-    sb.from('usuarios_baneados').select('cedula').eq('cedula', cedula).maybeSingle()
+    sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', cedula).maybeSingle()
   ]);
 
   btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
 
-  if (baneo) {
+  if (baneo && baneo.baneado) {
     errEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
     errEl.classList.add('show');
     return;
@@ -2213,13 +2213,13 @@ function startSessionWatchdog() {
     try {
       const [{ data: userData }, { data: banData }] = await Promise.all([
         sb.from('usuarios').select('cedula').eq('cedula', currentUser.cedula).maybeSingle(),
-        sb.from('usuarios_baneados').select('cedula').eq('cedula', currentUser.cedula).maybeSingle()
+        sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', currentUser.cedula).maybeSingle()
       ]);
       if (!userData) {
         // Usuario eliminado — cerrar sesión silenciosamente
         stopSessionWatchdog();
         onLogout();
-      } else if (banData) {
+      } else if (banData && banData.baneado) {
         // Usuario baneado — cerrar sesión y mostrar acceso restringido
         stopSessionWatchdog();
         kickBannedUser();
@@ -4604,7 +4604,10 @@ function startRealtime() {
       () => { stopSessionWatchdog(); onLogout(); })
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'usuarios_baneados', filter: 'cedula=eq.' + currentUser.cedula },
-      () => { stopSessionWatchdog(); kickBannedUser(); })
+      (payload) => { if (payload.new && payload.new.baneado) { stopSessionWatchdog(); kickBannedUser(); } })
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'usuarios_baneados', filter: 'cedula=eq.' + currentUser.cedula },
+      (payload) => { if (payload.new && payload.new.baneado) { stopSessionWatchdog(); kickBannedUser(); } })
     .subscribe(status => { _rtOk = (status === 'SUBSCRIBED'); });
 }
 

@@ -1123,14 +1123,14 @@
           </button>
           <button id="suutab-banear" onclick="showSuUserTab('banear')"
             style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:rgba(255,255,255,.5);">
-            🚫 Banear usuario
+            🗑 Usuarios eliminados/baneados
           </button>
         </div>
 
         <div style="padding:24px;">
         <!-- Eliminar usuario -->
         <div id="suupage-eliminar">
-          <div class="su-section-sub">Eliminar un colaborador borra su registro de la base de datos. Sus pedidos históricos no se eliminan.</div>
+          <div class="su-section-sub">Eliminar un colaborador borra su registro de la base de datos y lo mueve a la sección de eliminados/baneados. Sus pedidos históricos no se eliminan.</div>
           <div class="toolbar" style="margin-bottom:16px;">
             <div class="search-field">
               <span>🔍</span>
@@ -1153,9 +1153,9 @@
           </div>
         </div>
 
-        <!-- Banear usuario -->
+        <!-- Usuarios eliminados/baneados -->
         <div id="suupage-banear" style="display:none">
-          <div class="su-section-sub">Un usuario baneado no puede iniciar sesión ni registrarse de nuevo. El baneo se aplica por número de cédula y se puede deshacer en cualquier momento.</div>
+          <div class="su-section-sub">Los colaboradores eliminados aparecen aquí automáticamente. Un usuario <strong>baneado</strong> no puede iniciar sesión ni registrarse de nuevo con la misma cédula; el baneo se puede activar o deshacer en cualquier momento.</div>
 
           <div style="font-size:12px;font-weight:700;color:var(--lb-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear por cédula</div>
           <div class="toolbar" style="margin-bottom:24px;">
@@ -1166,29 +1166,18 @@
             <button class="btn btn-danger" onclick="banSuUserManual()">🚫 Banear</button>
           </div>
 
-          <div style="font-size:12px;font-weight:700;color:var(--lb-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear desde el buscador</div>
           <div class="toolbar" style="margin-bottom:16px;">
             <div class="search-field">
               <span>🔍</span>
-              <input type="text" id="su-ban-search" placeholder="Buscar colaborador…" oninput="filterSuBanCandidates()">
+              <input type="text" id="su-banned-search" placeholder="Buscar entre eliminados/baneados…" oninput="filterSuBannedUsers()">
             </div>
           </div>
-          <div class="table-wrap" style="margin-bottom:24px;max-height:300px;overflow-y:auto;">
+          <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
             <table>
               <thead><tr>
-                <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:100px;text-align:center;">Acción</th>
+                <th>Nombre</th><th>Cédula</th><th>Estado</th><th>Fecha</th><th style="width:120px;text-align:center;">Acción</th>
               </tr></thead>
-              <tbody id="su-ban-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
-            </table>
-          </div>
-
-          <div style="font-size:12px;font-weight:700;color:var(--lb-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Usuarios baneados</div>
-          <div class="table-wrap" style="max-height:260px;overflow-y:auto;">
-            <table>
-              <thead><tr>
-                <th>Nombre</th><th>Cédula</th><th>Fecha de baneo</th><th style="width:120px;text-align:center;">Acción</th>
-              </tr></thead>
-              <tbody id="su-banned-tbody"><tr><td colspan="4" class="empty-table">Cargando…</td></tr></tbody>
+              <tbody id="su-banned-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -3744,7 +3733,6 @@ async function loadSuUsers() {
   if (error) { console.error(error); return; }
   allSuUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   filterSuUsers();
-  filterSuBanCandidates();
 }
 
 function filterSuUsers() {
@@ -3787,7 +3775,7 @@ function renderSuUsers(list) {
 async function deleteUser(cedula, nombre) {
   showConfirm(
     '¿Eliminar colaborador?',
-    `Se eliminará a "${nombre}" (${cedula}). Sus pedidos históricos no se eliminarán.`,
+    `Se eliminará a "${nombre}" (${cedula}) y quedará registrado en Usuarios eliminados/baneados. Sus pedidos históricos no se eliminarán.`,
     async () => {
       const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
       if (error) { showToast('Error: ' + error.message); return; }
@@ -3796,79 +3784,71 @@ async function deleteUser(cedula, nombre) {
       allUsers = allUsers.filter(u => u.cedula !== cedula);
       if (document.getElementById('stat-users')) document.getElementById('stat-users').textContent = allUsers.length;
       renderUsers(allUsers);
-      filterSuBanCandidates();
-      // Preguntar si además se desea banear la cédula, para que no pueda
-      // volver a registrarse con el mismo número.
-      setTimeout(() => {
-        if (_suBannedSet.has(cedula)) return;
-        showConfirm(
-          '¿Banear también esta cédula?',
-          `"${nombre}" (${cedula}) no podrá volver a iniciar sesión ni registrarse mientras esté baneado.`,
-          async () => { const ok = await _suBanCedula(cedula, nombre); if (ok) showSuUserTab('banear'); },
-          { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
-        );
-      }, 250);
+      // Se registra automáticamente en "Usuarios eliminados/baneados" (sin
+      // banear todavía) y se muestra esa sección para que quede a la vista.
+      await _suRecordElimination(cedula, nombre);
+      showSuUserTab('banear');
     }
   );
 }
 
-// ── SUPERUSUARIO — BANEAR COLABORADORES ──────────────────────
+// ── SUPERUSUARIO — USUARIOS ELIMINADOS/BANEADOS ──────────────
 let allSuBanned = [];
-let _suBannedSet = new Set();
+let _suBannedSet = new Set(); // solo cédulas con baneado=true (baneo activo)
 
 async function loadSuBannedUsers() {
   const { data, error } = await sb.from('usuarios_baneados').select('*').order('baneado_at', { ascending: false });
   if (error) { console.error(error); return; }
   allSuBanned = data || [];
-  _suBannedSet = new Set(allSuBanned.map(b => b.cedula));
-  renderSuBannedUsers();
+  _suBannedSet = new Set(allSuBanned.filter(b => b.baneado).map(b => b.cedula));
+  filterSuBannedUsers();
   renderSuUsers(allSuUsers);
-  filterSuBanCandidates();
 }
 
-function renderSuBannedUsers() {
+function filterSuBannedUsers() {
+  const q = (document.getElementById('su-banned-search')?.value || '').toLowerCase();
+  const list = allSuBanned.filter(b =>
+    (b.nombre || '').toLowerCase().includes(q) ||
+    (b.cedula || '').toLowerCase().includes(q)
+  );
+  renderSuBannedUsers(list);
+}
+
+function renderSuBannedUsers(list) {
   const tbody = document.getElementById('su-banned-tbody');
   if (!tbody) return;
-  if (!allSuBanned.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-table">No hay usuarios baneados.</td></tr>'; return; }
-  tbody.innerHTML = allSuBanned.map(b => {
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No hay usuarios eliminados ni baneados.</td></tr>'; return; }
+  tbody.innerHTML = list.map(b => {
     const fecha = b.baneado_at ? new Date(b.baneado_at).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+    const estado = b.baneado
+      ? '<span style="font-size:10px;font-weight:700;color:#ff8f7a;background:rgba(220,38,38,.18);padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 Baneado</span>'
+      : '<span style="font-size:10px;font-weight:700;color:var(--lb-text3);background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;white-space:nowrap;">🗑 Eliminado</span>';
+    const action = b.baneado
+      ? `<button class="btn btn-sm btn-secondary" onclick="unbanSuUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">✅ Desbanear</button>`
+      : `<button class="btn btn-sm btn-danger" onclick="banSuUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">🚫 Banear</button>`;
     return `<tr>
       <td style="font-weight:600">${esc(b.nombre || '—')}</td>
       <td>${esc(b.cedula)}</td>
+      <td>${estado}</td>
       <td style="font-size:12px;color:var(--lb-text3)">${fecha}</td>
-      <td style="text-align:center"><button class="btn btn-sm btn-secondary" onclick="unbanSuUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">✅ Desbanear</button></td>
-    </tr>`;
-  }).join('');
-}
-
-function filterSuBanCandidates() {
-  const tbody = document.getElementById('su-ban-tbody');
-  if (!tbody) return;
-  const q = (document.getElementById('su-ban-search')?.value || '').toLowerCase();
-  const list = allSuUsers.filter(u =>
-    (u.nombre || '').toLowerCase().includes(q) ||
-    (u.cedula || '').toLowerCase().includes(q)
-  );
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
-  tbody.innerHTML = list.map(u => {
-    const banned = _suBannedSet.has(u.cedula);
-    const action = banned
-      ? `<span style="font-size:11px;font-weight:700;color:#ff8f7a;">🚫 Baneado</span>`
-      : `<button class="btn btn-sm btn-danger" onclick="banSuUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🚫 Banear</button>`;
-    return `<tr>
-      <td style="font-weight:600">${esc(u.nombre||'—')}</td>
-      <td>${esc(u.cedula||'—')}</td>
-      <td>${esc(u.departamento||'—')}</td>
-      <td>${esc(u.lugar||'—')}</td>
       <td style="text-align:center">${action}</td>
     </tr>`;
   }).join('');
 }
 
-async function _suBanCedula(cedula, nombre) {
-  const { error } = await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null });
-  if (error) { showToast('Error al banear: ' + error.message); return false; }
-  showToast(`${nombre || cedula} baneado ✓`, 'ok');
+// Registra la eliminación en el historial, sin banear, salvo que ya exista
+// un registro previo (p.ej. si ya estaba baneado) — en ese caso no se toca.
+async function _suRecordElimination(cedula, nombre) {
+  if (allSuBanned.some(b => b.cedula === cedula)) return;
+  const { error } = await sb.from('usuarios_baneados').insert({ cedula, nombre: nombre || null, baneado: false });
+  if (error) { console.error(error); return; }
+  await loadSuBannedUsers();
+}
+
+async function _suSetBaneado(cedula, nombre, baneado) {
+  const { error } = await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado, baneado_at: new Date().toISOString() });
+  if (error) { showToast('Error: ' + error.message); return false; }
+  showToast(baneado ? `${nombre || cedula} baneado ✓` : 'Baneo removido ✓', 'ok');
   await loadSuBannedUsers();
   return true;
 }
@@ -3877,7 +3857,7 @@ function banSuUser(cedula, nombre) {
   showConfirm(
     `¿Banear a ${nombre || cedula}?`,
     'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
-    async () => { await _suBanCedula(cedula, nombre); },
+    async () => { await _suSetBaneado(cedula, nombre, true); },
     { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
   );
 }
@@ -3887,11 +3867,13 @@ function banSuUserManual() {
   const cedula = (inp.value || '').trim();
   if (!cedula) { showToast('Ingresa un número de cédula.', 'warn'); return; }
   if (_suBannedSet.has(cedula)) { showToast('Esa cédula ya está baneada.', 'warn'); return; }
-  const found = allSuUsers.find(u => u.cedula === cedula);
+  const foundActive = allSuUsers.find(u => u.cedula === cedula);
+  const foundHist   = allSuBanned.find(b => b.cedula === cedula);
+  const nombre = foundActive ? foundActive.nombre : (foundHist ? foundHist.nombre : null);
   showConfirm(
-    `¿Banear la cédula ${cedula}${found ? ' (' + found.nombre + ')' : ''}?`,
+    `¿Banear la cédula ${cedula}${nombre ? ' (' + nombre + ')' : ''}?`,
     'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
-    async () => { const ok = await _suBanCedula(cedula, found ? found.nombre : null); if (ok) inp.value = ''; },
+    async () => { const ok = await _suSetBaneado(cedula, nombre, true); if (ok) inp.value = ''; },
     { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
   );
 }
@@ -3900,12 +3882,7 @@ function unbanSuUser(cedula, nombre) {
   showConfirm(
     '¿Quitar el baneo?',
     `"${nombre || cedula}" podrá volver a iniciar sesión y registrarse con normalidad.`,
-    async () => {
-      const { error } = await sb.from('usuarios_baneados').delete().eq('cedula', cedula);
-      if (error) { showToast('Error: ' + error.message); return; }
-      showToast('Baneo removido ✓', 'ok');
-      await loadSuBannedUsers();
-    },
+    async () => { await _suSetBaneado(cedula, nombre, false); },
     { icon: '✅', okLabel: 'Desbanear', okColor: '#16a34a' }
   );
 }

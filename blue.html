@@ -4912,7 +4912,16 @@ function _fixSuDashHeights() {
   if (_suChartUnidTiempo) _suChartUnidTiempo.resize();
   if (_suChartDiasMes)    _suChartDiasMes.resize();
 }
-window.addEventListener('resize', _fixSuDashHeights);
+// Solo reaccionar cuando cambia el ANCHO de la ventana (rotación o resize
+// real). En móvil, el scroll colapsa/expande la barra del navegador y dispara
+// "resize" cambiando solo el alto — si en ese caso llamamos chart.resize()
+// dentro del contenedor con zoom CSS, los gráficos se encogen progresivamente.
+let _lastDashW = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth === _lastDashW) return;
+  _lastDashW = window.innerWidth;
+  _fixSuDashHeights();
+});
 
 // ── TECLADO MÓVIL — subir login ──────────────────────────
 if (window.visualViewport) {

@@ -187,9 +187,6 @@
     .dash-row,.dash-row-3 { grid-template-columns:1fr; }
   }
 
-  /* ── CHECKBOX PROMOCIÓN ── */
-  #f-promocion:checked + #f-promocion-label { color:#dc2626; }
-
   /* ── ESTADOS DE FILA ── */
   tr.row-mora   td { background:#fef2f2; }
   tr.row-mora:hover td { background:#fee2e2; }
@@ -480,6 +477,45 @@
   .notif-hist-title { font-size:14px;font-weight:700;color:#143c5a; }
   .notif-hist-meta { font-size:12px;color:#9ca3af;margin:3px 0 8px; }
 
+  /* ── PROMOCIONES ── */
+  .promo-subtabs { display:flex;gap:8px;flex-wrap:wrap; }
+  .promo-subtab {
+    padding:9px 16px;border-radius:999px;border:1.5px solid #e5e7eb;background:#fff;
+    color:#6b7280;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;
+  }
+  .promo-subtab:hover { background:#f9fafb; }
+  .promo-subtab.active { background:#143c5a;color:#fff;border-color:#143c5a; }
+  .promo-rule-card { border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;transition:box-shadow .15s; }
+  .promo-rule-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .promo-rule-card.inactive { opacity:.6;background:#f9fafb; }
+  .promo-rule-title { font-size:14px;font-weight:700;color:#143c5a; }
+  .promo-rule-meta { font-size:12px;color:#6b7280;margin:3px 0 8px; }
+  .promo-rule-toggle {
+    border:none;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;
+  }
+  .promo-rule-toggle.on  { background:#d1fae5;color:#065f46; }
+  .promo-rule-toggle.off { background:#f3f4f6;color:#6b7280; }
+  .promo-rule-toggle:disabled { cursor:not-allowed;opacity:.55; }
+  .rule-prod-item { display:flex;align-items:center;gap:9px;padding:7px 12px;border-bottom:1px solid #f3f4f6;font-size:13px; }
+  .rule-prod-item:last-child { border-bottom:none; }
+  .rule-prod-item label { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;font-weight:500;color:#374151;text-transform:none;letter-spacing:0; }
+  .rule-prod-code { font-size:11px;color:#9ca3af;flex-shrink:0; }
+  .rule-prod-thumb { width:32px;height:32px;flex-shrink:0;border-radius:7px;object-fit:contain;background:#fff;border:1px solid #e5e7eb; }
+  .rule-prod-thumb-empty { width:32px;height:32px;flex-shrink:0;border-radius:7px;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:14px;color:#d1d5db; }
+  .rule-prod-stock-input { width:82px;flex-shrink:0;padding:5px 8px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;outline:none; }
+  /* La regla global .form-field input (width:100%, padding, border) se cuela
+     acá porque el picker vive dentro de un .form-field — la sobreescribimos
+     con selectores por id (mayor especificidad) para que checkbox y stock
+     no se vean gigantes ni tapen el nombre del producto. */
+  #rule-product-picker input[type="checkbox"] {
+    width:16px; height:16px; padding:0; border:none; border-radius:0;
+    flex-shrink:0; cursor:pointer; accent-color:#143c5a;
+  }
+  #rule-product-picker input[type="number"] {
+    width:82px; flex-shrink:0; padding:5px 8px; border:1.5px solid #e5e7eb;
+    border-radius:7px; font-size:12px;
+  }
+
   /* ── Home Editor ── */
   .home-rich-editor { min-height:120px;border:1.5px solid #e5e7eb;border-top:none;border-bottom-left-radius:9px;border-bottom-right-radius:9px;padding:12px 14px;font-size:14px;line-height:1.6;outline:none;font-family:inherit; }
   .home-rich-editor:focus { border-color:#7c3aed; }
@@ -565,9 +601,10 @@
   <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
   <button class="page-tab" onclick="showPage('users')">👤 Colaboradores</button>
   <button class="page-tab" onclick="showPage('dashboard')">📊 Dashboard</button>
-  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
+  <button class="page-tab" onclick="showPage('promotions')">🏷 Promociones</button>
   <button class="page-tab" onclick="showPage('notifications')">🔔 Notificaciones</button>
   <button class="page-tab" onclick="showPage('home')">🏠 Home Editor</button>
+  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
 </div>
 
 <!-- CONTENT -->
@@ -1088,30 +1125,113 @@
         <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="margin-top:20px;padding:12px 32px;">Guardar cambios</button>
       </div>
 
-      <!-- Eliminar colaboradores — 1 columna -->
-      <div class="stat-card">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Eliminar colaborador</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Busca y elimina un colaborador de la base de datos. Esta acción cerrará su sesión automáticamente.</div>
-        <div class="toolbar" style="margin-bottom:16px;">
-          <div class="search-field" style="flex:1;">
-            <span>🔍</span>
-            <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
-          </div>
-          <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+      <!-- Eliminar / Banear colaboradores — nav con sub-pestañas, igual que Pedidos -->
+      <div class="stat-card" style="padding:0;overflow:hidden;">
+        <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff;">
+          <button id="cfgutab-eliminar" onclick="showCfgUserTab('eliminar')"
+            style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #143c5a;color:#143c5a;">
+            🗑 Eliminar usuario
+          </button>
+          <button id="cfgutab-banear" onclick="showCfgUserTab('banear')"
+            style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
+            🚫 Banear usuario
+          </button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:80px;text-align:center;">Acción</th>
-            </tr></thead>
-            <tbody id="cfg-users-tbody">
-              <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
-            </tbody>
-          </table>
+
+        <div style="padding:20px;">
+        <!-- Eliminar usuario -->
+        <div id="cfgupage-eliminar">
+          <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Busca y elimina un colaborador de la base de datos. Esta acción cerrará su sesión automáticamente.</div>
+          <div class="toolbar" style="margin-bottom:16px;">
+            <div class="search-field" style="flex:1;">
+              <span>🔍</span>
+              <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
+            </div>
+            <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+          </div>
+          <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
+            <table>
+              <thead><tr>
+                <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:80px;text-align:center;">Acción</th>
+              </tr></thead>
+              <tbody id="cfg-users-tbody">
+                <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Banear usuario -->
+        <div id="cfgupage-banear" style="display:none">
+          <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Un usuario baneado no puede iniciar sesión ni registrarse de nuevo. El baneo se aplica por número de cédula y se puede deshacer en cualquier momento.</div>
+
+          <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear por cédula</div>
+          <div class="toolbar" style="margin-bottom:24px;">
+            <div class="search-field" style="flex:1;max-width:280px;">
+              <span>🪪</span>
+              <input type="text" id="cfg-ban-cedula-input" placeholder="Número de cédula…">
+            </div>
+            <button class="btn btn-danger" onclick="banCfgUserManual()">🚫 Banear</button>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear desde el buscador</div>
+          <div class="toolbar" style="margin-bottom:16px;">
+            <div class="search-field" style="flex:1;">
+              <span>🔍</span>
+              <input type="text" id="cfg-ban-search" placeholder="Buscar colaborador…" oninput="filterCfgBanCandidates()">
+            </div>
+          </div>
+          <div class="table-wrap" style="margin-bottom:24px;max-height:300px;overflow-y:auto;">
+            <table>
+              <thead><tr>
+                <th>Nombre</th><th>Cédula</th><th>Departamento</th><th>Lugar</th><th style="width:100px;text-align:center;">Acción</th>
+              </tr></thead>
+              <tbody id="cfg-ban-tbody">
+                <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Usuarios baneados</div>
+          <div class="table-wrap" style="max-height:260px;overflow-y:auto;">
+            <table>
+              <thead><tr>
+                <th>Nombre</th><th>Cédula</th><th>Fecha de baneo</th><th style="width:120px;text-align:center;">Acción</th>
+              </tr></thead>
+              <tbody id="cfg-banned-tbody">
+                <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
         </div>
       </div>
 
     </div>
+  </div>
+
+  <!-- ── PAGE: PROMOCIONES ── -->
+  <div id="page-promotions" style="display:none">
+
+    <div class="su-section" style="margin-bottom:16px;">
+      <div class="promo-subtabs">
+        <button class="promo-subtab active" id="promo-subtab-descuento" onclick="selectPromoTab('descuento')">% Descuentos</button>
+        <button class="promo-subtab" id="promo-subtab-limite" onclick="selectPromoTab('limite')">⊘ Límites de unidades</button>
+        <button class="promo-subtab" id="promo-subtab-promocion" onclick="selectPromoTab('promocion')">🏷 Promociones</button>
+      </div>
+    </div>
+
+    <div class="su-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
+        <div class="su-section-title" id="promo-tab-title">% Descuentos</div>
+        <button class="btn btn-primary btn-sm" onclick="openRuleModal(null)">+ Nueva regla</button>
+      </div>
+      <div class="su-section-sub" id="promo-tab-sub">Cada regla agrupa los productos que comparten ese descuento, con su propia fecha o activación manual.</div>
+      <div id="promo-rules-wrap">
+        <div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── PAGE: NOTIFICACIONES ── -->
@@ -1567,140 +1687,8 @@
         <label>Nombre completo *</label>
         <input type="text" id="f-nombre" placeholder="Nombre del producto" autocomplete="off">
       </div>
-      <!-- Promoción · Descuento · Límite (con programación) -->
-      <div class="form-field full">
-
-        <!-- Promoción -->
-        <div style="padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-            <input type="checkbox" id="f-promocion" onchange="togglePromoStyle(this)"
-              style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;">
-            <span id="f-promocion-label" style="font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;">En promoción</span>
-          </label>
-          <div id="f-promo-sched-wrap" style="display:none;margin-top:10px;">
-            <div style="display:flex;gap:16px;flex-wrap:wrap;">
-              <div style="flex:1;min-width:180px;">
-                <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Inicio</label>
-                <div style="display:flex;gap:3px;">
-                  <select id="f-promo-inicio-d" class="sched-sel"></select>
-                  <select id="f-promo-inicio-m" class="sched-sel"></select>
-                  <select id="f-promo-inicio-y" class="sched-sel"></select>
-                </div>
-                <div style="display:flex;gap:3px;margin-top:3px;">
-                  <select id="f-promo-inicio-h" class="sched-sel"></select>
-                  <select id="f-promo-inicio-mi" class="sched-sel"></select>
-                </div>
-                <div id="f-promo-inicio-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
-              </div>
-              <div style="flex:1;min-width:180px;">
-                <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Fin</label>
-                <div style="display:flex;gap:3px;">
-                  <select id="f-promo-fin-d" class="sched-sel"></select>
-                  <select id="f-promo-fin-m" class="sched-sel"></select>
-                  <select id="f-promo-fin-y" class="sched-sel"></select>
-                </div>
-                <div style="display:flex;gap:3px;margin-top:3px;">
-                  <select id="f-promo-fin-h" class="sched-sel"></select>
-                  <select id="f-promo-fin-mi" class="sched-sel"></select>
-                </div>
-                <div id="f-promo-fin-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Descuento + % -->
-        <div style="padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-            <input type="checkbox" id="f-descuento" onchange="toggleDescuentoStyle(this)"
-              style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;">
-            <span id="f-descuento-label" style="font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;">Descuento</span>
-          </label>
-          <div id="f-desc-pct-wrap" style="display:none;margin-top:10px;">
-            <div style="display:flex;align-items:center;gap:6px;max-width:140px;margin-bottom:12px;">
-              <input type="number" id="f-desc-pct" min="1" max="99" step="1" placeholder="%"
-                style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;min-width:0;">
-              <span style="font-size:12px;color:#6b7280;flex-shrink:0;">%</span>
-            </div>
-            <div style="display:flex;gap:16px;flex-wrap:wrap;">
-              <div style="flex:1;min-width:180px;">
-                <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Inicio</label>
-                <div style="display:flex;gap:3px;">
-                  <select id="f-desc-inicio-d" class="sched-sel"></select>
-                  <select id="f-desc-inicio-m" class="sched-sel"></select>
-                  <select id="f-desc-inicio-y" class="sched-sel"></select>
-                </div>
-                <div style="display:flex;gap:3px;margin-top:3px;">
-                  <select id="f-desc-inicio-h" class="sched-sel"></select>
-                  <select id="f-desc-inicio-mi" class="sched-sel"></select>
-                </div>
-                <div id="f-desc-inicio-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
-              </div>
-              <div style="flex:1;min-width:180px;">
-                <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Fin</label>
-                <div style="display:flex;gap:3px;">
-                  <select id="f-desc-fin-d" class="sched-sel"></select>
-                  <select id="f-desc-fin-m" class="sched-sel"></select>
-                  <select id="f-desc-fin-y" class="sched-sel"></select>
-                </div>
-                <div style="display:flex;gap:3px;margin-top:3px;">
-                  <select id="f-desc-fin-h" class="sched-sel"></select>
-                  <select id="f-desc-fin-mi" class="sched-sel"></select>
-                </div>
-                <div id="f-desc-fin-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Límite por usuario -->
-        <div style="padding:12px;border:1px solid #e5e7eb;border-radius:10px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-            <input type="checkbox" id="f-limite-check" onchange="toggleLimiteStyle(this)"
-              style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;">
-            <span id="f-limite-label" style="font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;">Límite por usuario</span>
-          </label>
-          <div id="f-limite-wrap" style="display:none;margin-top:10px;">
-            <input type="number" id="f-limite" min="1" step="1" placeholder="máx. unidades"
-              style="width:180px;box-sizing:border-box;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;margin-bottom:12px;">
-            <div style="display:flex;gap:16px;flex-wrap:wrap;">
-              <div style="flex:1;min-width:180px;">
-                <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Inicio</label>
-                <div style="display:flex;gap:3px;">
-                  <select id="f-lim-inicio-d" class="sched-sel"></select>
-                  <select id="f-lim-inicio-m" class="sched-sel"></select>
-                  <select id="f-lim-inicio-y" class="sched-sel"></select>
-                </div>
-                <div style="display:flex;gap:3px;margin-top:3px;">
-                  <select id="f-lim-inicio-h" class="sched-sel"></select>
-                  <select id="f-lim-inicio-mi" class="sched-sel"></select>
-                </div>
-                <div id="f-lim-inicio-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
-              </div>
-              <div style="flex:1;min-width:180px;">
-                <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Fin</label>
-                <div style="display:flex;gap:3px;">
-                  <select id="f-lim-fin-d" class="sched-sel"></select>
-                  <select id="f-lim-fin-m" class="sched-sel"></select>
-                  <select id="f-lim-fin-y" class="sched-sel"></select>
-                </div>
-                <div style="display:flex;gap:3px;margin-top:3px;">
-                  <select id="f-lim-fin-h" class="sched-sel"></select>
-                  <select id="f-lim-fin-mi" class="sched-sel"></select>
-                </div>
-                <div id="f-lim-fin-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="font-size:11px;color:#9ca3af;margin-top:8px;">Promoción y Descuento son mutuamente exclusivos. El límite por usuario se resetea al facturar. Deja Inicio/Fin sin definir para que rija de forma manual (sin programación).</div>
-        <div id="f-stock-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #e5e7eb;">
-          <label style="font-size:13px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px;">Stock disponible</label>
-          <input type="number" id="f-stock" min="0" step="1" placeholder="unidades disponibles"
-            style="width:180px;box-sizing:border-box;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
-          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Al llegar a 0, el producto se inactiva automáticamente.</div>
-        </div>
+      <div class="form-field full" style="background:#f9fafb;border:1px dashed #e5e7eb;border-radius:10px;padding:10px 14px;font-size:12px;color:#6b7280;">
+        🏷 La promoción, el descuento, el límite de unidades y el stock de este producto ahora se manejan desde el menú <strong>Promociones</strong>.
       </div>
       <div class="form-field" style="grid-column:span 2;">
         <label>Marca</label>
@@ -1747,6 +1735,81 @@
     <div class="modal-btns">
       <button class="btn btn-secondary" onclick="closeProductModal()">Cancelar</button>
       <button class="btn btn-primary" id="save-product-btn" onclick="saveProduct()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- RULE MODAL (Promociones) -->
+<div class="modal-overlay" id="rule-modal">
+  <div class="modal-card" style="max-width:640px;">
+    <div class="modal-title" id="rule-modal-title">Nueva regla</div>
+    <div class="form-grid">
+      <div class="form-field full">
+        <label>Nombre de la regla</label>
+        <input type="text" id="rule-nombre" placeholder="Ej: Black Friday 25%">
+      </div>
+      <div class="form-field" id="rule-valor-wrap">
+        <label id="rule-valor-label">Porcentaje de descuento</label>
+        <input type="number" id="rule-valor" min="1" step="1" placeholder="%">
+      </div>
+      <div class="form-field">
+        <label>Activación manual</label>
+        <button type="button" class="promo-rule-toggle off" id="rule-activo-btn" onclick="toggleRuleActivoField()" style="width:fit-content;">Inactiva</button>
+      </div>
+      <div class="form-field full">
+        <div style="font-size:11px;color:#9ca3af;">El botón manual solo funciona si dejas Inicio y Fin sin definir. Si programas fechas, la regla se activa y desactiva sola.</div>
+      </div>
+      <div class="form-field full">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Inicio</label>
+            <div style="display:flex;gap:3px;">
+              <select id="rule-inicio-d" class="sched-sel"></select>
+              <select id="rule-inicio-m" class="sched-sel"></select>
+              <select id="rule-inicio-y" class="sched-sel"></select>
+            </div>
+            <div style="display:flex;gap:3px;margin-top:3px;">
+              <select id="rule-inicio-h" class="sched-sel"></select>
+              <select id="rule-inicio-mi" class="sched-sel"></select>
+            </div>
+            <div id="rule-inicio-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Fin</label>
+            <div style="display:flex;gap:3px;">
+              <select id="rule-fin-d" class="sched-sel"></select>
+              <select id="rule-fin-m" class="sched-sel"></select>
+              <select id="rule-fin-y" class="sched-sel"></select>
+            </div>
+            <div style="display:flex;gap:3px;margin-top:3px;">
+              <select id="rule-fin-h" class="sched-sel"></select>
+              <select id="rule-fin-mi" class="sched-sel"></select>
+            </div>
+            <div id="rule-fin-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="clearRuleSchedule()">✕ Quitar fechas (modo manual)</button>
+      </div>
+      <div class="form-field full">
+        <label>Productos asignados (<span id="rule-prod-count">0</span>)</label>
+        <input type="text" id="rule-prod-search" placeholder="Buscar producto por nombre o código…" oninput="renderRuleProductPicker()">
+        <div id="rule-product-picker" style="max-height:240px;overflow-y:auto;border:1.5px solid #e5e7eb;border-radius:9px;margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeRuleModal()">Cancelar</button>
+      <button class="btn btn-primary" id="save-rule-btn" onclick="saveRule()">Guardar regla</button>
+    </div>
+  </div>
+</div>
+
+<!-- RULE DASHBOARD MODAL -->
+<div class="modal-overlay" id="rule-dash-modal">
+  <div class="modal-card" style="max-width:880px;">
+    <div class="modal-title" id="rule-dash-title">Dashboard de regla</div>
+    <div id="rule-dash-body"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeRuleDashboard()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2006,12 +2069,13 @@ window.addEventListener('resize', applyZoom);
 applyZoom();
 
 // ── PAGES ────────────────────────────────────────────────
+const ADMIN_PAGES = ['products','orders','users','dashboard','promotions','notifications','home','settings'];
 function showPage(page) {
-  ['products','orders','users','dashboard','settings','notifications','home'].forEach(p => {
+  ADMIN_PAGES.forEach(p => {
     document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
   });
   document.querySelectorAll('.page-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['products','orders','users','dashboard','settings','notifications','home'][i] === page);
+    t.classList.toggle('active', ADMIN_PAGES[i] === page);
   });
   if (page==='orders' && allAdminPend.length===0 && allAdminHist.length===0) loadOrders();
   if (page==='orders') requestAnimationFrame(_fitOrdersTable);
@@ -2020,7 +2084,8 @@ function showPage(page) {
     if (allAdminHist.length===0) loadOrders();
   }
   if (page==='dashboard') loadDashboard();
-  if (page==='settings') { loadConfig(); loadCfgUsers(); }
+  if (page==='settings') { loadConfig(); loadCfgUsers(); loadCfgBannedUsers(); }
+  if (page==='promotions') loadPromoRules();
   if (page==='notifications') loadNotifications();
   if (page==='home') loadHomeEditor();
 }
@@ -2328,26 +2393,6 @@ function openProductModal(product) {
   document.getElementById('f-iva').value         = product?.iva != null ? product.iva : 13;
   document.getElementById('f-imagen').value      = product?.imagen      || '';
   document.getElementById('f-activo').value      = product?.activo === false ? 'Inactivo' : 'Activo';
-  initSchedDropdowns();
-  const promoCheck = document.getElementById('f-promocion');
-  promoCheck.checked = !!product?.promocion;
-  isoToDropdowns('f-promo-inicio', product?.promo_inicio);
-  isoToDropdowns('f-promo-fin', product?.promo_fin);
-  togglePromoStyle(promoCheck);
-  document.getElementById('f-stock').value = product?.stock != null ? product.stock : '';
-  const descCheck = document.getElementById('f-descuento');
-  descCheck.checked = !!product?.descuento;
-  isoToDropdowns('f-desc-inicio', product?.descuento_inicio);
-  isoToDropdowns('f-desc-fin', product?.descuento_fin);
-  toggleDescuentoStyle(descCheck);
-  document.getElementById('f-desc-pct').value = product?.porcentaje_descuento || '';
-  const limCheck = document.getElementById('f-limite-check');
-  limCheck.checked = product?.limite_por_usuario != null;
-  isoToDropdowns('f-lim-inicio', product?.limite_inicio);
-  isoToDropdowns('f-lim-fin', product?.limite_fin);
-  toggleLimiteStyle(limCheck);
-  document.getElementById('f-limite').value = product?.limite_por_usuario != null ? product.limite_por_usuario : '';
-  updateStockVisibility();
   // Resetear estado del upload de imagen
   document.getElementById('img-upload-status').style.display = 'none';
   document.getElementById('img-preview-wrap').style.display  = 'none';
@@ -2384,32 +2429,11 @@ async function saveProduct() {
     iva:          parseFloat(document.getElementById('f-iva').value) ?? 13,
     imagen:       document.getElementById('f-imagen').value.trim(),
     activo:       document.getElementById('f-activo').value === 'Activo',
-    promocion:    document.getElementById('f-promocion').checked,
-    promo_inicio: dropdownsToIso('f-promo-inicio'),
-    promo_fin:    dropdownsToIso('f-promo-fin'),
-    descuento:    document.getElementById('f-descuento').checked,
-    descuento_inicio: dropdownsToIso('f-desc-inicio'),
-    descuento_fin:    dropdownsToIso('f-desc-fin'),
-    porcentaje_descuento: (() => { const v = document.getElementById('f-desc-pct').value.trim(); return (document.getElementById('f-descuento').checked && v !== '') ? parseFloat(v) : 0; })(),
-    limite_por_usuario: (() => { const v = document.getElementById('f-limite').value.trim(); return (document.getElementById('f-limite-check').checked && v !== '') ? parseInt(v) : null; })(),
-    limite_inicio: dropdownsToIso('f-lim-inicio'),
-    limite_fin:    dropdownsToIso('f-lim-fin'),
-    stock:        (() => { const v = document.getElementById('f-stock').value.trim(); const anyActive = document.getElementById('f-promocion').checked || document.getElementById('f-descuento').checked || document.getElementById('f-limite-check').checked; return (anyActive && v !== '') ? parseInt(v) : null; })(),
+    // Promoción / descuento / límite / stock ahora se editan exclusivamente
+    // desde el menú Promociones — este formulario ya no los toca, para no
+    // pisar por accidente lo que haya configurado una regla.
     updated_at:   new Date().toISOString()
   };
-
-  // Validar rangos de fecha (fin no puede ser anterior o igual al inicio)
-  const schedPairs = [
-    { ini: payload.promo_inicio,     fin: payload.promo_fin,     label: 'Promoción' },
-    { ini: payload.descuento_inicio, fin: payload.descuento_fin, label: 'Descuento' },
-    { ini: payload.limite_inicio,    fin: payload.limite_fin,    label: 'Límite por usuario' },
-  ];
-  for (const s of schedPairs) {
-    if (s.ini && s.fin && new Date(s.fin) <= new Date(s.ini)) {
-      showToast(`La fecha de fin de "${s.label}" debe ser posterior al inicio.`, 'warn');
-      return;
-    }
-  }
 
   // Validar todos los campos obligatorios
   const required = [
@@ -3243,7 +3267,16 @@ function _renderUsersPage() {
 function _usersGoPage(p) { _usersPage = p; _renderUsersPage(); }
 function _usersSetSize(v) { _usersPageSize = parseInt(v); _usersPage = 1; _renderUsersPage(); }
 
-// ── ELIMINAR COLABORADOR (sección settings) ───────────────
+// ── ELIMINAR / BANEAR COLABORADOR (sección settings) ───────
+function showCfgUserTab(tab) {
+  ['eliminar','banear'].forEach(t => {
+    document.getElementById('cfgupage-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('cfgutab-' + t);
+    btn.style.borderBottom = t === tab ? '3px solid #143c5a' : '3px solid transparent';
+    btn.style.color = t === tab ? '#143c5a' : '#6b7280';
+  });
+}
+
 let allCfgUsers = [];
 
 async function loadCfgUsers() {
@@ -3253,6 +3286,7 @@ async function loadCfgUsers() {
   if (error) { console.error(error); return; }
   allCfgUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   renderCfgUsers(allCfgUsers);
+  filterCfgBanCandidates();
 }
 
 function filterCfgUsers() {
@@ -3268,15 +3302,19 @@ function renderCfgUsers(list) {
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return;
   }
-  tbody.innerHTML = list.map(u => `<tr>
-    <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+  tbody.innerHTML = list.map(u => {
+    const banned = _cfgBannedSet.has(u.cedula);
+    const badge = banned ? ' <span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 Baneado</span>' : '';
+    return `<tr>
+    <td style="font-weight:600">${esc(u.nombre||'—')}${badge}</td>
     <td>${esc(u.cedula||'—')}</td>
     <td>${esc(u.departamento||'—')}</td>
     <td>${esc(u.lugar||'—')}</td>
     <td style="text-align:center">
       <button class="btn btn-sm btn-danger" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🗑</button>
     </td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 function deleteCfgUser(cedula, nombre) {
@@ -3292,8 +3330,121 @@ function deleteCfgUser(cedula, nombre) {
       document.getElementById('stat-users').textContent = allUsers.length;
       renderCfgUsers(allCfgUsers);
       renderUsers(allUsers);
+      filterCfgBanCandidates();
+      // Preguntar si además se desea banear la cédula, para que no pueda
+      // volver a registrarse con el mismo número.
+      setTimeout(() => {
+        if (_cfgBannedSet.has(cedula)) return;
+        showConfirm(
+          '¿Banear también esta cédula?',
+          `"${nombre}" (${cedula}) no podrá volver a iniciar sesión ni registrarse mientras esté baneado.`,
+          async () => { const ok = await _cfgBanCedula(cedula, nombre); if (ok) showCfgUserTab('banear'); },
+          { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
+        );
+      }, 250);
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+  );
+}
+
+// ── BANEAR COLABORADOR (sección settings) ─────────────────
+let allCfgBanned = [];
+let _cfgBannedSet = new Set();
+
+async function loadCfgBannedUsers() {
+  const { data, error } = await sb.from('usuarios_baneados').select('*').order('baneado_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  allCfgBanned = data || [];
+  _cfgBannedSet = new Set(allCfgBanned.map(b => b.cedula));
+  renderCfgBannedUsers();
+  renderCfgUsers(allCfgUsers);
+  filterCfgBanCandidates();
+}
+
+function renderCfgBannedUsers() {
+  const tbody = document.getElementById('cfg-banned-tbody');
+  if (!allCfgBanned.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">No hay usuarios baneados.</td></tr>'; return;
+  }
+  tbody.innerHTML = allCfgBanned.map(b => {
+    const fecha = b.baneado_at ? new Date(b.baneado_at).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+    return `<tr>
+    <td style="font-weight:600">${esc(b.nombre || '—')}</td>
+    <td>${esc(b.cedula)}</td>
+    <td style="font-size:12px;color:#6b7280">${fecha}</td>
+    <td style="text-align:center">
+      <button class="btn btn-sm btn-secondary" onclick="unbanCfgUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">✅ Desbanear</button>
+    </td>
+  </tr>`;
+  }).join('');
+}
+
+function filterCfgBanCandidates() {
+  const tbody = document.getElementById('cfg-ban-tbody');
+  if (!tbody) return;
+  const q = (document.getElementById('cfg-ban-search')?.value || '').toLowerCase();
+  const list = allCfgUsers.filter(u =>
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
+  );
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
+  tbody.innerHTML = list.map(u => {
+    const banned = _cfgBannedSet.has(u.cedula);
+    const action = banned
+      ? `<span style="font-size:11px;font-weight:700;color:#dc2626;">🚫 Baneado</span>`
+      : `<button class="btn btn-sm btn-danger" onclick="banCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🚫 Banear</button>`;
+    return `<tr>
+    <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+    <td>${esc(u.cedula||'—')}</td>
+    <td>${esc(u.departamento||'—')}</td>
+    <td>${esc(u.lugar||'—')}</td>
+    <td style="text-align:center">${action}</td>
+  </tr>`;
+  }).join('');
+}
+
+async function _cfgBanCedula(cedula, nombre) {
+  const { error } = await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null });
+  if (error) { showToast('Error al banear: ' + error.message, 'error'); return false; }
+  showToast(`${nombre || cedula} baneado ✓`, 'ok');
+  await loadCfgBannedUsers();
+  return true;
+}
+
+function banCfgUser(cedula, nombre) {
+  showConfirm(
+    `¿Banear a ${nombre || cedula}?`,
+    'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
+    async () => { await _cfgBanCedula(cedula, nombre); },
+    { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
+  );
+}
+
+function banCfgUserManual() {
+  const inp = document.getElementById('cfg-ban-cedula-input');
+  const cedula = (inp.value || '').trim();
+  if (!cedula) { showToast('Ingresa un número de cédula.', 'warn'); return; }
+  if (_cfgBannedSet.has(cedula)) { showToast('Esa cédula ya está baneada.', 'warn'); return; }
+  const found = allCfgUsers.find(u => u.cedula === cedula);
+  showConfirm(
+    `¿Banear la cédula ${cedula}${found ? ' (' + found.nombre + ')' : ''}?`,
+    'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
+    async () => { const ok = await _cfgBanCedula(cedula, found ? found.nombre : null); if (ok) inp.value = ''; },
+    { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
+  );
+}
+
+function unbanCfgUser(cedula, nombre) {
+  showConfirm(
+    '¿Quitar el baneo?',
+    `"${nombre || cedula}" podrá volver a iniciar sesión y registrarse con normalidad.`,
+    async () => {
+      const { error } = await sb.from('usuarios_baneados').delete().eq('cedula', cedula);
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      showToast('Baneo removido ✓', 'ok');
+      await loadCfgBannedUsers();
+    },
+    { icon: '✅', okLabel: 'Desbanear', okColor: '#16a34a' }
   );
 }
 
@@ -4554,7 +4705,7 @@ initAuth();
 // datetime-local <-> ISO. El input datetime-local usa hora local sin
 // zona horaria; new Date(v) lo interpreta como hora local del navegador.
 // ── PROGRAMACIÓN: dropdowns Día/Mes/Año/Hora/Min ─────────
-const SCHED_PREFIXES = ['f-promo-inicio','f-promo-fin','f-desc-inicio','f-desc-fin','f-lim-inicio','f-lim-fin'];
+const SCHED_PREFIXES = ['rule-inicio','rule-fin'];
 const MESES_ABBR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
 let _schedDropdownsInit = false;
@@ -4629,61 +4780,486 @@ function schedSuffix(inicio, fin) {
 // Clase del <span class="tip"> según si hay programación (tooltip 2 líneas) o no
 function tipCls(inicio, fin) { return (inicio || fin) ? 'tip tip-sched' : 'tip'; }
 
-// Muestra el bloque de stock si Promoción, Descuento o Límite está activo
-function updateStockVisibility() {
-  const anyActive = document.getElementById('f-promocion').checked ||
-                     document.getElementById('f-descuento').checked ||
-                     document.getElementById('f-limite-check').checked;
-  const stockWrap = document.getElementById('f-stock-wrap');
-  if (stockWrap) stockWrap.style.display = anyActive ? 'block' : 'none';
+// ============================================================
+//  PROMOCIONES — reglas de Descuento / Límite / Promoción
+//  Cada regla agrupa varios productos. Al guardar, se escriben las
+//  mismas columnas que ya usa el editor de producto (descuento /
+//  porcentaje_descuento / fechas, limite_por_usuario / fechas,
+//  promocion / fechas) — el catálogo (index.html, FL.html) no cambia.
+// ============================================================
+let _promoRules = [];          // todas las reglas (reglas_promocion)
+let _promoRuleProducts = {};   // { regla_id: [codigo, ...] }
+let _promoActiveTab = 'descuento';
+let editingRuleId = null;
+let _ruleProdSelected = new Set();
+let _ruleProdStock = new Map(); // codigo -> stock disponible (string del input, '' = ilimitado)
+
+const PROMO_TIPO_LABEL = { descuento: '% Descuentos', limite: '⊘ Límites de unidades', promocion: '🏷 Promociones' };
+const PROMO_TIPO_SUB = {
+  descuento: 'Cada regla agrupa los productos que comparten ese descuento, con su propia fecha o activación manual.',
+  limite:    'Cada regla agrupa los productos con el mismo límite de unidades por usuario.',
+  promocion: 'Cada regla agrupa los productos marcados "en promoción" en el mismo periodo.'
+};
+
+function selectPromoTab(tipo) {
+  _promoActiveTab = tipo;
+  document.querySelectorAll('.promo-subtab').forEach(t => t.classList.toggle('active', t.id === 'promo-subtab-' + tipo));
+  document.getElementById('promo-tab-title').textContent = PROMO_TIPO_LABEL[tipo];
+  document.getElementById('promo-tab-sub').textContent = PROMO_TIPO_SUB[tipo];
+  renderPromoRulesList();
 }
 
-// ── CHECKBOX PROMOCIÓN ───────────────────────────────────
-function togglePromoStyle(cb) {
-  const label = document.getElementById('f-promocion-label');
-  if (!label) return;
-  // Exclusión mutua con descuento
-  if (cb.checked) {
-    const descCb = document.getElementById('f-descuento');
-    if (descCb && descCb.checked) {
-      cb.checked = false;
-      showToast('Un producto no puede tener Promoción y Descuento al mismo tiempo.', 'warn');
-      return;
-    }
+async function loadPromoRules() {
+  const wrap = document.getElementById('promo-rules-wrap');
+  wrap.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>';
+  if (!allProducts.length) await loadProducts();
+
+  const [resReglas, resProds] = await Promise.all([
+    sb.from('reglas_promocion').select('*').order('created_at', { ascending: false }),
+    sb.from('regla_productos').select('regla_id, producto_codigo')
+  ]);
+  if (resReglas.error) {
+    wrap.innerHTML = `<div class="empty-table" style="color:#dc2626;">Error: ${resReglas.error.message}</div>`;
+    return;
   }
-  label.style.color = cb.checked ? '#dc2626' : '#6b7280';
-  label.textContent = cb.checked ? '¡En promoción!' : 'En promoción';
-  const schedWrap = document.getElementById('f-promo-sched-wrap');
-  if (schedWrap) schedWrap.style.display = cb.checked ? 'block' : 'none';
-  updateStockVisibility();
+  _promoRules = resReglas.data || [];
+  _promoRuleProducts = {};
+  (resProds.data || []).forEach(r => {
+    if (!_promoRuleProducts[r.regla_id]) _promoRuleProducts[r.regla_id] = [];
+    _promoRuleProducts[r.regla_id].push(r.producto_codigo);
+  });
+  renderPromoRulesList();
 }
 
-function toggleDescuentoStyle(cb) {
-  const label = document.getElementById('f-descuento-label');
-  if (!label) return;
-  // Exclusión mutua con promoción
-  if (cb.checked) {
-    const promoCb = document.getElementById('f-promocion');
-    if (promoCb && promoCb.checked) {
-      cb.checked = false;
-      showToast('Un producto no puede tener Descuento y Promoción al mismo tiempo.', 'warn');
-      return;
-    }
+function _isRuleActiveNow(r) {
+  if (r.inicio || r.fin) {
+    const now = Date.now();
+    if (r.inicio && now < new Date(r.inicio).getTime()) return false;
+    if (r.fin && now > new Date(r.fin).getTime()) return false;
+    return true;
   }
-  label.style.color = cb.checked ? '#dc2626' : '#6b7280';
-  label.textContent = cb.checked ? '¡Con descuento!' : 'Descuento';
-  const pctWrap = document.getElementById('f-desc-pct-wrap');
-  if (pctWrap) pctWrap.style.display = cb.checked ? 'block' : 'none';
-  updateStockVisibility();
+  return !!r.activo;
 }
 
-function toggleLimiteStyle(cb) {
-  const label = document.getElementById('f-limite-label');
-  if (!label) return;
-  label.style.color = cb.checked ? '#dc2626' : '#6b7280';
-  const wrap = document.getElementById('f-limite-wrap');
-  if (wrap) wrap.style.display = cb.checked ? 'block' : 'none';
-  updateStockVisibility();
+function renderPromoRulesList() {
+  const wrap = document.getElementById('promo-rules-wrap');
+  const list = _promoRules.filter(r => r.tipo === _promoActiveTab);
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Todavía no hay reglas en esta sección. Crea una con el botón <strong>+ Nueva regla</strong>.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(r => {
+    const prods = _promoRuleProducts[r.id] || [];
+    const scheduled = !!(r.inicio || r.fin);
+    const isActiveNow = _isRuleActiveNow(r);
+    const dateStr = scheduled
+      ? schedSuffix(r.inicio, r.fin).replace(/\n/g, ' · ').replace(/^\s*·\s*/, '')
+      : 'Sin programar (manual)';
+    let valorStr = '';
+    if (r.tipo === 'descuento') valorStr = `−${r.valor}%`;
+    else if (r.tipo === 'limite') valorStr = `Límite: ${r.valor} por usuario`;
+    else valorStr = 'En promoción';
+    return `<div class="promo-rule-card${isActiveNow ? '' : ' inactive'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div>
+          <div class="promo-rule-title">${esc(r.nombre)} · ${valorStr}</div>
+          <div class="promo-rule-meta">${dateStr} · ${prods.length} producto${prods.length === 1 ? '' : 's'}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;align-items:center;">
+          <button class="promo-rule-toggle ${r.activo ? 'on' : 'off'}" ${scheduled ? 'disabled title="Programada por fecha: se activa y desactiva sola"' : ''} onclick="toggleRuleManual('${r.id}')">${r.activo ? 'Activa' : 'Inactiva'}</button>
+          <button class="btn btn-purple btn-sm" onclick="openRuleDashboard('${r.id}')">📊 Dashboard</button>
+          <button class="btn btn-secondary btn-sm" onclick="openRuleModal('${r.id}')">✎ Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRule('${r.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL: crear/editar regla ──────────────────────────────
+function openRuleModal(ruleId) {
+  initSchedDropdowns();
+  const rule = ruleId ? _promoRules.find(r => r.id === ruleId) : null;
+  editingRuleId = rule ? rule.id : null;
+  document.getElementById('rule-modal-title').textContent = rule ? 'Editar regla' : 'Nueva regla';
+  document.getElementById('rule-nombre').value = rule?.nombre || '';
+
+  const valorWrap  = document.getElementById('rule-valor-wrap');
+  const valorLabel = document.getElementById('rule-valor-label');
+  const valorInput = document.getElementById('rule-valor');
+  if (_promoActiveTab === 'promocion') {
+    valorWrap.style.display = 'none';
+    valorInput.value = '';
+  } else {
+    valorWrap.style.display = 'flex';
+    valorLabel.textContent = _promoActiveTab === 'descuento' ? 'Porcentaje de descuento' : 'Límite de unidades por usuario';
+    valorInput.placeholder = _promoActiveTab === 'descuento' ? '%' : 'unidades';
+    valorInput.value = rule?.valor ?? '';
+  }
+
+  isoToDropdowns('rule-inicio', rule?.inicio || null);
+  isoToDropdowns('rule-fin', rule?.fin || null);
+  _setRuleActivoBtn(!!rule?.activo);
+
+  _ruleProdSelected = new Set(rule ? (_promoRuleProducts[rule.id] || []) : []);
+  _ruleProdStock = new Map();
+  allProducts.forEach(p => { if (p.stock != null) _ruleProdStock.set(p.codigo, String(p.stock)); });
+  document.getElementById('rule-prod-search').value = '';
+  renderRuleProductPicker();
+
+  document.getElementById('rule-modal').classList.add('open');
+}
+
+function closeRuleModal() {
+  document.getElementById('rule-modal').classList.remove('open');
+  editingRuleId = null;
+  _ruleProdSelected = new Set();
+}
+
+function _setRuleActivoBtn(on) {
+  const btn = document.getElementById('rule-activo-btn');
+  btn.dataset.on = on ? '1' : '0';
+  btn.classList.toggle('on', on);
+  btn.classList.toggle('off', !on);
+  btn.textContent = on ? 'Activa' : 'Inactiva';
+}
+function toggleRuleActivoField() {
+  const btn = document.getElementById('rule-activo-btn');
+  _setRuleActivoBtn(btn.dataset.on !== '1');
+}
+function clearRuleSchedule() {
+  isoToDropdowns('rule-inicio', null);
+  isoToDropdowns('rule-fin', null);
+}
+
+function renderRuleProductPicker() {
+  const wrap = document.getElementById('rule-product-picker');
+  const q = (document.getElementById('rule-prod-search').value || '').trim().toLowerCase();
+  // Los marcados van arriba del todo, para verlos de un vistazo; dentro de
+  // cada grupo (marcados / no marcados) se ordena alfabéticamente.
+  let list = allProducts.slice().sort((a, b) => {
+    const selA = _ruleProdSelected.has(a.codigo) ? 0 : 1;
+    const selB = _ruleProdSelected.has(b.codigo) ? 0 : 1;
+    if (selA !== selB) return selA - selB;
+    return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+  });
+  if (q) list = list.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.codigo || '').toLowerCase().includes(q));
+  if (!list.length) { wrap.innerHTML = '<div style="padding:16px;color:#9ca3af;font-size:13px;">Sin resultados.</div>'; document.getElementById('rule-prod-count').textContent = _ruleProdSelected.size; return; }
+  wrap.innerHTML = list.map(p => {
+    const codeSafe = p.codigo.replace(/'/g, "\\'");
+    const checked = _ruleProdSelected.has(p.codigo) ? 'checked' : '';
+    const stockVal = _ruleProdStock.has(p.codigo) ? _ruleProdStock.get(p.codigo) : '';
+    const thumb = p.imagen
+      ? `<img src="${esc(p.imagen)}" class="rule-prod-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="rule-prod-thumb-empty" style="display:none">📦</div>`
+      : `<div class="rule-prod-thumb-empty">📦</div>`;
+    return `<div class="rule-prod-item">
+      <input type="checkbox" id="rp-${esc(p.codigo)}" ${checked} onchange="toggleRuleProdSelected('${codeSafe}')">
+      ${thumb}
+      <label for="rp-${esc(p.codigo)}">${esc(p.nombre)}</label>
+      <span class="rule-prod-code">${esc(p.codigo)}</span>
+      <input type="number" class="rule-prod-stock-input" id="rp-stock-${esc(p.codigo)}" min="0" step="1" placeholder="stock" title="Stock disponible mientras la regla esté activa. Al llegar a 0 el producto se marca agotado y deja de venderse. Vacío = sin límite de stock." value="${esc(stockVal)}" style="visibility:${checked ? 'visible' : 'hidden'}" onchange="updateRuleProdStock('${codeSafe}', this.value)">
+    </div>`;
+  }).join('');
+  document.getElementById('rule-prod-count').textContent = _ruleProdSelected.size;
+}
+function updateRuleProdStock(codigo, val) {
+  val = (val || '').trim();
+  if (val === '') _ruleProdStock.delete(codigo);
+  else _ruleProdStock.set(codigo, val);
+}
+function toggleRuleProdSelected(codigo) {
+  if (_ruleProdSelected.has(codigo)) _ruleProdSelected.delete(codigo);
+  else _ruleProdSelected.add(codigo);
+  renderRuleProductPicker();
+}
+
+async function saveRule() {
+  const nombre = document.getElementById('rule-nombre').value.trim();
+  if (!nombre) { showToast('Ponle un nombre a la regla.', 'warn'); return; }
+  const tipo = _promoActiveTab;
+  let valor = null;
+  if (tipo !== 'promocion') {
+    valor = parseFloat(document.getElementById('rule-valor').value);
+    if (!valor || valor <= 0) { showToast(tipo === 'descuento' ? 'Ingresa un porcentaje válido.' : 'Ingresa un límite de unidades válido.', 'warn'); return; }
+  }
+  const inicio = dropdownsToIso('rule-inicio');
+  const fin = dropdownsToIso('rule-fin');
+  if (inicio && fin && new Date(fin) <= new Date(inicio)) { showToast('La fecha de fin debe ser posterior al inicio.', 'warn'); return; }
+  const scheduled = !!(inicio || fin);
+  const activo = scheduled ? true : (document.getElementById('rule-activo-btn').dataset.on === '1');
+  const productos = Array.from(_ruleProdSelected);
+
+  const saveBtn = document.getElementById('save-rule-btn');
+  saveBtn.disabled = true; saveBtn.textContent = 'Guardando…';
+
+  try {
+    const payload = { tipo, nombre, valor, activo, inicio, fin };
+    let ruleId = editingRuleId;
+    if (ruleId) {
+      const { error } = await sb.from('reglas_promocion').update(payload).eq('id', ruleId);
+      if (error) throw error;
+    } else {
+      const { data, error } = await sb.from('reglas_promocion').insert(payload).select('id').single();
+      if (error) throw error;
+      ruleId = data.id;
+    }
+
+    // Sacar el producto de cualquier otra regla del mismo tipo (evita solapamiento)
+    const otherSameType = _promoRules.filter(r => r.tipo === tipo && r.id !== ruleId);
+    for (const other of otherSameType) {
+      const otherProds = _promoRuleProducts[other.id] || [];
+      const conflict = otherProds.filter(c => productos.includes(c));
+      if (conflict.length) {
+        await sb.from('regla_productos').delete().eq('regla_id', other.id).in('producto_codigo', conflict);
+        _promoRuleProducts[other.id] = otherProds.filter(c => !conflict.includes(c));
+        showToast(`${conflict.length} producto(s) se movieron desde "${other.nombre}" a "${nombre}".`, 'warn');
+      }
+    }
+
+    // Sincronizar regla_productos: borrar los que ya no están, insertar los nuevos
+    const prevProds = _promoRuleProducts[ruleId] || [];
+    const toRemove = prevProds.filter(c => !productos.includes(c));
+    const toAdd = productos.filter(c => !prevProds.includes(c));
+    if (toRemove.length) await sb.from('regla_productos').delete().eq('regla_id', ruleId).in('producto_codigo', toRemove);
+    if (toAdd.length) await sb.from('regla_productos').insert(toAdd.map(c => ({ regla_id: ruleId, producto_codigo: c })));
+
+    // Write-through: aplicar la config a todos los productos asignados
+    // (el stock es por producto, cada uno puede tener uno distinto)
+    for (const codigo of productos) {
+      const stockRaw = _ruleProdStock.get(codigo);
+      const stock = (stockRaw != null && stockRaw !== '') ? parseInt(stockRaw) : null;
+      await _applyRuleToProduct(tipo, { valor, activo, inicio, fin, stock }, codigo);
+    }
+    // Resetear los que se quitaron de esta regla
+    for (const codigo of toRemove) {
+      await _clearProductRuleFields(tipo, codigo);
+    }
+
+    showToast('Regla guardada ✓', 'ok');
+    closeRuleModal();
+    await loadProducts();
+    await loadPromoRules();
+  } catch (e) {
+    showToast('Error guardando la regla: ' + e.message, 'error');
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = 'Guardar regla';
+  }
+}
+
+async function _applyRuleToProduct(tipo, cfg, codigo) {
+  let payload = {};
+  if (tipo === 'descuento') {
+    payload = { descuento: cfg.activo, porcentaje_descuento: cfg.valor, descuento_inicio: cfg.inicio, descuento_fin: cfg.fin };
+  } else if (tipo === 'limite') {
+    payload = { limite_por_usuario: cfg.activo ? cfg.valor : null, limite_inicio: cfg.inicio, limite_fin: cfg.fin };
+  } else {
+    payload = { promocion: cfg.activo, promo_inicio: cfg.inicio, promo_fin: cfg.fin };
+  }
+  // Stock disponible mientras la regla esté activa: al llegar a 0 el producto
+  // se marca agotado y deja de venderse (misma lógica que ya existía en el
+  // editor de producto). 'undefined' = no tocar el campo (p.ej. toggle manual).
+  if (cfg.stock !== undefined) payload.stock = cfg.stock;
+  await sb.from('productos').update(payload).eq('codigo', codigo);
+}
+
+async function _clearProductRuleFields(tipo, codigo) {
+  let payload = {};
+  if (tipo === 'descuento') payload = { descuento: false, porcentaje_descuento: null, descuento_inicio: null, descuento_fin: null };
+  else if (tipo === 'limite') payload = { limite_por_usuario: null, limite_inicio: null, limite_fin: null };
+  else payload = { promocion: false, promo_inicio: null, promo_fin: null };
+  payload.stock = null;
+  await sb.from('productos').update(payload).eq('codigo', codigo);
+}
+
+async function toggleRuleManual(id) {
+  const rule = _promoRules.find(r => r.id === id);
+  if (!rule) return;
+  if (rule.inicio || rule.fin) { showToast('Esta regla está programada por fecha; quítale las fechas para poder activarla/desactivarla manualmente.', 'warn'); return; }
+  const newActivo = !rule.activo;
+  const { error } = await sb.from('reglas_promocion').update({ activo: newActivo }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  rule.activo = newActivo;
+  const prods = _promoRuleProducts[id] || [];
+  for (const codigo of prods) {
+    await _applyRuleToProduct(rule.tipo, { valor: rule.valor, activo: newActivo, inicio: null, fin: null }, codigo);
+  }
+  showToast(newActivo ? 'Regla activada ✓' : 'Regla desactivada ✓', 'ok');
+  renderPromoRulesList();
+  loadProducts();
+}
+
+function deleteRule(id) {
+  const rule = _promoRules.find(r => r.id === id);
+  if (!rule) return;
+  showConfirm(
+    '¿Eliminar regla?',
+    `"${rule.nombre}" será eliminada y se desactivará/limpiará su configuración en todos los productos asignados. Esta acción no se puede deshacer.`,
+    async () => {
+      const prods = _promoRuleProducts[id] || [];
+      for (const codigo of prods) {
+        await _clearProductRuleFields(rule.tipo, codigo);
+      }
+      const { error } = await sb.from('reglas_promocion').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      showToast('Regla eliminada ✓', 'ok');
+      await loadProducts();
+      await loadPromoRules();
+    }
+  );
+}
+
+// ── DASHBOARD POR REGLA ─────────────────────────────────────
+let _ruleDashChart = null;
+
+async function openRuleDashboard(id) {
+  const rule = _promoRules.find(r => r.id === id);
+  if (!rule) return;
+  const prods = _promoRuleProducts[id] || [];
+  document.getElementById('rule-dash-title').textContent = '📊 ' + rule.nombre;
+  const body = document.getElementById('rule-dash-body');
+  body.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>';
+  document.getElementById('rule-dash-modal').classList.add('open');
+
+  if (!prods.length) {
+    body.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Esta regla no tiene productos asignados.</div>';
+    return;
+  }
+
+  // Reutiliza el mismo dataset que la sección Dashboard (_dashData) para que
+  // los botones "Detalles" y el avatar → ficha de colaborador funcionen igual
+  // acá adentro. Si todavía no se ha cargado (no se visitó Dashboard), se
+  // carga una sola vez con la misma consulta que usa loadDashboard().
+  if (!_dashData) {
+    const [resPed, resUsers] = await Promise.all([
+      sb.from('pedidos')
+        .select('id, fecha, facturado_at, total, estado, exento_pago, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario, descuento_porcentaje)')
+        .order('fecha', { ascending: true }),
+      sb.from('usuarios').select('cedula', { count: 'exact', head: true })
+    ]);
+    if (resPed.error) { body.innerHTML = `<div class="empty-table" style="color:#dc2626;">Error: ${resPed.error.message}</div>`; return; }
+    _dashData = resPed.data || [];
+    _dashAllDays = _dashData;
+    _dashTotalUsers = resUsers.count || 0;
+  }
+
+  const start = rule.inicio ? new Date(rule.inicio).getTime() : new Date(rule.created_at).getTime();
+  const end   = rule.fin ? new Date(rule.fin).getTime() : Date.now();
+
+  const lines = [];
+  _dashData.forEach(o => {
+    if (o.estado === 'cancelado' || o.estado === 'eliminado' || o.estado === 'sin_inventario') return;
+    const t = new Date(o.fecha).getTime();
+    if (t < start || t > end) return;
+    (o.lineas_pedido || []).forEach(l => {
+      if (prods.includes(l.producto_codigo)) {
+        lines.push({ ...l, fecha: o.fecha, pedidoId: o.id, usuario_nombre: o.usuario_nombre, usuario_email: o.usuario_email });
+      }
+    });
+  });
+
+  const totalRevenue = lines.reduce((s, l) => s + (l.subtotal || 0), 0);
+  const totalUnits   = lines.reduce((s, l) => s + (l.cantidad || 0), 0);
+  const orderCount   = new Set(lines.map(l => l.pedidoId)).size;
+
+  // Más vendidos (productos de la regla)
+  const byProd = {};
+  lines.forEach(l => {
+    const k = l.producto_codigo;
+    if (!byProd[k]) byProd[k] = { nombre: l.producto_nombre, unidades: 0, revenue: 0 };
+    byProd[k].unidades += l.cantidad || 0;
+    byProd[k].revenue  += l.subtotal || 0;
+  });
+  const rankProductos = Object.entries(byProd).sort((a, b) => b[1].unidades - a[1].unidades).slice(0, 8);
+  const mxProd = rankProductos[0]?.[1].unidades || 1;
+
+  // Unidades compradas (por colaborador)
+  const byUserUnid = {};
+  lines.forEach(l => { const k = l.usuario_nombre || l.usuario_email; byUserUnid[k] = (byUserUnid[k] || 0) + (l.cantidad || 0); });
+  const rankUnidades = Object.entries(byUserUnid).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const mxUnid = rankUnidades[0]?.[1] || 1;
+
+  // Mayor compra (por colaborador, monto gastado en productos de la regla)
+  const byUserMonto = {};
+  lines.forEach(l => { const k = l.usuario_nombre || l.usuario_email; byUserMonto[k] = (byUserMonto[k] || 0) + (l.subtotal || 0); });
+  const rankMonto = Object.entries(byUserMonto).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const mxMonto = rankMonto[0]?.[1] || 1;
+
+  const byDay = {};
+  lines.forEach(l => {
+    const day = new Date(l.fecha).toISOString().slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + (l.subtotal || 0);
+  });
+  const days = Object.keys(byDay).sort();
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+      <div class="su-section" style="margin:0;padding:14px;"><div style="font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Ventas totales</div><div style="font-size:20px;font-weight:700;color:#143c5a;"><span class="col-sign">₡</span>${totalRevenue.toLocaleString('es-CR')}</div></div>
+      <div class="su-section" style="margin:0;padding:14px;"><div style="font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Unidades vendidas</div><div style="font-size:20px;font-weight:700;color:#143c5a;">${totalUnits.toLocaleString('es-CR')}</div></div>
+      <div class="su-section" style="margin:0;padding:14px;"><div style="font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Pedidos</div><div style="font-size:20px;font-weight:700;color:#143c5a;">${orderCount}</div></div>
+    </div>
+    <div class="su-section" style="margin-bottom:16px;">
+      <div class="su-section-title" style="font-size:14px;">Ventas en el tiempo</div>
+      <div style="height:220px;margin-top:10px;"><canvas id="rule-dash-chart"></canvas></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+      <div class="su-section">
+        <div class="su-section-title" style="font-size:14px;">Más vendidos</div>
+        <div style="margin-top:8px;">
+          ${rankProductos.length ? rankProductos.map(([k, p], i) => `
+            <div class="rank-row"><span class="rank-num">${i + 1}</span><div class="rank-mid">
+              <div class="rank-name">${esc(p.nombre)}</div>
+              <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(p.unidades / mxProd * 100)}%"></div></div>
+            </div><span class="rank-val">${p.unidades} u.</span>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openProdDetail('${esc(k).replace(/'/g, "\\'")}','${esc(p.nombre).replace(/'/g, "\\'")}')">Detalles</button>
+            </div>`).join('')
+            : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin ventas registradas en el periodo activo.</div>'}
+        </div>
+      </div>
+      <div class="su-section">
+        <div class="su-section-title" style="font-size:14px;">Unidades compradas</div>
+        <div style="margin-top:8px;">
+          ${rankUnidades.length ? rankUnidades.map(([n, v], i) => `
+            <div class="rank-row"><span class="rank-num">${i + 1}</span>${userAvatar(n, n)}<div class="rank-mid">
+              <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
+              <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxUnid * 100)}%"></div></div>
+            </div><span class="rank-val">${v} u.</span>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openUserDetail('${esc(n).replace(/'/g, "\\'")}')">Detalles</button>
+            </div>`).join('')
+            : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
+        </div>
+      </div>
+      <div class="su-section">
+        <div class="su-section-title" style="font-size:14px;">Mayor compra</div>
+        <div style="margin-top:8px;">
+          ${rankMonto.length ? rankMonto.map(([n, v], i) => `
+            <div class="rank-row"><span class="rank-num">${i + 1}</span>${userAvatar(n, n)}<div class="rank-mid">
+              <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
+              <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxMonto * 100)}%"></div></div>
+            </div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v / 1000)}k</span>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openMontoDetail('${esc(n).replace(/'/g, "\\'")}')">Detalles</button>
+            </div>`).join('')
+            : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
+        </div>
+      </div>
+    </div>`;
+
+  if (days.length) {
+    if (_ruleDashChart) _ruleDashChart.destroy();
+    const ctx = document.getElementById('rule-dash-chart').getContext('2d');
+    _ruleDashChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: days.map(d => new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: 'short' })),
+        datasets: [{ label: 'Ventas', data: days.map(d => byDay[d]), borderColor: '#143c5a', backgroundColor: 'rgba(20,60,90,.1)', fill: true, tension: .25 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+}
+
+function closeRuleDashboard() {
+  document.getElementById('rule-dash-modal').classList.remove('open');
+  if (_ruleDashChart) { _ruleDashChart.destroy(); _ruleDashChart = null; }
 }
 
 // ── EXPORTAR PRODUCTOS A EXCEL ────────────────────────────

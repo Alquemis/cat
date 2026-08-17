@@ -1846,15 +1846,21 @@ async function initAuth() {
       if (session.nombre && session.cedula && session.departamento && session.lugar) {
         // Restaurar sesión de inmediato sin esperar la red
         onLogin(session, true);
-        // Verificar en segundo plano: si el usuario fue eliminado, cerrar sesión
-        sb.from('usuarios').select('cedula').eq('cedula', session.cedula).maybeSingle()
-          .then(({ data }) => {
-            if (!data) {
-              localStorage.removeItem('catalogo_session');
-              doLogout();
-            }
-          })
-          .catch(() => { /* sin red → mantener sesión */ });
+        // Verificar en segundo plano: si el usuario fue eliminado o baneado, cerrar sesión
+        Promise.all([
+          sb.from('usuarios').select('cedula').eq('cedula', session.cedula).maybeSingle(),
+          sb.from('usuarios_baneados').select('cedula').eq('cedula', session.cedula).maybeSingle()
+        ]).then(([userRes, banRes]) => {
+          if (!userRes.data) {
+            localStorage.removeItem('catalogo_session');
+            doLogout();
+            return;
+          }
+          if (banRes.data) {
+            localStorage.removeItem('catalogo_session');
+            kickBannedUser();
+          }
+        }).catch(() => { /* sin red → mantener sesión */ });
         return;
       }
     } catch(e) {}
@@ -2031,6 +2037,15 @@ async function doVerifyCedula() {
     const res  = await fetch('https://api.hacienda.go.cr/fe/ae?identificacion=' + encodeURIComponent(num));
     const data = await res.json();
     if (!data || !data.nombre) throw new Error('no_name');
+    // Chequear baneo antes que nada: una cédula baneada no puede registrarse de nuevo
+    const { data: baneo } = await sb.from('usuarios_baneados').select('cedula').eq('cedula', num).maybeSingle();
+    if (baneo) {
+      statusEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
+      statusEl.style.color = '#dc2626';
+      btn.disabled = false;
+      btn.textContent = 'Verificar';
+      return;
+    }
     // Check if cedula already registered
     const { data: existing } = await sb.from('usuarios').select('cedula').eq('cedula', num).maybeSingle();
     if (existing) {
@@ -2091,9 +2106,18 @@ async function doQuickLogin() {
 
   btn.disabled = true; btn.textContent = 'Buscando…';
 
-  const { data: perfil } = await sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle();
+  const [{ data: perfil }, { data: baneo }] = await Promise.all([
+    sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle(),
+    sb.from('usuarios_baneados').select('cedula').eq('cedula', cedula).maybeSingle()
+  ]);
 
   btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
+
+  if (baneo) {
+    errEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
+    errEl.classList.add('show');
+    return;
+  }
 
   if (!perfil) {
     errEl.textContent = 'No encontramos esa cédula. ¿Ya te registraste?';
@@ -2160,6 +2184,18 @@ function doLogout() {
   onLogout();
 }
 
+// Cierra la sesión de un usuario baneado y muestra el mensaje de acceso
+// restringido en la pantalla de login (sin detalles adicionales).
+function kickBannedUser() {
+  closeUserMenu();
+  onLogout();
+  const errEl = document.getElementById('login-error-quick');
+  if (errEl) {
+    errEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
+    errEl.classList.add('show');
+  }
+}
+
 // ── SESSION WATCHDOG ──────────────────────────────────────
 // Verifica cada 30 s si el usuario sigue existiendo en la BD.
 // Si fue eliminado por el superuser, cierra sesión automáticamente.
@@ -2175,15 +2211,18 @@ function startSessionWatchdog() {
     if (_rtOk && Date.now() - _lastWatchdogCheck < 60000) return;
     _lastWatchdogCheck = Date.now();
     try {
-      const { data, error } = await sb
-        .from('usuarios')
-        .select('cedula')
-        .eq('cedula', currentUser.cedula)
-        .maybeSingle();
-      if (!data) {
+      const [{ data: userData }, { data: banData }] = await Promise.all([
+        sb.from('usuarios').select('cedula').eq('cedula', currentUser.cedula).maybeSingle(),
+        sb.from('usuarios_baneados').select('cedula').eq('cedula', currentUser.cedula).maybeSingle()
+      ]);
+      if (!userData) {
         // Usuario eliminado — cerrar sesión silenciosamente
         stopSessionWatchdog();
         onLogout();
+      } else if (banData) {
+        // Usuario baneado — cerrar sesión y mostrar acceso restringido
+        stopSessionWatchdog();
+        kickBannedUser();
       }
     } catch(_) { /* ignorar errores de red */ }
   }, 10000);
@@ -4563,6 +4602,9 @@ function startRealtime() {
     .on('postgres_changes',
       { event: 'DELETE', schema: 'public', table: 'usuarios', filter: 'cedula=eq.' + currentUser.cedula },
       () => { stopSessionWatchdog(); onLogout(); })
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'usuarios_baneados', filter: 'cedula=eq.' + currentUser.cedula },
+      () => { stopSessionWatchdog(); kickBannedUser(); })
     .subscribe(status => { _rtOk = (status === 'SUBSCRIBED'); });
 }
 

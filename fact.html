@@ -448,7 +448,28 @@ async function init() {
   ]);
   _prodMap = {};
   (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
+  startRealtimeOrders();
 }
+
+// ── TIEMPO REAL — recarga automática al cambiar pedidos, en silencio ──
+// No borra la tabla ni muestra "Cargando…": se refresca de fondo para que
+// no haya parpadeo visible mientras se está viendo la lista.
+let _rtOrdersChannel = null;
+let _rtReloadT = null;
+function _rtScheduleReload() {
+  clearTimeout(_rtReloadT);
+  _rtReloadT = setTimeout(() => { loadPendientes(true); loadHistorial(true); }, 800); // debounce
+}
+function startRealtimeOrders() {
+  if (_rtOrdersChannel || !sb.channel) return;
+  _rtOrdersChannel = sb.channel('rt-pedidos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, _rtScheduleReload)
+    .subscribe();
+}
+// Al volver a la pestaña, refrescar en silencio por si hubo cambios mientras estaba oculta
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _rtOrdersChannel) _rtScheduleReload();
+});
 
 // ── TABS ──────────────────────────────────────────────────────
 function showTab(tab) {
@@ -461,9 +482,11 @@ function showTab(tab) {
 }
 
 // ── PENDIENTES ────────────────────────────────────────────────
-async function loadPendientes() {
-  document.getElementById('pend-tbody').innerHTML =
-    '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+async function loadPendientes(silent) {
+  if (!silent) {
+    document.getElementById('pend-tbody').innerHTML =
+      '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+  }
 
   const { data, error } = await sb.from('pedidos')
     .select('*, lineas_pedido(*)')
@@ -678,9 +701,11 @@ function recalcStats() {
 }
 
 // ── HISTORIAL ─────────────────────────────────────────────────
-async function loadHistorial() {
-  document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+async function loadHistorial(silent) {
+  if (!silent) {
+    document.getElementById('hist-tbody').innerHTML =
+      '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+  }
 
   const { data, error } = await sb.from('pedidos')
     .select('*, lineas_pedido(*)')

@@ -555,7 +555,6 @@
   <button class="page-tab" onclick="showPage('promotions')">🏷 Promociones</button>
   <button class="page-tab" onclick="showPage('notifications')">🔔 Notificaciones</button>
   <button class="page-tab" onclick="showPage('home')">🏠 Home Editor</button>
-  <button class="page-tab" onclick="showPage('settings')">⚙ Configuración</button>
 </div>
 
 <!-- CONTENT -->
@@ -898,17 +897,6 @@
         </div>
         <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
         <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
-      </div>
-
-      <div class="stat-card" style="margin-bottom:24px;">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">🚨 Posibles registros falsos</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
-        <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
-          <table>
-            <thead><tr><th>Cédulas asociadas</th><th>Nombres</th><th>Eventos</th><th>Última actividad</th></tr></thead>
-            <tbody id="cfg-fraude-tbody"><tr><td colspan="4" class="empty-table">Cargando…</td></tr></tbody>
-          </table>
-        </div>
       </div>
     </div>
   </div>
@@ -1288,6 +1276,18 @@
         </div>
       </div>
 
+      <!-- Posibles registros falsos -->
+      <div class="su-section" style="margin-top:24px;">
+        <div class="su-section-title">🚨 Posibles registros falsos</div>
+        <div class="su-section-sub">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
+        <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>Cédulas asociadas</th><th>Nombres</th><th>Eventos</th><th>Última actividad</th></tr></thead>
+            <tbody id="cfg-fraude-tbody"><tr><td colspan="4" class="empty-table">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1318,10 +1318,34 @@
   <!-- ── PAGE: NOTIFICACIONES ── -->
   <div id="page-notifications" style="display:none">
 
-    <!-- Compose -->
     <div class="su-section" style="margin-bottom:20px;">
-      <div class="su-section-title">✉️ Nueva notificación</div>
-      <div class="su-section-sub">Redacta y envía una notificación a todos los colaboradores.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="su-section-title">🔔 Notificaciones</div>
+          <div class="su-section-sub">Redacta y envía notificaciones a todos los colaboradores.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openNotifModal()">+ Nueva notificación</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="su-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
+        <div class="su-section-title">📋 Historial de notificaciones</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadNotifications()">↻ Actualizar</button>
+      </div>
+      <div class="su-section-sub">Notificaciones enviadas. Cancela, reenvía o consulta lectores.</div>
+      <div id="notif-history-wrap">
+        <div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NOTIFICATION COMPOSE MODAL -->
+  <div class="modal-overlay" id="notif-modal">
+    <div class="modal-card" style="max-width:640px;">
+      <div class="modal-title">✉️ Nueva notificación</div>
 
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Título</label>
@@ -1385,26 +1409,51 @@
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="notif-send-btn" onclick="sendNotification()">📤 Enviar notificación</button>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Vigencia (opcional)</label>
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Si defines fechas, la notificación solo será visible para los colaboradores dentro de ese rango — así los usuarios nuevos no ven avisos vencidos. Déjalo en blanco para que no expire.</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Inicio</label>
+            <div style="display:flex;gap:3px;">
+              <select id="notif-inicio-d" class="sched-sel"></select>
+              <select id="notif-inicio-m" class="sched-sel"></select>
+              <select id="notif-inicio-y" class="sched-sel"></select>
+            </div>
+            <div style="display:flex;gap:3px;margin-top:3px;">
+              <select id="notif-inicio-h" class="sched-sel"></select>
+              <select id="notif-inicio-mi" class="sched-sel"></select>
+            </div>
+            <div id="notif-inicio-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <label style="font-size:10px;color:#9ca3af;display:block;margin-bottom:3px;">Fin</label>
+            <div style="display:flex;gap:3px;">
+              <select id="notif-fin-d" class="sched-sel"></select>
+              <select id="notif-fin-m" class="sched-sel"></select>
+              <select id="notif-fin-y" class="sched-sel"></select>
+            </div>
+            <div style="display:flex;gap:3px;margin-top:3px;">
+              <select id="notif-fin-h" class="sched-sel"></select>
+              <select id="notif-fin-mi" class="sched-sel"></select>
+            </div>
+            <div id="notif-fin-summary" style="font-size:10.5px;color:#6b7280;font-style:italic;margin-top:4px;"></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="isoToDropdowns('notif-inicio', null); isoToDropdowns('notif-fin', null);">✕ Quitar fechas</button>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
         <button class="btn btn-secondary" onclick="previewNotifCard()">🃏 Vista previa tarjeta</button>
         <button class="btn btn-secondary" onclick="previewNotifCompose()">👁 Vista previa completa</button>
         <button class="btn btn-secondary" onclick="clearNotifCompose()">✕ Limpiar</button>
       </div>
-    </div>
 
-    <!-- History -->
-    <div class="su-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
-        <div class="su-section-title">📋 Historial de notificaciones</div>
-        <button class="btn btn-secondary btn-sm" onclick="loadNotifications()">↻ Actualizar</button>
-      </div>
-      <div class="su-section-sub">Notificaciones enviadas. Cancela, reenvía o consulta lectores.</div>
-      <div id="notif-history-wrap">
-        <div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>
+      <div class="modal-btns">
+        <button class="btn btn-secondary" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-primary" id="notif-send-btn" onclick="sendNotification()">📤 Enviar notificación</button>
       </div>
     </div>
-
   </div>
 
   <!-- ── PAGE: HOME EDITOR ── -->
@@ -2147,7 +2196,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── PAGES ────────────────────────────────────────────────
-const ALL_PAGES = ['products','orders','users','dashboard','su','promotions','notifications','home','settings'];
+const ALL_PAGES = ['products','orders','users','dashboard','su','promotions','notifications','home'];
 
 // ── RESPONSIVE ZOOM ──────────────────────────────────────
 function applyZoom() {
@@ -2175,7 +2224,6 @@ function showPage(page) {
   if (page==='promotions') loadPromoRules();
   if (page==='notifications') loadNotifications();
   if (page==='home') loadHomeEditor();
-  if (page==='settings') { loadConfig(); loadFraudDevices(); }
 }
 
 // ── STATS ────────────────────────────────────────────────
@@ -2434,7 +2482,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ── PROGRAMACIÓN: dropdowns Día/Mes/Año/Hora/Min ─────────
-const SCHED_PREFIXES = ['rule-inicio','rule-fin'];
+const SCHED_PREFIXES = ['rule-inicio','rule-fin','notif-inicio','notif-fin'];
 const MESES_ABBR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
 let _schedDropdownsInit = false;
@@ -3994,7 +4042,7 @@ async function loadSuPage() {
   ['admin','fact','su','gr','tr','he'].forEach(t => {
     document.getElementById('su-msg-' + t).style.display = 'none';
   });
-  await Promise.all([loadSuUsers(), loadExemptCedulas(), loadSuBannedUsers()]);
+  await Promise.all([loadSuUsers(), loadExemptCedulas(), loadSuBannedUsers(), loadFraudDevices()]);
 }
 
 async function saveSuCred(type) {
@@ -5765,6 +5813,17 @@ function removeNotifImage() {
   document.getElementById('notif-img-preview').src = '';
 }
 
+function openNotifModal() {
+  initSchedDropdowns();
+  isoToDropdowns('notif-inicio', null);
+  isoToDropdowns('notif-fin', null);
+  document.getElementById('notif-modal').classList.add('open');
+}
+
+function closeNotifModal() {
+  document.getElementById('notif-modal').classList.remove('open');
+}
+
 async function sendNotification() {
   const title    = (document.getElementById('notif-title').innerText || '').trim();
   const titleHtml= (document.getElementById('notif-title').innerHTML || '').trim();
@@ -5777,17 +5836,21 @@ async function sendNotification() {
   btn.disabled = true; btn.textContent = 'Enviando…';
 
   const createdBy = (typeof currentUser === 'string' && currentUser) ? currentUser : 'superusuario';
+  const fecha_inicio = dropdownsToIso('notif-inicio');
+  const fecha_fin    = dropdownsToIso('notif-fin');
 
   const { error } = await sb.from('notifications').insert({
     title: titleHtml, subtitle, body,
     image_url:  _notifImageData || null,
-    created_by: createdBy
+    created_by: createdBy,
+    fecha_inicio, fecha_fin
   });
 
   btn.disabled = false; btn.textContent = '📤 Enviar notificación';
   if (error) { showToast('Error al enviar: ' + error.message, 'error'); return; }
   showToast('Notificación enviada correctamente ✓', 'ok');
   clearNotifCompose();
+  closeNotifModal();
   loadNotifications();
 }
 
@@ -5796,6 +5859,8 @@ function clearNotifCompose() {
   document.getElementById('notif-subtitle').innerHTML = '';
   document.getElementById('notif-body').innerHTML = '';
   removeNotifImage();
+  isoToDropdowns('notif-inicio', null);
+  isoToDropdowns('notif-fin', null);
 }
 
 function previewNotifCard() {
@@ -5883,9 +5948,11 @@ async function loadNotifications() {
       ? `<b style="color:#143c5a;">${readers.length} lectura${readers.length === 1 ? '' : 's'}</b> <button class="btn btn-secondary btn-sm" onclick="openNotifReaders('${n.id}')" style="margin-left:4px;">Ver detalle</button>`
       : '<span style="font-style:italic;">Ningún colaborador lo ha abierto aún.</span>';
 
+    const vigenciaTxt = (n.fecha_inicio || n.fecha_fin) ? schedSuffix(n.fecha_inicio, n.fecha_fin).replace(/\n/g, ' · ').replace(/^\s*·\s*/, '') : '';
     const chips = [
       cancelled ? `<span class="badge badge-red">CANCELADA</span>` : '',
-      n.image_url ? `<span class="badge badge-gray">📎 imagen</span>` : ''
+      n.image_url ? `<span class="badge badge-gray">📎 imagen</span>` : '',
+      vigenciaTxt ? `<span class="badge badge-gray" title="${_escHtml(vigenciaTxt)}">🗓 Programada</span>` : ''
     ].filter(Boolean).join(' ');
 
     return `<div class="notif-hist-card${cancelled ? ' cancelled' : ''}">
@@ -6007,6 +6074,7 @@ async function cancelNotification(id) {
 
 function renotify(id) {
   const n = _notifHistData[id]; if (!n) return;
+  openNotifModal();
   document.getElementById('notif-title').innerHTML = n.title;
   document.getElementById('notif-subtitle').innerHTML = n.subtitle || '';
   document.getElementById('notif-body').innerHTML = n.body;
@@ -6019,7 +6087,8 @@ function renotify(id) {
   } else {
     removeNotifImage();
   }
-  document.getElementById('notif-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  isoToDropdowns('notif-inicio', n.fecha_inicio || null);
+  isoToDropdowns('notif-fin', n.fecha_fin || null);
   setTimeout(() => document.getElementById('notif-title').focus(), 400);
   showToast('Contenido cargado — edita y reenvía cuando quieras', 'ok');
 }

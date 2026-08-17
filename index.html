@@ -4871,7 +4871,7 @@ async function loadUserNotifications() {
   // Active (non-cancelled) notifications
   const { data: notifs } = await sb
     .from('notifications')
-    .select('id, title, subtitle, body, image_url, created_at')
+    .select('id, title, subtitle, body, image_url, created_at, fecha_inicio, fecha_fin')
     .is('cancelled_at', null)
     .order('created_at', { ascending: false });
 
@@ -4886,10 +4886,14 @@ async function loadUserNotifications() {
 
   const readSet = new Set((reads || []).map(r => r.notification_id));
   const dismissed = _getDismissedNotifIds();
+  const nowTs = Date.now();
   // Se mantienen en la lista aunque ya se hayan visto; solo desaparecen
-  // si el usuario las borra explícitamente (✕).
+  // si el usuario las borra explícitamente (✕), o si quedan fuera del rango
+  // de vigencia (fecha_inicio/fecha_fin) definido al crearlas — así un
+  // usuario nuevo no ve avisos que ya no tienen validez.
   _userNotifs = notifs
     .filter(n => !dismissed.has(String(n.id)))
+    .filter(n => (!n.fecha_inicio || new Date(n.fecha_inicio).getTime() <= nowTs) && (!n.fecha_fin || new Date(n.fecha_fin).getTime() >= nowTs))
     .map(n => ({ ...n, read: readSet.has(n.id) }));
   _updateAdminNotifBadge();
 }

@@ -448,26 +448,7 @@ async function init() {
   ]);
   _prodMap = {};
   (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
-  startRealtimeOrders();
 }
-
-// ── TIEMPO REAL — recarga automática al cambiar pedidos ──────
-let _rtOrdersChannel = null;
-let _rtReloadT = null;
-function _rtScheduleReload() {
-  clearTimeout(_rtReloadT);
-  _rtReloadT = setTimeout(() => { loadPendientes(); loadHistorial(); }, 800); // debounce
-}
-function startRealtimeOrders() {
-  if (_rtOrdersChannel || !sb.channel) return;
-  _rtOrdersChannel = sb.channel('rt-pedidos')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, _rtScheduleReload)
-    .subscribe();
-}
-// Al volver a la pestaña, refrescar por si hubo cambios mientras estaba oculta
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && _rtOrdersChannel) _rtScheduleReload();
-});
 
 // ── TABS ──────────────────────────────────────────────────────
 function showTab(tab) {

@@ -714,10 +714,10 @@ async function loadOrders() {
   const [resPend, resHist, resProd] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').eq('usuario_lugar', LUGAR).order('fecha', {ascending:true}),
     sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado']).eq('usuario_lugar', LUGAR).order('fecha', {ascending:true}),
-    sb.from('productos').select('codigo, nombre')
+    sb.from('productos').select('codigo, nombre, nombre_catalogo')
   ]);
   _prodMap = {};
-  (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
+  (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre_catalogo || p.nombre; });
   // Filter by LUGAR client-side
   allAdminHist = (resHist.data || []).filter(o => o.usuario_lugar === LUGAR)
     .map(o => ({ ...o, usuario_nombre: toTitleCase(o.usuario_nombre) }));

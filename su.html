@@ -942,6 +942,10 @@
         <div class="dash-kpi-val" id="sdk-colaboradores">—</div>
         <div class="dash-kpi-lbl">Colaboradores activos <span style="font-size:10px;color:#9ca3af;">↗</span></div>
       </div>
+      <div class="dash-kpi" onclick="openSuWishlistsModal()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
+        <div class="dash-kpi-val" id="sdk-wishlists">—</div>
+        <div class="dash-kpi-lbl">Wishlists recibidas <span style="font-size:10px;color:#9ca3af;">↗</span></div>
+      </div>
     </div>
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
@@ -1643,6 +1647,21 @@
 <!-- MODAL PERFIL COLABORADOR SU -->
 <div id="su-collab-profile-modal" class="collab-modal" style="z-index:780;" onclick="if(event.target===this)closeSuCollabProfile()">
   <div class="collab-modal-card" id="su-collab-profile-card"></div>
+</div>
+
+<!-- MODAL WISHLISTS RECIBIDAS SU -->
+<div id="su-wishlists-modal" class="collab-modal" style="z-index:785;" onclick="if(event.target===this)closeSuWishlistsModal()">
+  <div class="collab-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="font-size:17px;font-weight:700;color:#143c5a;" id="su-wishlists-modal-title">🎁 Wishlists recibidas</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="su-wishlists-search" placeholder="Buscar colaborador…" oninput="filterSuWishlistsModal()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <button onclick="closeSuWishlistsModal()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
+      </div>
+    </div>
+    <div id="su-wishlists-modal-body"></div>
+    <div id="su-wishlists-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
+  </div>
 </div>
 
 <!-- MODAL DETALLES MONTO SU -->
@@ -2893,11 +2912,13 @@ function deleteRule(id) {
 
 // ── DASHBOARD POR REGLA ─────────────────────────────────────
 let _ruleDashChart = null;
+let _ruleDashProds = null;
 
 async function openRuleDashboard(id) {
   const rule = _promoRules.find(r => r.id === id);
   if (!rule) return;
   const prods = _promoRuleProducts[id] || [];
+  _ruleDashProds = prods;
   document.getElementById('rule-dash-title').textContent = '📊 ' + rule.nombre;
   const body = document.getElementById('rule-dash-body');
   body.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>';
@@ -2993,7 +3014,7 @@ async function openRuleDashboard(id) {
               <div class="rank-name">${esc(p.nombre)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(p.unidades / mxProd * 100)}%"></div></div>
             </div><span class="rank-val">${p.unidades} u.</span>
-            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuProdDetail('${esc(k).replace(/'/g, "\\'")}','${esc(p.nombre).replace(/'/g, "\\'")}')">Detalles</button>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuProdDetail('${esc(k).replace(/'/g, "\\'")}','${esc(p.nombre).replace(/'/g, "\\'")}',${start},${end})">Detalles</button>
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin ventas registradas en el periodo activo.</div>'}
         </div>
@@ -3006,7 +3027,7 @@ async function openRuleDashboard(id) {
               <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxUnid * 100)}%"></div></div>
             </div><span class="rank-val">${v} u.</span>
-            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${esc(n).replace(/'/g, "\\'")}')">Detalles</button>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${esc(n).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
         </div>
@@ -3019,7 +3040,7 @@ async function openRuleDashboard(id) {
               <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxMonto * 100)}%"></div></div>
             </div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v / 1000)}k</span>
-            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${esc(n).replace(/'/g, "\\'")}')">Detalles</button>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${esc(n).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
         </div>
@@ -3821,9 +3842,17 @@ function openOrderDetail(id) {
 
 // ── COLABORADORES ─────────────────────────────────────────────
 async function loadUsers() {
-  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
+  const [{ data, error }, bannedRes] = await Promise.all([
+    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre'),
+    sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
+  ]);
   if (error) { console.error(error); return; }
-  allUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
+  if (bannedRes && !bannedRes.error) {
+    _suBannedSet = new Set((bannedRes.data || []).map(b => b.cedula));
+  }
+  allUsers = (data || [])
+    .filter(u => !_suBannedSet.has(u.cedula))
+    .map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   document.getElementById('stat-users').textContent = allUsers.length;
 
   // Poblar departamentos dinámicamente
@@ -4560,18 +4589,24 @@ let _suChartDias    = null;
 let _suChartDiasMes = null;
 
 let _suDashTotalUsers = 0;
+let _suDashBannedSet = new Set();
 
 async function loadSuDashboard() {
   if (_suDashData) { _suDashData = null; } // forzar re-fetch para incluir precio_unitario
-  const [resPed, resUsers] = await Promise.all([
+  const [resPed, resUsers, resWishlists, resBanned] = await Promise.all([
     sb.from('pedidos')
       .select('id, fecha, facturado_at, total, estado, exento_pago, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario, descuento_porcentaje)')
       .order('fecha', { ascending: true }),
-    sb.from('usuarios').select('cedula', { count: 'exact', head: true })
+    sb.from('usuarios').select('cedula'),
+    sb.from('family_wishlists').select('id', { count: 'exact', head: true }),
+    sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
   ]);
   _suDashData      = resPed.data || [];
   _suDashAllDays   = _suDashData;
-  _suDashTotalUsers = resUsers.count || 0;
+  _suDashBannedSet = new Set((resBanned.data || []).map(b => b.cedula));
+  _suDashTotalUsers = (resUsers.data || []).filter(u => !_suDashBannedSet.has(u.cedula)).length;
+  const sdkWishlistsEl = document.getElementById('sdk-wishlists');
+  if (sdkWishlistsEl) sdkWishlistsEl.textContent = resWishlists.count || 0;
   renderSuDashboard();
 }
 
@@ -4615,7 +4650,7 @@ function renderSuDashboard() {
   const granTotalDash = sdkTotNuevos + sdkTotFact + sdkTotPag;
   const fmt_sdk  = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   const totalUnid = activos.reduce((s,o) => s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0), 0);
-  const colab = new Set(activos.map(o => o.usuario_email)).size;
+  const colab = new Set(activos.filter(o => !_suDashBannedSet.has(o.usuario_email)).map(o => o.usuario_email)).size;
   document.getElementById('sdk-total-fact').textContent = granTotalDash.toLocaleString('es-CR');
   document.getElementById('sdk-gt-nuevos').innerHTML    = fmt_sdk(sdkTotNuevos);
   document.getElementById('sdk-gt-facturados').innerHTML = fmt_sdk(sdkTotFact);
@@ -4817,10 +4852,14 @@ let _suProdDetailRowData = [];
 let _suProdDetailChart  = null;
 let _suProdDetailPeriod = 'month';
 let _suProdDetailData   = [];
+let _suProdDetailRangeStart = null;
+let _suProdDetailRangeEnd   = null;
 
-function openSuProdDetail(key, displayName) {
+function openSuProdDetail(key, displayName, rangeStart, rangeEnd) {
   _suProdDetailKey  = key;
   _suProdDetailName = displayName || key;
+  _suProdDetailRangeStart = rangeStart != null ? rangeStart : null;
+  _suProdDetailRangeEnd   = rangeEnd   != null ? rangeEnd   : null;
   document.getElementById('su-prod-detail-title').textContent = _suProdDetailName;
   const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -4835,6 +4874,8 @@ function renderSuProdDetail() {
   const m = document.getElementById('su-pd-month').value;
   const data = (_suDashData||[]).filter(o => {
     const d = new Date(o.fecha);
+    if (_suProdDetailRangeStart != null && d.getTime() < _suProdDetailRangeStart) return false;
+    if (_suProdDetailRangeEnd   != null && d.getTime() > _suProdDetailRangeEnd)   return false;
     if (y && d.getFullYear() != y) return false;
     if (m !== '' && d.getMonth() != m) return false;
     return true;
@@ -4852,7 +4893,8 @@ function renderSuProdDetail() {
   const rows = Object.entries(userMap).sort((a,b)=>b[1].total-a[1].total);
   const maxU = rows[0]?.[1].total || 1;
   const totalUnid = rows.reduce((s,[,v])=>s+v.total, 0);
-  document.getElementById('su-prod-detail-sub').textContent = `${totalUnid} unidades · ${rows.length} colaborador${rows.length!==1?'es':''}`;
+  const rangoTxt = (_suProdDetailRangeStart != null || _suProdDetailRangeEnd != null) ? ' · dentro del período de la promoción' : '';
+  document.getElementById('su-prod-detail-sub').textContent = `${totalUnid} unidades · ${rows.length} colaborador${rows.length!==1?'es':''}${rangoTxt}`;
 
   _suProdDetailData = data;
   renderSuProdDetailChart();
@@ -4986,6 +5028,114 @@ async function openSuCollabList() {
 }
 function closeSuCollabList() { document.getElementById('su-collab-list-modal').classList.remove('open'); }
 
+let _suWlAllData      = [];
+let _suWlFiltered     = [];
+let _suWlNombreMap    = {};
+let _suWlDiscMap      = {};
+let _suWlFilterCedula = null;
+let _suWlPage         = 1;
+const _suWlPageSize   = 12;
+
+async function openSuWishlistsModal(filterCedula, filterNombre) {
+  const title = document.getElementById('su-wishlists-modal-title');
+  title.textContent = filterCedula ? ('🎁 Wishlists recibidas — ' + (filterNombre || filterCedula)) : '🎁 Wishlists recibidas';
+  const body = document.getElementById('su-wishlists-modal-body');
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Cargando…</div>';
+  document.getElementById('su-wishlists-pagination').innerHTML = '';
+  const searchEl = document.getElementById('su-wishlists-search');
+  if (searchEl) searchEl.value = '';
+  document.getElementById('su-wishlists-modal').classList.add('open');
+  _suWlFilterCedula = filterCedula || null;
+
+  let q = sb.from('family_wishlists').select('*').order('created_at', { ascending: false });
+  if (filterCedula) q = q.eq('colaborador_cedula', filterCedula);
+  const { data, error } = await q;
+  if (error) { body.innerHTML = '<div style="padding:32px;text-align:center;color:#dc2626;font-size:13px;">Error al cargar.</div>'; return; }
+  _suWlAllData = data || [];
+
+  if (!allUsers.length) await loadUsers();
+  _suWlNombreMap = {};
+  allUsers.forEach(u => { _suWlNombreMap[u.cedula] = u.nombre; });
+
+  _suWlDiscMap = {};
+  const allCodigos = [...new Set(_suWlAllData.flatMap(w => (w.items||[]).map(i => i.codigo)).filter(Boolean))];
+  if (allCodigos.length) {
+    const { data: prodRows } = await sb.from('productos').select('codigo,descuento,porcentaje_descuento').in('codigo', allCodigos);
+    (prodRows||[]).forEach(p => { if (p.descuento && p.porcentaje_descuento) _suWlDiscMap[p.codigo] = p.porcentaje_descuento; });
+  }
+
+  filterSuWishlistsModal();
+}
+
+function filterSuWishlistsModal() {
+  const q = (document.getElementById('su-wishlists-search')?.value || '').toLowerCase();
+  _suWlFiltered = q
+    ? _suWlAllData.filter(w =>
+        (_suWlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '').toLowerCase().includes(q) ||
+        (w.familiar_nombre || '').toLowerCase().includes(q))
+    : _suWlAllData;
+  _suWlPage = 1;
+  _renderSuWishlistsPage();
+}
+
+function _suWlGoPage(p) { _suWlPage = p; _renderSuWishlistsPage(); }
+
+function _renderSuWishlistsPage() {
+  const body = document.getElementById('su-wishlists-modal-body');
+  const pg   = document.getElementById('su-wishlists-pagination');
+  if (!_suWlFiltered.length) {
+    body.innerHTML = `<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">${_suWlAllData.length ? 'Sin resultados para la búsqueda.' : 'Sin listas de deseos recibidas.'}</div>`;
+    pg.innerHTML = '';
+    return;
+  }
+  const pages = Math.ceil(_suWlFiltered.length / _suWlPageSize);
+  _suWlPage = Math.min(_suWlPage, pages);
+  const slice = _suWlFiltered.slice((_suWlPage-1)*_suWlPageSize, _suWlPage*_suWlPageSize);
+
+  body.innerHTML = slice.map(w => {
+    const fecha = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    const estadoBadge = w.estado === 'procesada'
+      ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PROCESADA</span>'
+      : w.estado === 'descartada'
+      ? '<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DESCARTADA</span>'
+      : '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PENDIENTE</span>';
+    const items = w.items || [];
+    const unidades = items.reduce((s,i) => s + (i.cantidad||0), 0);
+    const total = items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0);
+    const recipientLine = _suWlFilterCedula ? '' : `<div class="ud-order-meta">Para: ${esc(_suWlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '—')}</div>`;
+    const lines = items.map(i => {
+      const pct = _suWlDiscMap[i.codigo];
+      const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
+      return `<div class="ud-line"><span class="ud-line-name">${esc(i.nombre || i.codigo || '')}${discBadge}</span><span class="ud-line-qty">${i.cantidad||0} u. · ₡${Math.round((i.cantidad||0)*(i.precio_unitario||0)).toLocaleString('es-CR')}</span></div>`;
+    }).join('');
+    return `<div class="ud-order">
+      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+        <div><div class="ud-order-num">💌 ${esc(w.familiar_nombre || '—')}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div>${recipientLine}</div>
+        <span class="ud-order-units">${unidades} u. · <span class="col-sign">₡</span>${Math.round(total).toLocaleString('es-CR')}</span>
+        <span class="ud-order-arrow">›</span>
+      </div>
+      <div class="ud-order-body">${lines || '<div style="font-size:12px;color:#9ca3af;">Sin productos.</div>'}</div>
+    </div>`;
+  }).join('');
+
+  if (pages <= 1) { pg.innerHTML = `<span class="pagination-info">${_suWlFiltered.length} resultado${_suWlFiltered.length!==1?'s':''}</span>`; return; }
+  const inicio = (_suWlPage-1)*_suWlPageSize + 1;
+  const fin    = Math.min(_suWlPage*_suWlPageSize, _suWlFiltered.length);
+  let html = `<span class="pagination-info">${inicio}–${fin} de ${_suWlFiltered.length}</span>`;
+  html += `<button class="pg-btn" onclick="_suWlGoPage(1)" ${_suWlPage===1?'disabled':''}>«</button>`;
+  html += `<button class="pg-btn" onclick="_suWlGoPage(${_suWlPage-1})" ${_suWlPage===1?'disabled':''}>‹</button>`;
+  const range = [];
+  for (let i=Math.max(1,_suWlPage-2); i<=Math.min(pages,_suWlPage+2); i++) range.push(i);
+  range.forEach(i => { html += `<button class="pg-btn${i===_suWlPage?' active':''}" onclick="_suWlGoPage(${i})">${i}</button>`; });
+  html += `<button class="pg-btn" onclick="_suWlGoPage(${_suWlPage+1})" ${_suWlPage===pages?'disabled':''}>›</button>`;
+  html += `<button class="pg-btn" onclick="_suWlGoPage(${pages})" ${_suWlPage===pages?'disabled':''}>»</button>`;
+  pg.innerHTML = html;
+}
+
+function closeSuWishlistsModal() {
+  document.getElementById('su-wishlists-modal').classList.remove('open');
+}
+
 function filterSuCollabList() {
   const q = (document.getElementById('su-collab-search').value||'').toLowerCase();
   const list = _suCollabListData.filter(u=>(u.nombre||'').toLowerCase().includes(q)||(u.cedula||'').toLowerCase().includes(q)||(u.departamento||'').toLowerCase().includes(q));
@@ -5050,6 +5200,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
   const avgPedido  = activos.length?Math.round(totalMonto/activos.length):0;
   const fechaReg   = user.created_at?new Date(user.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'}):'—';
   const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const { count: wishlistCount } = await sb.from('family_wishlists').select('id', { count:'exact', head:true }).eq('colaborador_cedula', user.cedula);
   const prodMap={};
   activos.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{const k=l.producto_codigo||l.producto_nombre;prodMap[k]=(prodMap[k]||0)+(l.cantidad||0);}));
   const topProds=Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -5075,6 +5226,10 @@ async function openSuCollabProfile(cedulaOrNombre) {
       <div class="profile-kpi"><div class="profile-kpi-val">${activos.length}</div><div class="profile-kpi-lbl">Pedidos</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val"><span class="col-sign">₡</span>${Math.round(avgPedido).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
+      <div class="profile-kpi" onclick="openSuWishlistsModal('${esc(user.cedula||'').replace(/'/g,"\\'")}','${esc(user.nombre||'').replace(/'/g,"\\'")}')" style="cursor:pointer;">
+        <div class="profile-kpi-val">${wishlistCount||0}</div>
+        <div class="profile-kpi-lbl">Wishlists recibidas</div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;margin-bottom:4px;">
       <div class="profile-section-title" style="margin:0;">Compras en el tiempo</div>
@@ -5128,9 +5283,15 @@ let _suMontoDetailName   = '';
 let _suMontoDetailChart  = null;
 let _suMontoDetailPeriod = 'month';
 let _suMontoDetailData   = [];
+let _suMontoDetailRangeStart = null;
+let _suMontoDetailRangeEnd   = null;
+let _suMontoDetailFilterProds = null;
 
-function openSuMontoDetail(nombre) {
+function openSuMontoDetail(nombre, rangeStart, rangeEnd, filterProds) {
   _suMontoDetailName = nombre;
+  _suMontoDetailRangeStart = rangeStart != null ? rangeStart : null;
+  _suMontoDetailRangeEnd   = rangeEnd   != null ? rangeEnd   : null;
+  _suMontoDetailFilterProds = (filterProds && filterProds.length) ? filterProds : null;
   document.getElementById('su-monto-detail-title').textContent = nombre;
   const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -5146,19 +5307,31 @@ function setSuMontoPeriod(p) {
   renderSuMontoDetailChart();
 }
 
+function _suMdMatchLines(o) {
+  return _suMontoDetailFilterProds ? (o.lineas_pedido||[]).filter(l => _suMontoDetailFilterProds.includes(l.producto_codigo)) : (o.lineas_pedido||[]);
+}
+function _suMdOrderMonto(o) {
+  if (!_suMontoDetailFilterProds) return o.total || 0;
+  return _suMdMatchLines(o).reduce((s,l)=> s + (l.subtotal || (l.precio_unitario||0)*(l.cantidad||0) || 0), 0);
+}
+
 function renderSuMontoDetail() {
   const y = document.getElementById('su-md-year').value;
   const m = document.getElementById('su-md-month').value;
   _suMontoDetailData = (_suDashData||[]).filter(o => {
     if (o.usuario_nombre !== _suMontoDetailName && o.usuario_email !== _suMontoDetailName) return false;
+    if (_suMontoDetailFilterProds && !(o.lineas_pedido||[]).some(l => _suMontoDetailFilterProds.includes(l.producto_codigo))) return false;
     const d = new Date(o.fecha);
+    if (_suMontoDetailRangeStart != null && d.getTime() < _suMontoDetailRangeStart) return false;
+    if (_suMontoDetailRangeEnd   != null && d.getTime() > _suMontoDetailRangeEnd)   return false;
     if (y && d.getFullYear() != y) return false;
     if (m !== '' && d.getMonth() != m) return false;
     return true;
   }).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
 
-  const totalMonto = _suMontoDetailData.reduce((s,o)=>s+(o.total||0),0);
-  document.getElementById('su-monto-detail-sub').innerHTML = `${_suMontoDetailData.length} pedido${_suMontoDetailData.length!==1?'s':''} · <span class="col-sign">₡</span>${totalMonto.toLocaleString('es-CR')}`;
+  const totalMonto = _suMontoDetailData.reduce((s,o)=>s+_suMdOrderMonto(o),0);
+  const rangoTxt = (_suMontoDetailRangeStart != null || _suMontoDetailRangeEnd != null) ? ' · dentro del período de la promoción' : '';
+  document.getElementById('su-monto-detail-sub').innerHTML = `${_suMontoDetailData.length} pedido${_suMontoDetailData.length!==1?'s':''} · <span class="col-sign">₡</span>${totalMonto.toLocaleString('es-CR')}${rangoTxt}`;
 
   renderSuMontoDetailChart();
 
@@ -5170,12 +5343,15 @@ function renderSuMontoDetail() {
   document.getElementById('su-monto-detail-body').innerHTML = sorted.map(o => {
     const num   = o.id.slice(0,8).toUpperCase();
     const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-    const monto = (o.total||0).toLocaleString('es-CR');
-    const lines = (o.lineas_pedido||[]).map(l=>`
+    const monto = _suMdOrderMonto(o).toLocaleString('es-CR');
+    const lines = _suMdMatchLines(o).map(l=>{
+      const descAmt = (l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0);
+      return `
       <div class="ud-line">
-        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</span>
+        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</span>
         <span class="ud-line-qty">${l.cantidad} u. · <span class="col-sign">₡</span>${(l.subtotal || (l.precio_unitario||0)*(l.cantidad||0) || 0).toLocaleString('es-CR')}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
         <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}</div><div class="ud-order-meta">${fecha}</div></div>
@@ -5195,7 +5371,7 @@ function renderSuMontoDetailChart() {
     if (_suMontoDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
     else if (_suMontoDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
     else                                    key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
-    map[key] = (map[key]||0) + (o.total||0);
+    map[key] = (map[key]||0) + _suMdOrderMonto(o);
   });
   const labels = Object.keys(map), vals = Object.values(map);
   const ctx = document.getElementById('su-monto-detail-chart').getContext('2d');
@@ -5214,9 +5390,15 @@ function closeSuMontoDetail() {
 
 // ── DETALLES USUARIO ─────────────────────────────────────
 let _suUserDetailName = '';
+let _suUserDetailRangeStart = null;
+let _suUserDetailRangeEnd   = null;
+let _suUserDetailFilterProds = null;
 
-function openSuUserDetail(nombre) {
+function openSuUserDetail(nombre, rangeStart, rangeEnd, filterProds) {
   _suUserDetailName = nombre;
+  _suUserDetailRangeStart = rangeStart != null ? rangeStart : null;
+  _suUserDetailRangeEnd   = rangeEnd   != null ? rangeEnd   : null;
+  _suUserDetailFilterProds = (filterProds && filterProds.length) ? filterProds : null;
   document.getElementById('su-user-detail-title').textContent = nombre;
   const years = [...new Set((_suDashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -5226,19 +5408,27 @@ function openSuUserDetail(nombre) {
   document.getElementById('su-user-detail-modal').classList.add('open');
 }
 
+function _suUdMatchLines(o) {
+  return _suUserDetailFilterProds ? (o.lineas_pedido||[]).filter(l => _suUserDetailFilterProds.includes(l.producto_codigo)) : (o.lineas_pedido||[]);
+}
+
 function renderSuUserDetail() {
   const y = document.getElementById('su-ud-year').value;
   const m = document.getElementById('su-ud-month').value;
   const pedidos = (_suDashData||[]).filter(o => {
     if (o.usuario_nombre !== _suUserDetailName && o.usuario_email !== _suUserDetailName) return false;
+    if (_suUserDetailFilterProds && !(o.lineas_pedido||[]).some(l => _suUserDetailFilterProds.includes(l.producto_codigo))) return false;
     const d = new Date(o.fecha);
+    if (_suUserDetailRangeStart != null && d.getTime() < _suUserDetailRangeStart) return false;
+    if (_suUserDetailRangeEnd   != null && d.getTime() > _suUserDetailRangeEnd)   return false;
     if (y && d.getFullYear() != y) return false;
     if (m !== '' && d.getMonth() != m) return false;
     return true;
   }).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-  const totalUnid = pedidos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
-  document.getElementById('su-user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades`;
+  const totalUnid = pedidos.reduce((s,o)=>s+_suUdMatchLines(o).reduce((a,l)=>a+(l.cantidad||0),0),0);
+  const rangoTxt = (_suUserDetailRangeStart != null || _suUserDetailRangeEnd != null) ? ' · dentro del período de la promoción' : '';
+  document.getElementById('su-user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades${rangoTxt}`;
 
   _suUserDetailData = [...pedidos].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
   renderSuUdChart();
@@ -5250,12 +5440,15 @@ function renderSuUserDetail() {
   document.getElementById('su-user-detail-body').innerHTML = pedidos.map(o => {
     const num   = o.id.slice(0,8).toUpperCase();
     const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-    const unid  = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
-    const lines = (o.lineas_pedido||[]).map(l=>`
+    const unid  = _suUdMatchLines(o).reduce((s,l)=>s+(l.cantidad||0),0);
+    const lines = _suUdMatchLines(o).map(l=>{
+      const descAmt = (l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0);
+      return `
       <div class="ud-line">
-        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</span>
+        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</span>
         <span class="ud-line-qty">${l.cantidad} u.</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
         <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}${o.estado==='sin_inventario'?'<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;white-space:nowrap;">SIN INVENTARIO</span>':''}${o.estado==='eliminado'?'<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;white-space:nowrap;">ELIMINADO</span>':''}</div><div class="ud-order-meta">${fecha}</div></div>
@@ -5296,7 +5489,7 @@ function renderSuUdChart() {
     else if (_suUserDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
     else if (_suUserDetailPeriod==='year') key = String(d.getFullYear());
     else                                   key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
-    const unid = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    const unid = _suUdMatchLines(o).reduce((s,l)=>s+(l.cantidad||0),0);
     map[key] = (map[key]||0) + unid;
   });
   const labels = Object.keys(map), vals = Object.values(map);

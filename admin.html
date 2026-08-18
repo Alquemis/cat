@@ -445,9 +445,9 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     margin-bottom:2px;
   }
-  .pr-meta { font-size:11px;color:#d1d5db; }
+  .pr-meta { font-size:11px;color:#9ca3af; }
   .pr-meta b { color:#6b7280; }
-  .pr-code { font-family:monospace;font-size:11px;color:#d1d5db;margin-top:2px; }
+  .pr-code { font-family:monospace;font-size:11px;color:#9ca3af;margin-top:2px; }
   .pr-price     { font-size:16px;font-weight:800;color:#143c5a;white-space:nowrap;flex-shrink:0; }
   .pr-price-mob { display:none;font-size:16px;font-weight:800;color:#143c5a;margin-top:3px; }
   .pr-actions   { display:flex;gap:8px;flex-shrink:0;align-items:center; }
@@ -979,6 +979,10 @@
       <div class="dash-kpi" onclick="openCollabList()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#143c5a'" onmouseout="this.style.borderColor='#e5e7eb'">
         <div class="dash-kpi-val" id="dk-colaboradores">—</div>
         <div class="dash-kpi-lbl">Colaboradores activos <span style="font-size:10px;color:#9ca3af;">↗</span></div>
+      </div>
+      <div class="dash-kpi" onclick="openWishlistsModal()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#143c5a'" onmouseout="this.style.borderColor='#e5e7eb'">
+        <div class="dash-kpi-val" id="dk-wishlists">—</div>
+        <div class="dash-kpi-lbl">Wishlists recibidas <span style="font-size:10px;color:#9ca3af;">↗</span></div>
       </div>
     </div>
 
@@ -1640,6 +1644,21 @@
 <!-- MODAL PERFIL COLABORADOR -->
 <div id="collab-profile-modal" class="collab-modal" style="z-index:780;" onclick="if(event.target===this)closeCollabProfile()">
   <div class="collab-modal-card" id="collab-profile-card"></div>
+</div>
+
+<!-- MODAL WISHLISTS RECIBIDAS -->
+<div id="wishlists-modal" class="collab-modal" style="z-index:785;" onclick="if(event.target===this)closeWishlistsModal()">
+  <div class="collab-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="font-size:17px;font-weight:700;color:#143c5a;" id="wishlists-modal-title">🎁 Wishlists recibidas</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="wishlists-search" placeholder="Buscar colaborador…" oninput="filterWishlistsModal()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <button onclick="closeWishlistsModal()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
+      </div>
+    </div>
+    <div id="wishlists-modal-body"></div>
+    <div id="wishlists-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
+  </div>
 </div>
 
 <!-- MODAL DETALLES MONTO -->
@@ -3189,11 +3208,17 @@ function openOrderDetail(id) {
 let _userSort = { col: 'nombre', dir: 'asc' };
 
 async function loadUsers() {
-  const { data, error } = await sb.from('usuarios')
-    .select('cedula, nombre, departamento, lugar, created_at')
-    .order('nombre');
+  const [{ data, error }, bannedRes] = await Promise.all([
+    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre'),
+    sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
+  ]);
   if (error) { console.error(error); return; }
-  allUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
+  if (bannedRes && !bannedRes.error) {
+    _cfgBannedSet = new Set((bannedRes.data || []).map(b => b.cedula));
+  }
+  allUsers = (data || [])
+    .filter(u => !_cfgBannedSet.has(u.cedula))
+    .map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   document.getElementById('stat-users').textContent = allUsers.length;
 
   // Poblar departamentos dinámicamente
@@ -3719,20 +3744,26 @@ let _chartDias   = null;
 let _chartDiasMes = null;
 
 let _dashTotalUsers = 0;
+let _dashBannedSet = new Set();
 
 async function loadDashboard() {
   if (_dashData) { _dashData = null; } // forzar re-fetch para incluir precio_unitario
 
-  const [resPed, resUsers] = await Promise.all([
+  const [resPed, resUsers, resWishlists, resBanned] = await Promise.all([
     sb.from('pedidos')
       .select('id, fecha, facturado_at, total, estado, exento_pago, usuario_nombre, usuario_email, lineas_pedido(producto_nombre, producto_codigo, cantidad, subtotal, precio_unitario, descuento_porcentaje)')
       .order('fecha', { ascending: true }),
-    sb.from('usuarios').select('cedula', { count: 'exact', head: true })
+    sb.from('usuarios').select('cedula'),
+    sb.from('family_wishlists').select('id', { count: 'exact', head: true }),
+    sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
   ]);
 
   _dashData      = resPed.data || [];
   _dashAllDays   = _dashData;
-  _dashTotalUsers = resUsers.count || 0;
+  _dashBannedSet = new Set((resBanned.data || []).map(b => b.cedula));
+  _dashTotalUsers = (resUsers.data || []).filter(u => !_dashBannedSet.has(u.cedula)).length;
+  const dkWishlistsEl = document.getElementById('dk-wishlists');
+  if (dkWishlistsEl) dkWishlistsEl.textContent = resWishlists.count || 0;
   renderDashboard();
 }
 
@@ -3798,7 +3829,7 @@ function renderDashboard() {
   const granTotalDash = dkTotNuevos + dkTotFact + dkTotPag;
   const fmt_dk    = v => '<span class="col-sign">₡</span>' + v.toLocaleString('es-CR');
   const totalUnid = activos.reduce((s,o) => s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0), 0);
-  const colab     = new Set(activos.map(o => o.usuario_email)).size;
+  const colab     = new Set(activos.filter(o => !_dashBannedSet.has(o.usuario_email)).map(o => o.usuario_email)).size;
   document.getElementById('dk-total-fact').textContent = granTotalDash.toLocaleString('es-CR');
   document.getElementById('dk-gt-nuevos').innerHTML    = fmt_dk(dkTotNuevos);
   document.getElementById('dk-gt-facturados').innerHTML = fmt_dk(dkTotFact);
@@ -4008,10 +4039,14 @@ let _prodDetailRowData = [];
 let _prodDetailChart  = null;
 let _prodDetailPeriod = 'month';
 let _prodDetailData   = [];
+let _prodDetailRangeStart = null;
+let _prodDetailRangeEnd   = null;
 
-function openProdDetail(key, displayName) {
+function openProdDetail(key, displayName, rangeStart, rangeEnd) {
   _prodDetailKey  = key;
   _prodDetailName = displayName || key;
+  _prodDetailRangeStart = rangeStart != null ? rangeStart : null;
+  _prodDetailRangeEnd   = rangeEnd   != null ? rangeEnd   : null;
   document.getElementById('prod-detail-title').textContent = _prodDetailName;
   // Poblar filtros de año
   const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
@@ -4027,6 +4062,8 @@ function renderProdDetail() {
   const m = document.getElementById('pd-month').value;
   const data = (_dashData||[]).filter(o => {
     const d = new Date(o.fecha);
+    if (_prodDetailRangeStart != null && d.getTime() < _prodDetailRangeStart) return false;
+    if (_prodDetailRangeEnd   != null && d.getTime() > _prodDetailRangeEnd)   return false;
     if (y && d.getFullYear() != y) return false;
     if (m !== '' && d.getMonth() != m) return false;
     return true;
@@ -4045,7 +4082,8 @@ function renderProdDetail() {
   const rows = Object.entries(userMap).sort((a,b)=>b[1].total-a[1].total);
   const maxU = rows[0]?.[1].total || 1;
   const totalUnid = rows.reduce((s,[,v])=>s+v.total,0);
-  document.getElementById('prod-detail-sub').textContent = `${totalUnid} unidades · ${rows.length} colaborador${rows.length!==1?'es':''}`;
+  const rangoTxt = (_prodDetailRangeStart != null || _prodDetailRangeEnd != null) ? ' · dentro del período de la promoción' : '';
+  document.getElementById('prod-detail-sub').textContent = `${totalUnid} unidades · ${rows.length} colaborador${rows.length!==1?'es':''}${rangoTxt}`;
 
   // Gráfico de línea en el tiempo
   _prodDetailData = data;
@@ -4223,6 +4261,114 @@ function closeCollabList() {
   document.getElementById('collab-list-modal').classList.remove('open');
 }
 
+let _wlAllData      = [];
+let _wlFiltered     = [];
+let _wlNombreMap    = {};
+let _wlDiscMap      = {};
+let _wlFilterCedula = null;
+let _wlPage         = 1;
+const _wlPageSize   = 12;
+
+async function openWishlistsModal(filterCedula, filterNombre) {
+  const title = document.getElementById('wishlists-modal-title');
+  title.textContent = filterCedula ? ('🎁 Wishlists recibidas — ' + (filterNombre || filterCedula)) : '🎁 Wishlists recibidas';
+  const body = document.getElementById('wishlists-modal-body');
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Cargando…</div>';
+  document.getElementById('wishlists-pagination').innerHTML = '';
+  const searchEl = document.getElementById('wishlists-search');
+  if (searchEl) searchEl.value = '';
+  document.getElementById('wishlists-modal').classList.add('open');
+  _wlFilterCedula = filterCedula || null;
+
+  let q = sb.from('family_wishlists').select('*').order('created_at', { ascending: false });
+  if (filterCedula) q = q.eq('colaborador_cedula', filterCedula);
+  const { data, error } = await q;
+  if (error) { body.innerHTML = '<div style="padding:32px;text-align:center;color:#dc2626;font-size:13px;">Error al cargar.</div>'; return; }
+  _wlAllData = data || [];
+
+  if (!allUsers.length) await loadUsers();
+  _wlNombreMap = {};
+  allUsers.forEach(u => { _wlNombreMap[u.cedula] = u.nombre; });
+
+  _wlDiscMap = {};
+  const allCodigos = [...new Set(_wlAllData.flatMap(w => (w.items||[]).map(i => i.codigo)).filter(Boolean))];
+  if (allCodigos.length) {
+    const { data: prodRows } = await sb.from('productos').select('codigo,descuento,porcentaje_descuento').in('codigo', allCodigos);
+    (prodRows||[]).forEach(p => { if (p.descuento && p.porcentaje_descuento) _wlDiscMap[p.codigo] = p.porcentaje_descuento; });
+  }
+
+  filterWishlistsModal();
+}
+
+function filterWishlistsModal() {
+  const q = (document.getElementById('wishlists-search')?.value || '').toLowerCase();
+  _wlFiltered = q
+    ? _wlAllData.filter(w =>
+        (_wlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '').toLowerCase().includes(q) ||
+        (w.familiar_nombre || '').toLowerCase().includes(q))
+    : _wlAllData;
+  _wlPage = 1;
+  _renderWishlistsPage();
+}
+
+function _wlGoPage(p) { _wlPage = p; _renderWishlistsPage(); }
+
+function _renderWishlistsPage() {
+  const body = document.getElementById('wishlists-modal-body');
+  const pg   = document.getElementById('wishlists-pagination');
+  if (!_wlFiltered.length) {
+    body.innerHTML = `<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">${_wlAllData.length ? 'Sin resultados para la búsqueda.' : 'Sin listas de deseos recibidas.'}</div>`;
+    pg.innerHTML = '';
+    return;
+  }
+  const pages = Math.ceil(_wlFiltered.length / _wlPageSize);
+  _wlPage = Math.min(_wlPage, pages);
+  const slice = _wlFiltered.slice((_wlPage-1)*_wlPageSize, _wlPage*_wlPageSize);
+
+  body.innerHTML = slice.map(w => {
+    const fecha = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    const estadoBadge = w.estado === 'procesada'
+      ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PROCESADA</span>'
+      : w.estado === 'descartada'
+      ? '<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DESCARTADA</span>'
+      : '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PENDIENTE</span>';
+    const items = w.items || [];
+    const unidades = items.reduce((s,i) => s + (i.cantidad||0), 0);
+    const total = items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0);
+    const recipientLine = _wlFilterCedula ? '' : `<div class="ud-order-meta">Para: ${esc(_wlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '—')}</div>`;
+    const lines = items.map(i => {
+      const pct = _wlDiscMap[i.codigo];
+      const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
+      return `<div class="ud-line"><span class="ud-line-name">${esc(i.nombre || i.codigo || '')}${discBadge}</span><span class="ud-line-qty">${i.cantidad||0} u. · ₡${Math.round((i.cantidad||0)*(i.precio_unitario||0)).toLocaleString('es-CR')}</span></div>`;
+    }).join('');
+    return `<div class="ud-order">
+      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+        <div><div class="ud-order-num">💌 ${esc(w.familiar_nombre || '—')}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div>${recipientLine}</div>
+        <span class="ud-order-units">${unidades} u. · <span class="col-sign">₡</span>${Math.round(total).toLocaleString('es-CR')}</span>
+        <span class="ud-order-arrow">›</span>
+      </div>
+      <div class="ud-order-body">${lines || '<div style="font-size:12px;color:#9ca3af;">Sin productos.</div>'}</div>
+    </div>`;
+  }).join('');
+
+  if (pages <= 1) { pg.innerHTML = `<span class="pagination-info">${_wlFiltered.length} resultado${_wlFiltered.length!==1?'s':''}</span>`; return; }
+  const inicio = (_wlPage-1)*_wlPageSize + 1;
+  const fin    = Math.min(_wlPage*_wlPageSize, _wlFiltered.length);
+  let html = `<span class="pagination-info">${inicio}–${fin} de ${_wlFiltered.length}</span>`;
+  html += `<button class="pg-btn" onclick="_wlGoPage(1)" ${_wlPage===1?'disabled':''}>«</button>`;
+  html += `<button class="pg-btn" onclick="_wlGoPage(${_wlPage-1})" ${_wlPage===1?'disabled':''}>‹</button>`;
+  const range = [];
+  for (let i=Math.max(1,_wlPage-2); i<=Math.min(pages,_wlPage+2); i++) range.push(i);
+  range.forEach(i => { html += `<button class="pg-btn${i===_wlPage?' active':''}" onclick="_wlGoPage(${i})">${i}</button>`; });
+  html += `<button class="pg-btn" onclick="_wlGoPage(${_wlPage+1})" ${_wlPage===pages?'disabled':''}>›</button>`;
+  html += `<button class="pg-btn" onclick="_wlGoPage(${pages})" ${_wlPage===pages?'disabled':''}>»</button>`;
+  pg.innerHTML = html;
+}
+
+function closeWishlistsModal() {
+  document.getElementById('wishlists-modal').classList.remove('open');
+}
+
 function filterCollabList() {
   const q = (document.getElementById('collab-search').value||'').toLowerCase();
   const list = _collabListData.filter(u =>
@@ -4267,6 +4413,7 @@ async function openCollabProfile(cedulaOrNombre) {
   const avgPedido  = activos.length ? Math.round(totalMonto/activos.length) : 0;
   const fechaReg   = user.created_at ? new Date(user.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
   const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const { count: wishlistCount } = await sb.from('family_wishlists').select('id', { count:'exact', head:true }).eq('colaborador_cedula', user.cedula);
 
   // Top productos
   const prodMap = {};
@@ -4301,6 +4448,10 @@ async function openCollabProfile(cedulaOrNombre) {
       <div class="profile-kpi"><div class="profile-kpi-val">${activos.length}</div><div class="profile-kpi-lbl">Pedidos</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val"><span class="col-sign">₡</span>${Math.round(avgPedido).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
+      <div class="profile-kpi" onclick="openWishlistsModal('${esc(user.cedula||'').replace(/'/g,"\\'")}','${esc(user.nombre||'').replace(/'/g,"\\'")}')" style="cursor:pointer;">
+        <div class="profile-kpi-val">${wishlistCount||0}</div>
+        <div class="profile-kpi-lbl">Wishlists recibidas</div>
+      </div>
     </div>
 
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;margin-bottom:4px;">
@@ -4387,9 +4538,15 @@ let _montoDetailName   = '';
 let _montoDetailChart  = null;
 let _montoDetailPeriod = 'month';
 let _montoDetailData   = [];
+let _montoDetailRangeStart = null;
+let _montoDetailRangeEnd   = null;
+let _montoDetailFilterProds = null;
 
-function openMontoDetail(nombre) {
+function openMontoDetail(nombre, rangeStart, rangeEnd, filterProds) {
   _montoDetailName = nombre;
+  _montoDetailRangeStart = rangeStart != null ? rangeStart : null;
+  _montoDetailRangeEnd   = rangeEnd   != null ? rangeEnd   : null;
+  _montoDetailFilterProds = (filterProds && filterProds.length) ? filterProds : null;
   document.getElementById('monto-detail-title').textContent = nombre;
   const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -4405,19 +4562,31 @@ function setMontoPeriod(p) {
   renderMontoDetailChart();
 }
 
+function _mdMatchLines(o) {
+  return _montoDetailFilterProds ? (o.lineas_pedido||[]).filter(l => _montoDetailFilterProds.includes(l.producto_codigo)) : (o.lineas_pedido||[]);
+}
+function _mdOrderMonto(o) {
+  if (!_montoDetailFilterProds) return o.total || 0;
+  return _mdMatchLines(o).reduce((s,l)=> s + (l.subtotal || (l.precio_unitario||0)*(l.cantidad||0) || 0), 0);
+}
+
 function renderMontoDetail() {
   const y = document.getElementById('md-year').value;
   const m = document.getElementById('md-month').value;
   _montoDetailData = (_dashData||[]).filter(o => {
     if (o.usuario_nombre !== _montoDetailName && o.usuario_email !== _montoDetailName) return false;
+    if (_montoDetailFilterProds && !(o.lineas_pedido||[]).some(l => _montoDetailFilterProds.includes(l.producto_codigo))) return false;
     const d = new Date(o.fecha);
+    if (_montoDetailRangeStart != null && d.getTime() < _montoDetailRangeStart) return false;
+    if (_montoDetailRangeEnd   != null && d.getTime() > _montoDetailRangeEnd)   return false;
     if (y && d.getFullYear() != y) return false;
     if (m !== '' && d.getMonth() != m) return false;
     return true;
   }).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
 
-  const totalMonto = _montoDetailData.reduce((s,o)=>s+(o.total||0),0);
-  document.getElementById('monto-detail-sub').innerHTML = `${_montoDetailData.length} pedido${_montoDetailData.length!==1?'s':''} · <span class="col-sign">₡</span>${totalMonto.toLocaleString('es-CR')}`;
+  const totalMonto = _montoDetailData.reduce((s,o)=>s+_mdOrderMonto(o),0);
+  const rangoTxt = (_montoDetailRangeStart != null || _montoDetailRangeEnd != null) ? ' · dentro del período de la promoción' : '';
+  document.getElementById('monto-detail-sub').innerHTML = `${_montoDetailData.length} pedido${_montoDetailData.length!==1?'s':''} · <span class="col-sign">₡</span>${totalMonto.toLocaleString('es-CR')}${rangoTxt}`;
 
   renderMontoDetailChart();
 
@@ -4430,12 +4599,15 @@ function renderMontoDetail() {
   document.getElementById('monto-detail-body').innerHTML = sorted.map(o => {
     const num   = o.id.slice(0,8).toUpperCase();
     const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-    const monto = (o.total||0).toLocaleString('es-CR');
-    const lines = (o.lineas_pedido||[]).map(l=>`
+    const monto = _mdOrderMonto(o).toLocaleString('es-CR');
+    const lines = _mdMatchLines(o).map(l=>{
+      const descAmt = (l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0);
+      return `
       <div class="ud-line">
-        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</span>
+        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</span>
         <span class="ud-line-qty">${l.cantidad} u. · <span class="col-sign">₡</span>${(l.subtotal || (l.precio_unitario||0)*(l.cantidad||0) || 0).toLocaleString('es-CR')}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
         <div><div class="ud-order-num" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">#${num}${moraOrderBadge(o)}</div><div class="ud-order-meta">${fecha}</div></div>
@@ -4455,7 +4627,7 @@ function renderMontoDetailChart() {
     if (_montoDetailPeriod==='day')       key = d.toLocaleDateString('es-CR',{day:'2-digit',month:'short'});
     else if (_montoDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
     else                                  key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
-    map[key] = (map[key]||0) + (o.total||0);
+    map[key] = (map[key]||0) + _mdOrderMonto(o);
   });
   const labels = Object.keys(map);
   const vals   = Object.values(map);
@@ -4486,9 +4658,15 @@ let _userDetailChart  = null;
 let _userDetailPeriod = 'month';
 let _userDetailType   = 'line';
 let _userDetailData   = [];
+let _userDetailRangeStart = null;
+let _userDetailRangeEnd   = null;
+let _userDetailFilterProds = null;
 
-function openUserDetail(nombre) {
+function openUserDetail(nombre, rangeStart, rangeEnd, filterProds) {
   _userDetailName = nombre;
+  _userDetailRangeStart = rangeStart != null ? rangeStart : null;
+  _userDetailRangeEnd   = rangeEnd   != null ? rangeEnd   : null;
+  _userDetailFilterProds = (filterProds && filterProds.length) ? filterProds : null;
   document.getElementById('user-detail-title').textContent = nombre;
   const years = [...new Set((_dashData||[]).map(o=>new Date(o.fecha).getFullYear()))].sort((a,b)=>b-a);
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -4498,19 +4676,27 @@ function openUserDetail(nombre) {
   document.getElementById('user-detail-modal').classList.add('open');
 }
 
+function _udMatchLines(o) {
+  return _userDetailFilterProds ? (o.lineas_pedido||[]).filter(l => _userDetailFilterProds.includes(l.producto_codigo)) : (o.lineas_pedido||[]);
+}
+
 function renderUserDetail() {
   const y = document.getElementById('ud-year').value;
   const m = document.getElementById('ud-month').value;
   const pedidos = (_dashData||[]).filter(o => {
     if (o.usuario_nombre !== _userDetailName && o.usuario_email !== _userDetailName) return false;
+    if (_userDetailFilterProds && !(o.lineas_pedido||[]).some(l => _userDetailFilterProds.includes(l.producto_codigo))) return false;
     const d = new Date(o.fecha);
+    if (_userDetailRangeStart != null && d.getTime() < _userDetailRangeStart) return false;
+    if (_userDetailRangeEnd   != null && d.getTime() > _userDetailRangeEnd)   return false;
     if (y && d.getFullYear() != y) return false;
     if (m !== '' && d.getMonth() != m) return false;
     return true;
   }).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-  const totalUnid = pedidos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
-  document.getElementById('user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades`;
+  const totalUnid = pedidos.reduce((s,o)=>s+_udMatchLines(o).reduce((a,l)=>a+(l.cantidad||0),0),0);
+  const rangoTxt = (_userDetailRangeStart != null || _userDetailRangeEnd != null) ? ' · dentro del período de la promoción' : '';
+  document.getElementById('user-detail-sub').textContent = `${pedidos.length} pedido${pedidos.length!==1?'s':''} · ${totalUnid} unidades${rangoTxt}`;
 
   // Guardar datos para el gráfico (orden cronológico)
   _userDetailData = [...pedidos].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
@@ -4524,12 +4710,15 @@ function renderUserDetail() {
   document.getElementById('user-detail-body').innerHTML = pedidos.map(o => {
     const num   = o.id.slice(0,8).toUpperCase();
     const fecha = new Date(o.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-    const unid  = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
-    const lines = (o.lineas_pedido||[]).map(l=>`
+    const unid  = _udMatchLines(o).reduce((s,l)=>s+(l.cantidad||0),0);
+    const lines = _udMatchLines(o).map(l=>{
+      const descAmt = (l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0);
+      return `
       <div class="ud-line">
-        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}</span>
+        <span class="ud-line-name">${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</span>
         <span class="ud-line-qty">${l.cantidad} u.</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="ud-order">
       <div class="ud-order-hd" onclick="toggleUdOrder(this)">
         <div>
@@ -4568,7 +4757,7 @@ function renderUdChart() {
     else if (_userDetailPeriod==='week') { const w=new Date(d); w.setDate(d.getDate()-d.getDay()); key=w.toLocaleDateString('es-CR',{day:'2-digit',month:'short'}); }
     else if (_userDetailPeriod==='year') key = String(d.getFullYear());
     else                                 key = d.toLocaleDateString('es-CR',{month:'short',year:'numeric'});
-    const unid = (o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);
+    const unid = _udMatchLines(o).reduce((s,l)=>s+(l.cantidad||0),0);
     map[key] = (map[key]||0) + unid;
   });
   const labels = Object.keys(map), vals = Object.values(map);
@@ -5168,11 +5357,13 @@ function deleteRule(id) {
 
 // ── DASHBOARD POR REGLA ─────────────────────────────────────
 let _ruleDashChart = null;
+let _ruleDashProds = null;
 
 async function openRuleDashboard(id) {
   const rule = _promoRules.find(r => r.id === id);
   if (!rule) return;
   const prods = _promoRuleProducts[id] || [];
+  _ruleDashProds = prods;
   document.getElementById('rule-dash-title').textContent = '📊 ' + rule.nombre;
   const body = document.getElementById('rule-dash-body');
   body.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">Cargando…</div>';
@@ -5268,7 +5459,7 @@ async function openRuleDashboard(id) {
               <div class="rank-name">${esc(p.nombre)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(p.unidades / mxProd * 100)}%"></div></div>
             </div><span class="rank-val">${p.unidades} u.</span>
-            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openProdDetail('${esc(k).replace(/'/g, "\\'")}','${esc(p.nombre).replace(/'/g, "\\'")}')">Detalles</button>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openProdDetail('${esc(k).replace(/'/g, "\\'")}','${esc(p.nombre).replace(/'/g, "\\'")}',${start},${end})">Detalles</button>
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin ventas registradas en el periodo activo.</div>'}
         </div>
@@ -5281,7 +5472,7 @@ async function openRuleDashboard(id) {
               <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxUnid * 100)}%"></div></div>
             </div><span class="rank-val">${v} u.</span>
-            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openUserDetail('${esc(n).replace(/'/g, "\\'")}')">Detalles</button>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openUserDetail('${esc(n).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
         </div>
@@ -5294,7 +5485,7 @@ async function openRuleDashboard(id) {
               <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxMonto * 100)}%"></div></div>
             </div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v / 1000)}k</span>
-            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openMontoDetail('${esc(n).replace(/'/g, "\\'")}')">Detalles</button>
+            <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openMontoDetail('${esc(n).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
         </div>

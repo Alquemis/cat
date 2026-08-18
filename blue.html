@@ -3570,7 +3570,7 @@ function openOrderDetail(id) {
 // ── COLABORADORES ─────────────────────────────────────────────
 async function loadUsers() {
   const [{ data, error }, bannedRes] = await Promise.all([
-    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre'),
+    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso').order('nombre'),
     sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
   ]);
   if (error) { console.error(error); return; }
@@ -4530,7 +4530,7 @@ function userAvatar(nombre, key) {
 
 async function openSuCollabList() {
   if (!allUsers.length) await loadUsers();
-  _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at}));
+  _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at,ultimo_acceso:u.ultimo_acceso}));
   filterSuCollabList();
   document.getElementById('su-collab-list-modal').classList.add('open');
 }
@@ -4650,6 +4650,10 @@ function filterSuCollabList() {
   if (!list.length) { document.getElementById('su-collab-list-body').innerHTML='<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>'; return; }
   document.getElementById('su-collab-list-body').innerHTML = list.map(u=>{
     const ini=(u.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const ua = u.ultimo_acceso ? new Date(u.ultimo_acceso) : null;
+    const uaHtml = ua
+      ? `${ua.toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'})}<br><span style="font-size:10px;color:rgba(255,255,255,.3)">${ua.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'})}</span>`
+      : '<span style="color:rgba(255,255,255,.3)">Nunca</span>';
     return `<div class="collab-list-row" onclick="openSuCollabProfile('${esc(u.cedula||u.nombre).replace(/'/g,"\\'")}')">
       <div class="collab-avatar">${ini}</div>
       <div style="flex:1;min-width:0;">
@@ -4657,6 +4661,7 @@ function filterSuCollabList() {
         <div style="font-size:11px;color:rgba(255,255,255,.45);">${esc(u.departamento||'—')} · ${esc(u.lugar||'—')}</div>
       </div>
       <div style="font-size:12px;color:rgba(255,255,255,.45);white-space:nowrap;">${esc(u.cedula||'—')}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);white-space:nowrap;text-align:right;line-height:1.35;min-width:60px;">${uaHtml}</div>
       <span style="font-size:13px;color:rgba(255,255,255,.45);">›</span>
     </div>`;
   }).join('');
@@ -4696,7 +4701,7 @@ function _renderSuCollabProfileTimeCharts() {
 async function openSuCollabProfile(cedulaOrNombre) {
   if (!_suCollabListData.length) {
     if (!allUsers.length) await loadUsers();
-    _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at}));
+    _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at,ultimo_acceso:u.ultimo_acceso}));
   }
   const user = _suCollabListData.find(u=>u.cedula===cedulaOrNombre||u.nombre===cedulaOrNombre);
   if (!user) return;

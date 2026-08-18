@@ -1901,6 +1901,8 @@ async function onLogin(session, isRestore = false) {
       }
     }
     localStorage.setItem('catalogo_session', JSON.stringify(session));
+    // Registra la última vez que el colaborador entró a la app (login o restauración de sesión)
+    sb.from('usuarios').update({ ultimo_acceso: new Date().toISOString() }).eq('cedula', session.cedula).then(()=>{}).catch(()=>{});
   } catch(e) { /* si falla se usa lo que digitó */ }
 
   currentUser = session;

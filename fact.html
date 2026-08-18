@@ -63,6 +63,7 @@
   .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
   tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
   tbody tr:last-child td { border-bottom:none; }
+  tbody tr.hold-divider td { border-top:2px dashed #f97316; }
   .empty-table { text-align:center;color:#9ca3af;padding:48px 20px; }
 
   /* ── BOTONES ── */
@@ -77,6 +78,10 @@
   .btn-danger-soft { background:#16a34a;color:#fff;border:1.5px solid #fca5a5; }
   .btn-danger-soft:hover { background:#fecaca; }
   .btn-danger-soft:disabled { background:#f3f4f6;color:#9ca3af;cursor:not-allowed; }
+  .btn-ghost.viewed { background:#ffedd5;color:#c2410c;border-color:#fdba74; }
+  .btn-ghost.viewed:hover { background:#fed7aa; }
+  .btn-hold { background:#f97316;color:#fff;padding:8px 14px;flex-shrink:0; }
+  .btn-hold:hover { background:#ea580c; }
 
   /* ── BADGES ── */
   .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap; }
@@ -285,7 +290,7 @@
 </div>
 
 <!-- MODAL DETALLE -->
-<div class="modal-overlay" id="detail-modal" onclick="this.classList.remove('open')">
+<div class="modal-overlay" id="detail-modal" onclick="closeDetailModal()">
   <div class="modal-card" onclick="event.stopPropagation()" id="detail-card"></div>
 </div>
 
@@ -531,6 +536,12 @@ function _sortList(list, col, dir) {
   });
 }
 
+// Pedidos cuyo detalle ya se miró (se pinta el botón "Ver detalle" de naranja
+// claro). Es de UI únicamente, se resetea al pasar el pedido a historial.
+// El estado de "hold" (o.en_hold) sí se guarda en la DB para sobrevivir un
+// refresh — ver toggleHold().
+let _factViewedPend = new Set();
+
 function filterPendientes() {
   const q     = document.getElementById('pend-search').value.toLowerCase();
   const lugar = document.getElementById('pend-lugar').value;
@@ -542,7 +553,25 @@ function filterPendientes() {
     const matchL = !lugar || (o.usuario_lugar||'') === lugar;
     return matchQ && matchL;
   });
-  renderPendientes(_sortList(list, _factSort.pend.col, _factSort.pend.dir));
+  const sorted = _sortList(list, _factSort.pend.col, _factSort.pend.dir);
+  // Los pedidos en hold van siempre al final, sin importar el orden/filtro activo
+  // (sort estable: preserva el orden relativo dentro de cada grupo).
+  sorted.sort((a, b) => (a.en_hold ? 1 : 0) - (b.en_hold ? 1 : 0));
+  renderPendientes(sorted);
+}
+
+async function toggleHold(id) {
+  const o = allPendientes.find(x => x.id === id);
+  if (!o) return;
+  const nuevo = !o.en_hold;
+  o.en_hold = nuevo; // optimista
+  filterPendientes();
+  const { error } = await sb.from('pedidos').update({ en_hold: nuevo }).eq('id', id);
+  if (error) {
+    o.en_hold = !nuevo; // revertir si falla
+    filterPendientes();
+    showToast('Error al guardar hold: ' + error.message);
+  }
 }
 
 function renderPendientes(list) {
@@ -552,20 +581,27 @@ function renderPendientes(list) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos pendientes</td></tr>';
     return;
   }
-  tbody.innerHTML = list.map(o => {
+  let _sawHold = false;
+  tbody.innerHTML = list.map((o, i) => {
     const fecha    = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
     const num      = o.id.slice(0,8).toUpperCase();
+    const held     = !!o.en_hold;
+    // Línea divisoria justo antes del primer pedido en hold (la lista ya
+    // viene con los "hold" empujados al final, sin importar el orden/filtro).
+    const isFirstHold = held && !_sawHold;
+    if (held) _sawHold = true;
     const dupColor = _factDupMap[o.id] || '';
     const rowStyle = dupColor ? `background:${dupColor};` : '';
     const dupChip  = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
-    return '<tr style="' + rowStyle + '">' +
+    const viewedCls = _factViewedPend.has(o.id) ? ' viewed' : '';
+    return '<tr class="' + (isFirstHold ? 'hold-divider' : '') + '" style="' + rowStyle + '">' +
       '<td>' + fecha + dupChip + '</td>' +
       '<td><code style="font-size:12px">' + esc(num) + '</code></td>' +
       '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
       '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
       '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
       '<td style="font-weight:700"><span class="col-sign">₡</span>' + (o.total||0).toLocaleString('es-CR') + '</td>' +
-      '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'pend\')">Ver detalle</button></td>' +
+      '<td><button class="btn btn-ghost' + viewedCls + '" onclick="openDetail(\'' + o.id + '\',\'pend\')">Ver detalle</button></td>' +
       '<td style="display:flex;gap:20px;align-items:center">' +
         '<button class="btn btn-green" id="listo-' + o.id + '" onclick="marcarListo(\'' + o.id + '\')">✓ Listo</button>' +
         '<button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'pend\')" style="width:36px;padding:8px 0;text-align:center;font-size:15px;flex-shrink:0;" title="Cancelar pedido">✕</button>' +
@@ -614,6 +650,7 @@ async function confirmCancelar() {
   if (from === 'pend') {
     const moved = allPendientes.find(o => o.id === id);
     allPendientes = allPendientes.filter(o => o.id !== id);
+    _factViewedPend.delete(id);
     if (moved) { moved.estado = 'cancelado'; allHistorial = [moved, ...allHistorial]; }
     filterPendientes();
   } else {
@@ -656,6 +693,7 @@ async function marcarListo(id) {
 
   const moved = allPendientes.find(o => o.id === id);
   allPendientes = allPendientes.filter(o => o.id !== id);
+  _factViewedPend.delete(id);
   if (moved) {
     // Dueño exento: auto-transición a pagado+exento sin esperar pago
     if (moved.usuario_email === OWNER_CEDULA) {
@@ -801,7 +839,12 @@ function renderHistorial(list) {
 }
 
 // ── DETALLE ───────────────────────────────────────────────────
+let _detailOpenId     = null;
+let _detailOpenSource = null;
+
 function openDetail(id, source) {
+  _detailOpenId     = id;
+  _detailOpenSource = source;
   const list = source === 'pend' ? allPendientes : allHistorial;
   const o = list.find(x => x.id === id);
   if (!o) return;
@@ -859,10 +902,24 @@ function openDetail(id, source) {
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px">' +
       '<button class="btn btn-ghost" style="flex:1;padding:13px" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-' + o.id + '">📋 Copiar pedido</button>' +
-      '<button class="btn btn-dark" style="flex:1;padding:13px" onclick="document.getElementById(\'detail-modal\').classList.remove(\'open\')">Cerrar</button>' +
+      '<button class="btn btn-dark" style="flex:1;padding:13px" onclick="closeDetailModal()">Cerrar</button>' +
+      (source === 'pend' ? '<button class="btn btn-hold" style="padding:13px 18px;" onclick="toggleHold(\'' + o.id + '\');closeDetailModal();">Hold</button>' : '') +
     '</div>';
 
   document.getElementById('detail-modal').classList.add('open');
+}
+
+// Marca el pedido como "ya visto" (solo aplica en pendientes — se pinta el
+// botón "Ver detalle" de naranja claro) y cierra el modal. Al pasar el
+// pedido a historial este estado no se conserva (es otra lista/render).
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  if (_detailOpenSource === 'pend' && _detailOpenId) {
+    _factViewedPend.add(_detailOpenId);
+    filterPendientes();
+  }
+  _detailOpenId     = null;
+  _detailOpenSource = null;
 }
 
 // ── COPIAR PEDIDO ─────────────────────────────────────────────
@@ -1003,7 +1060,7 @@ function _pNombre(codigo, fallback) { return (codigo && _prodMap[codigo]) || fal
       var m = document.getElementById('detail-modal');
       var card = document.getElementById('detail-card');
       if (m && m.classList.contains('open') && card && !card.contains(tgt))
-        m.classList.remove('open');
+        closeDetailModal();
       return;
     }
 

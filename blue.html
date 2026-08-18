@@ -360,8 +360,9 @@
   .pr-thumb { width:60px;height:60px;flex-shrink:0;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15); }
   .pr-thumb-empty { width:60px;height:60px;flex-shrink:0;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(255,255,255,.3); }
   .pr-info { flex:1;min-width:0; }
-  .pr-name { font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px; }
-  .pr-meta { font-size:12px;color:var(--lb-text3); }
+  .pr-name { font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px; }
+  .pr-catalog-name { font-size:12px;font-weight:700;color:var(--lb-text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px; }
+  .pr-meta { font-size:11px;color:var(--lb-text3); }
   .pr-code { font-family:monospace;font-size:11px;color:var(--lb-text3);margin-top:2px; }
   .pr-price     { font-size:16px;font-weight:800;color:#fff;white-space:nowrap;flex-shrink:0; }
   .pr-price-mob { display:none;font-size:16px;font-weight:800;color:#fff;margin-top:3px; }
@@ -2089,6 +2090,7 @@ function renderProducts(list) {
   for (let i = 0; i < list.length; i++) {
     const p = list[i];
     const nombre     = esc(p.nombre      || '');
+    const nombreCat  = esc(p.nombre_catalogo || '');
     const codigo     = esc(p.codigo      || '');
     const marca      = esc(p.marca       || '');
     const spc        = esc(p.spc         || '');
@@ -2114,6 +2116,7 @@ function renderProducts(list) {
     html += '<div class="product-row">';
     html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
     html +=   '<div class="pr-info"><div class="pr-name">' + nombre + '</div>';
+    if (nombreCat) html += '<div class="pr-catalog-name">' + nombreCat + '</div>';
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
     html +=   '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">';
     html +=     '<div class="pr-code" style="margin-top:0;">' + codigo + '</div>';

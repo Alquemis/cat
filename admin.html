@@ -438,9 +438,14 @@
   .pr-name {
     font-size:14px;font-weight:700;color:#143c5a;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    margin-bottom:3px;
+    margin-bottom:1px;
   }
-  .pr-meta { font-size:12px;color:#d1d5db; }
+  .pr-catalog-name {
+    font-size:12px;font-weight:700;color:#9ca3af;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:2px;
+  }
+  .pr-meta { font-size:11px;color:#d1d5db; }
   .pr-meta b { color:#6b7280; }
   .pr-code { font-family:monospace;font-size:11px;color:#d1d5db;margin-top:2px; }
   .pr-price     { font-size:16px;font-weight:800;color:#143c5a;white-space:nowrap;flex-shrink:0; }
@@ -2231,6 +2236,7 @@ function renderProducts(list) {
   for (let i = 0; i < list.length; i++) {
     const p = list[i];
     const nombre      = esc(p.nombre      || '');
+    const nombreCat   = esc(p.nombre_catalogo || '');
     const codigo      = esc(p.codigo      || '');
     const marca       = esc(p.marca       || '');
     const spc         = esc(p.spc         || '');
@@ -2264,6 +2270,7 @@ function renderProducts(list) {
     html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
     html +=   '<div class="pr-info">';
     html +=     '<div class="pr-name">' + nombre + '</div>';
+    if (nombreCat) html += '<div class="pr-catalog-name">' + nombreCat + '</div>';
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
     html +=     '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">';
     html +=       '<div class="pr-code" style="margin-top:0;">' + codigo + '</div>';

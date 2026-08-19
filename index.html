@@ -683,10 +683,11 @@
     border-top-left-radius:20px; border-top-right-radius:20px; flex-shrink:0;
   }
   .rating-modal-img-wrap img { max-width:92%; max-height:92%; object-fit:contain; }
-  #modal-rating { background:rgba(0,0,0,0); transition:background .25s; }
+  #modal-rating { background:rgba(0,0,0,0); transition:background .25s; padding-top:2px; padding-bottom:2px; }
   #modal-rating.open { background:rgba(0,0,0,.5); }
   #modal-rating .modal-card {
     transform:scale(0.4); opacity:0;
+    min-height:min(760px, 98vh); max-height:98vh;
     transition:transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s;
   }
   #modal-rating.open .modal-card { transform:scale(1); opacity:1; }

@@ -3952,10 +3952,15 @@ async function loadRatingReviews(codigo) {
   document.getElementById('rating-first-note').style.display = 'none';
   wrap.innerHTML = data.map(r => {
     const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+    // Si la reseña vino de FL.html (un familiar externo sin cuenta, desde el
+    // link de "Compartir con familia"), se muestra "Fulano por Colaborador".
+    const autor = r.familiar_nombre
+      ? `${escHtml(r.familiar_nombre)} <span style="font-weight:400;color:#9ca3af;">por</span> ${escHtml(r.usuario_nombre ? displayName(r.usuario_nombre) : '—')}`
+      : escHtml(r.usuario_nombre ? displayName(r.usuario_nombre) : '—');
     return `<div class="rating-review-item">
       <div class="rating-review-item-top">
         ${starsHtml(r.estrellas)}
-        <span class="rating-review-item-user">${escHtml(r.usuario_nombre ? displayName(r.usuario_nombre) : '—')}</span>
+        <span class="rating-review-item-user">${autor}</span>
         <span class="rating-review-item-date">${fecha}</span>
       </div>
       ${r.comentario ? `<div class="rating-review-item-comment">${escHtml(r.comentario)}</div>` : ''}

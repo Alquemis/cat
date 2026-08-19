@@ -162,6 +162,31 @@
   .fl-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
   .fl-cart-empty { text-align: center; padding: 40px 10px; color: #9ca3af; font-size: 14px; }
 
+  /* ── Estrellas de valoración (mismo patrón visual que el catálogo) ── */
+  .star-rating { position:relative;display:inline-block;line-height:1;letter-spacing:1px;
+    font-size:clamp(11px, 6.5cqw, 16px); }
+  .star-rating-bg { color:#e5e7eb; }
+  .star-rating-fg { position:absolute;top:0;left:0;overflow:hidden;color:#f59e0b;white-space:nowrap; }
+  .product-stars-row { display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 8px 0;cursor:pointer;user-select:none; }
+  .product-stars-count { font-size:clamp(9px, 5cqw, 12px); color:#9ca3af;font-weight:600; }
+
+  .rating-picker { display:flex;gap:11px;font-size:38px;line-height:1;cursor:pointer;user-select:none;justify-content:center;margin-bottom:14px; }
+  .rating-picker-star { color:#e5e7eb;transition:color .1s; }
+  .rating-picker-star.filled { color:#f59e0b; }
+  .rating-review-item { padding:10px 0;border-bottom:1px solid #f3f4f6; }
+  .rating-review-item:last-child { border-bottom:none; }
+  .rating-review-item-top { display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px; }
+  .rating-review-item-user { font-size:13px;font-weight:700;color:#143c5a; }
+  .rating-review-item-date { font-size:11px;color:#9ca3af; }
+  .rating-review-item-comment { font-size:13px;color:#374151;line-height:1.5; }
+  .rating-empty-msg { text-align:center;padding:20px 4px;color:#9ca3af;font-size:13px; }
+  .rating-modal-img-wrap {
+    width:100%;aspect-ratio:4/3;background:#fff;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:12px;margin-bottom:14px;border:1px solid #f3f4f6;
+  }
+  .rating-modal-img-wrap img { max-width:92%;max-height:92%;object-fit:contain; }
+
   .fl-fullscreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; }
   .fl-fullscreen-card { max-width: 380px; }
   .fl-fullscreen-icon { font-size: 52px; margin-bottom: 14px; }
@@ -257,6 +282,37 @@
   <div class="fl-modal-card" id="fl-qadd-card" onclick="event.stopPropagation()"></div>
 </div>
 
+<div class="fl-modal" id="fl-rating-modal" onclick="if(event.target===this)flCloseRatingModal()">
+  <div class="fl-modal-card" onclick="event.stopPropagation()">
+    <div class="fl-modal-hd">
+      <h2>¡Valora este producto!</h2>
+      <button class="fl-modal-close" onclick="flCloseRatingModal()">✕</button>
+    </div>
+    <div class="rating-modal-img-wrap" id="fl-rating-img-wrap" style="display:none;">
+      <img id="fl-rating-img" src="" alt="">
+    </div>
+    <div id="fl-rating-first-note" style="display:none;font-size:13px;font-weight:700;color:#143c5a;text-align:center;margin-bottom:12px;">Se el primero en valorar este producto</div>
+    <div id="fl-rating-picker" class="rating-picker">
+      <span class="rating-picker-star" data-val="1" onclick="flSetRatingPick(1)">★</span>
+      <span class="rating-picker-star" data-val="2" onclick="flSetRatingPick(2)">★</span>
+      <span class="rating-picker-star" data-val="3" onclick="flSetRatingPick(3)">★</span>
+      <span class="rating-picker-star" data-val="4" onclick="flSetRatingPick(4)">★</span>
+      <span class="rating-picker-star" data-val="5" onclick="flSetRatingPick(5)">★</span>
+    </div>
+    <div class="fl-name-field" style="margin-top:0;">
+      <label>Tu nombre</label>
+      <input type="text" id="fl-rating-name-input" placeholder="Ej: María Rodríguez" maxlength="80">
+    </div>
+    <textarea id="fl-rating-comment-input" placeholder="Deja un comentario acerca de este producto" rows="3"
+      style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;font-family:inherit;resize:vertical;outline:none;margin-top:10px;box-sizing:border-box;"></textarea>
+    <button class="fl-submit-btn" id="fl-rating-accept-btn" onclick="flSubmitRating()">Enviar valoración</button>
+    <div style="padding:16px 0 8px;border-top:1px solid #f3f4f6;margin-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Valoraciones de otros usuarios</div>
+    </div>
+    <div id="fl-rating-reviews-list"></div>
+  </div>
+</div>
+
 <div id="fl-toast" class="fl-toast"></div>
 
 <div id="img-lightbox" onclick="closeLightbox()">
@@ -274,8 +330,19 @@ let CATALOG = [];
 let flCart  = [];
 let flColaboradorCedula = null;
 let flColaboradorNombre = '';
+let flColaboradorNombreFull = '';
 let flColaboradorPrimerNombre = '';
 let flActiveTab = 'TODOS';
+
+/* ── Valoraciones: un familiar externo (sin cuenta) puede valorar un
+   producto escribiendo su nombre; la reseña queda asociada al
+   colaborador dueño del link (usuario_cedula/usuario_nombre), y se
+   guarda además el nombre del familiar (familiar_nombre) para mostrar
+   "Fulano por Colaborador" en la sección de Valoraciones de admin. ── */
+let _ratingsActivo      = true;
+let _ratingsSummary     = {};
+let _flRatingModalCodigo = null;
+let _flRatingPickValue   = 0;
 
 /* ── Categorías: mismo mapeo que TABS en index.html (solo lo necesario
    para filtrar por categoría/marca/subcategoría/promo — sin las píldoras
@@ -321,6 +388,43 @@ async function loadCatalog() {
   const { data, error } = await sb.from('productos').select('*').eq('activo', true).order('nombre');
   if (error) { console.error(error); return; }
   CATALOG = (data || []).map(mapProductRow);
+}
+
+// ============================================================
+//  VALORACIONES — resumen (promedio + conteo) por producto
+//  (misma lógica que index.html, copiada tal cual — ver nota arriba)
+// ============================================================
+async function loadRatingsSummary() {
+  try {
+    const { data: cfg } = await sb.from('app_config').select('value').eq('key','valoraciones_activo').maybeSingle();
+    _ratingsActivo = !cfg || cfg.value !== 'false';
+    const { data, error } = await sb.from('valoraciones').select('producto_codigo,estrellas').eq('oculto', false);
+    if (error) throw error;
+    const map = {};
+    (data||[]).forEach(r => {
+      if (!map[r.producto_codigo]) map[r.producto_codigo] = { sum:0, count:0 };
+      map[r.producto_codigo].sum += r.estrellas;
+      map[r.producto_codigo].count++;
+    });
+    Object.keys(map).forEach(k => { map[k].avg = map[k].sum / map[k].count; });
+    _ratingsSummary = map;
+  } catch(e) { console.error('Error cargando valoraciones:', e); }
+}
+
+function starsHtml(avg) {
+  const pct = Math.max(0, Math.min(100, (avg/5)*100));
+  return `<span class="star-rating"><span class="star-rating-bg">★★★★★</span><span class="star-rating-fg" style="width:${pct}%">★★★★★</span></span>`;
+}
+
+function productStarsRowHtml(codigo) {
+  if (!_ratingsActivo) return '';
+  const stat = _ratingsSummary[codigo];
+  const avg = stat ? stat.avg : 0;
+  const count = stat ? stat.count : 0;
+  return `<div class="product-stars-row" onclick="event.stopPropagation();openFlRatingModal('${escAttr(codigo)}')">
+    ${starsHtml(avg)}
+    <span class="product-stars-count">${count > 0 ? '('+count+')' : ''}</span>
+  </div>`;
 }
 
 function priceIva(p) {
@@ -390,9 +494,10 @@ function renderFamilyCard(p) {
   return `
     <div class="product-card${p.descuento ? ' desc-card' : ''}">
       <div class="product-img-wrap">
-        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" loading="lazy" onclick="event.stopPropagation();openLightbox('${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='flex'">` : ''}
+        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" loading="lazy" onclick="event.stopPropagation();flOnProductImageTap('${escAttr(p.id)}','${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='flex'">` : ''}
         <div class="product-img-placeholder" style="${p.img ? 'display:none' : 'display:flex'}">🧴</div>
       </div>
+      ${productStarsRowHtml(p.id)}
       <div class="product-info">
         <div class="product-name">${escHtml(p.n)}</div>
         <div class="product-meta-row">
@@ -635,11 +740,12 @@ async function flInit() {
 
   flColaboradorCedula = data.cedula;
   flColaboradorNombre = shortName(data.nombre);
+  flColaboradorNombreFull = toTitleCase(data.nombre || '');
   flColaboradorPrimerNombre = toTitleCase(data.nombre || '').trim().split(/\s+/)[0] || '';
   document.getElementById('fl-header-sub').innerHTML = `Se enviará a: <strong>${escHtml(flColaboradorNombre)}</strong>`;
   document.getElementById('fl-submit-btn').textContent = '📤 Enviar lista a ' + flColaboradorPrimerNombre;
 
-  await loadCatalog();
+  await Promise.all([loadCatalog(), loadRatingsSummary()]);
 
   document.getElementById('fl-loading').style.display = 'none';
   document.getElementById('fl-app').style.display = 'block';
@@ -653,6 +759,102 @@ function flShowInvalid(reason) {
     document.getElementById('fl-invalid-msg').textContent = 'El colaborador que lo compartió ya no tiene acceso activo.';
   }
   document.getElementById('fl-invalid').style.display = 'flex';
+}
+
+// ============================================================
+//  MODAL DE VALORACIÓN (familiares) — sin login: el familiar escribe
+//  su nombre y la reseña queda asociada al colaborador dueño del link.
+// ============================================================
+function flOnProductImageTap(codigo, img) {
+  if (_ratingsActivo) openFlRatingModal(codigo);
+  else openLightbox(img);
+}
+
+function openFlRatingModal(codigo) {
+  _flRatingModalCodigo = codigo;
+  _flRatingPickValue = 0;
+  document.getElementById('fl-rating-name-input').value = '';
+  document.getElementById('fl-rating-comment-input').value = '';
+  flUpdateRatingPickerUI();
+
+  const p = CATALOG.find(x => x.id === codigo);
+  const imgWrap = document.getElementById('fl-rating-img-wrap');
+  const imgEl   = document.getElementById('fl-rating-img');
+  if (p && p.img) { imgEl.src = p.img; imgEl.alt = p.n || ''; imgWrap.style.display = 'flex'; }
+  else { imgEl.src = ''; imgWrap.style.display = 'none'; }
+
+  document.getElementById('fl-rating-reviews-list').innerHTML = '<div class="rating-empty-msg">Cargando…</div>';
+  document.getElementById('fl-rating-modal').classList.add('open');
+  loadFlRatingReviews(codigo);
+}
+
+function flCloseRatingModal() {
+  document.getElementById('fl-rating-modal').classList.remove('open');
+  _flRatingModalCodigo = null;
+}
+
+function flSetRatingPick(v) {
+  _flRatingPickValue = v;
+  flUpdateRatingPickerUI();
+}
+function flUpdateRatingPickerUI() {
+  document.querySelectorAll('#fl-rating-picker .rating-picker-star').forEach(el => {
+    el.classList.toggle('filled', parseInt(el.dataset.val,10) <= _flRatingPickValue);
+  });
+}
+
+async function flSubmitRating() {
+  const nombre = (document.getElementById('fl-rating-name-input').value || '').trim();
+  if (!nombre) { flToast('Escribe tu nombre'); return; }
+  if (!_flRatingPickValue) { flToast('Selecciona de 1 a 5 estrellas'); return; }
+  const codigo = _flRatingModalCodigo;
+  if (!codigo) return;
+  const comentario = document.getElementById('fl-rating-comment-input').value.trim() || null;
+  const btn = document.getElementById('fl-rating-accept-btn');
+  btn.disabled = true;
+  const { error } = await sb.from('valoraciones').insert({
+    producto_codigo: codigo,
+    usuario_cedula:  flColaboradorCedula,
+    usuario_nombre:  flColaboradorNombreFull,
+    familiar_nombre: toTitleCase(nombre),
+    estrellas:       _flRatingPickValue,
+    comentario,
+    oculto: false
+  });
+  btn.disabled = false;
+  if (error) { flToast('No se pudo guardar tu valoración'); return; }
+  flToast('¡Gracias por tu valoración!');
+  _flRatingPickValue = 0;
+  document.getElementById('fl-rating-comment-input').value = '';
+  flUpdateRatingPickerUI();
+  await loadRatingsSummary();
+  flRenderGrid();
+  loadFlRatingReviews(codigo);
+}
+
+async function loadFlRatingReviews(codigo) {
+  const wrap = document.getElementById('fl-rating-reviews-list');
+  const firstNote = document.getElementById('fl-rating-first-note');
+  const { data, error } = await sb.from('valoraciones').select('*')
+    .eq('producto_codigo', codigo).eq('oculto', false)
+    .order('created_at', { ascending:false });
+  if (error) { firstNote.style.display = 'none'; wrap.innerHTML = '<div class="rating-empty-msg">No se pudieron cargar las reseñas.</div>'; return; }
+  if (!data || data.length === 0) { firstNote.style.display = 'block'; wrap.innerHTML = '<div class="rating-empty-msg">Aún no hay reseñas</div>'; return; }
+  firstNote.style.display = 'none';
+  wrap.innerHTML = data.map(r => {
+    const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+    const autor = r.familiar_nombre
+      ? `${escHtml(r.familiar_nombre)} <span style="font-weight:400;color:#9ca3af;">por</span> ${escHtml(shortName(r.usuario_nombre||''))}`
+      : escHtml(shortName(r.usuario_nombre || '—'));
+    return `<div class="rating-review-item">
+      <div class="rating-review-item-top">
+        ${starsHtml(r.estrellas)}
+        <span class="rating-review-item-user">${autor}</span>
+        <span class="rating-review-item-date">${fecha}</span>
+      </div>
+      ${r.comentario ? `<div class="rating-review-item-comment">${escHtml(r.comentario)}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 flInit();

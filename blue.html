@@ -4276,10 +4276,21 @@ function filterRatings() {
       const codigo = (r.producto_codigo||'').toLowerCase();
       const comentario = (r.comentario||'').toLowerCase();
       const usuario = (r.usuario_nombre||'').toLowerCase();
-      return nombre.includes(q) || codigo.includes(q) || comentario.includes(q) || usuario.includes(q);
+      const familiar = (r.familiar_nombre||'').toLowerCase();
+      return nombre.includes(q) || codigo.includes(q) || comentario.includes(q) || usuario.includes(q) || familiar.includes(q);
     }).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
   }
   renderRatingsList(items);
+}
+
+// Si la reseña vino de FL.html (un familiar externo sin cuenta valorando
+// desde el link de "Compartir con familia"), se guarda el nombre que el
+// familiar escribió en `familiar_nombre`, asociado al colaborador dueño
+// del link (`usuario_nombre`). Se muestra "Fulano por Colaborador".
+function ratingReviewerHtml(r) {
+  return r.familiar_nombre
+    ? `${esc(r.familiar_nombre)} <span style="font-weight:400;color:var(--lb-text3);">por</span> ${esc(r.usuario_nombre||'—')}`
+    : esc(r.usuario_nombre||'—');
 }
 
 function renderRatingsList(items) {
@@ -4304,7 +4315,7 @@ function renderRatingsList(items) {
         <div class="rating-review-row${r.oculto ? ' hidden-review' : ''}" onclick="toggleRatingRowActions(this)">
           <div class="rating-review-top">
             ${starsHtml(r.estrellas, 13)}
-            <span class="rating-review-user">${esc(r.usuario_nombre||'—')}</span>
+            <span class="rating-review-user">${ratingReviewerHtml(r)}</span>
             <span class="rating-review-date">${fecha}</span>
             ${r.oculto ? '<span class="rating-hidden-badge">Oculta</span>' : ''}
           </div>
@@ -4344,7 +4355,7 @@ function editRating(id) {
   const r = _ratingsAll.find(x => x.id === id);
   if (!r) return;
   _ratingsEditId = id;
-  document.getElementById('rating-edit-sub').textContent = _pNombre(r.producto_codigo, r.producto_codigo) + ' · ' + (r.usuario_nombre||'—');
+  document.getElementById('rating-edit-sub').textContent = _pNombre(r.producto_codigo, r.producto_codigo) + ' · ' + (r.familiar_nombre ? (r.familiar_nombre + ' por ' + (r.usuario_nombre||'—')) : (r.usuario_nombre||'—'));
   document.getElementById('rating-edit-stars').value = String(r.estrellas);
   document.getElementById('rating-edit-comment').value = r.comentario || '';
   document.getElementById('rating-edit-modal').style.display = 'flex';

@@ -1739,6 +1739,10 @@
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <div style="font-size:17px;font-weight:700;color:#143c5a;">Colaboradores</div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <select id="collab-sort" onchange="filterCollabList()" style="padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+          <option value="">Ordenar: Nombre</option>
+          <option value="recent">Actividad reciente</option>
+        </select>
         <input type="text" id="collab-search" placeholder="Buscar…" oninput="filterCollabList()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
         <button onclick="closeCollabList()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
       </div>
@@ -4744,11 +4748,17 @@ function closeWishlistsModal() {
 
 function filterCollabList() {
   const q = (document.getElementById('collab-search').value||'').toLowerCase();
+  const sort = document.getElementById('collab-sort')?.value || '';
   const list = _collabListData.filter(u =>
     (u.nombre||'').toLowerCase().includes(q) ||
     (u.cedula||'').toLowerCase().includes(q) ||
     (u.departamento||'').toLowerCase().includes(q)
   );
+  if (sort === 'recent') {
+    list.sort((a,b) => new Date(b.ultimo_acceso || 0) - new Date(a.ultimo_acceso || 0));
+  } else {
+    list.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+  }
   if (!list.length) {
     document.getElementById('collab-list-body').innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>';
     return;

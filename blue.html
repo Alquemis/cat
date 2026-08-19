@@ -1516,6 +1516,10 @@
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <div style="font-size:17px;font-weight:700;color:#fff;">Colaboradores</div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <select id="su-collab-sort" onchange="filterSuCollabList()" style="padding:7px 10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;font-size:13px;outline:none;">
+          <option value="" style="color:#000;">Ordenar: Nombre</option>
+          <option value="recent" style="color:#000;">Actividad reciente</option>
+        </select>
         <input type="text" id="su-collab-search" placeholder="Buscar…" oninput="filterSuCollabList()" style="padding:7px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;font-size:13px;outline:none;width:180px;">
         <button onclick="closeSuCollabList()" style="background:rgba(255,255,255,.12);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;color:#fff;">×</button>
       </div>
@@ -5019,7 +5023,13 @@ function closeSuWishlistsModal() {
 
 function filterSuCollabList() {
   const q = (document.getElementById('su-collab-search').value||'').toLowerCase();
+  const sort = document.getElementById('su-collab-sort')?.value || '';
   const list = _suCollabListData.filter(u=>(u.nombre||'').toLowerCase().includes(q)||(u.cedula||'').toLowerCase().includes(q)||(u.departamento||'').toLowerCase().includes(q));
+  if (sort === 'recent') {
+    list.sort((a,b) => new Date(b.ultimo_acceso || 0) - new Date(a.ultimo_acceso || 0));
+  } else {
+    list.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+  }
   if (!list.length) { document.getElementById('su-collab-list-body').innerHTML='<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>'; return; }
   document.getElementById('su-collab-list-body').innerHTML = list.map(u=>{
     const ini=(u.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();

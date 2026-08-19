@@ -193,8 +193,8 @@
 <div id="fl-invalid" class="fl-fullscreen" style="display:none;">
   <div class="fl-fullscreen-card">
     <div class="fl-fullscreen-icon">🔗</div>
-    <div class="fl-fullscreen-title">Este link no es válido</div>
-    <div class="fl-fullscreen-msg">Pídele a tu familiar que te comparta el link de nuevo desde la app.</div>
+    <div class="fl-fullscreen-title" id="fl-invalid-title">Este link no es válido</div>
+    <div class="fl-fullscreen-msg" id="fl-invalid-msg">Pídele a tu familiar que te comparta el link de nuevo desde la app.</div>
   </div>
 </div>
 
@@ -629,6 +629,10 @@ async function flInit() {
 
   if (error || !data) { flShowInvalid(); return; }
 
+  // Si el colaborador que compartió el link está baneado, el link deja de funcionar.
+  const { data: baneo } = await sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', data.cedula).maybeSingle();
+  if (baneo && baneo.baneado) { flShowInvalid('baneado'); return; }
+
   flColaboradorCedula = data.cedula;
   flColaboradorNombre = shortName(data.nombre);
   flColaboradorPrimerNombre = toTitleCase(data.nombre || '').trim().split(/\s+/)[0] || '';
@@ -642,8 +646,12 @@ async function flInit() {
   flRenderGrid();
 }
 
-function flShowInvalid() {
+function flShowInvalid(reason) {
   document.getElementById('fl-loading').style.display = 'none';
+  if (reason === 'baneado') {
+    document.getElementById('fl-invalid-title').textContent = 'Este link ya no está disponible';
+    document.getElementById('fl-invalid-msg').textContent = 'El colaborador que lo compartió ya no tiene acceso activo.';
+  }
   document.getElementById('fl-invalid').style.display = 'flex';
 }
 

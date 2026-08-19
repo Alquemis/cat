@@ -699,9 +699,15 @@
   }
   #modal-rating.open .modal-card { transform:scale(1); opacity:1; }
 
-  /* Desktop / pantalla horizontal: layout de dos columnas */
+  /* Desktop / pantalla horizontal: la ventana del modal es horizontal
+     (más ancha que alta) en vez de la tarjeta vertical de móvil, con
+     dos columnas: imagen fija a la izquierda, contenido con scroll
+     propio a la derecha. */
   @media (min-width:768px) and (min-aspect-ratio:1/1) {
-    #modal-rating .modal-card.rating-modal-card { max-width:840px; }
+    #modal-rating .modal-card.rating-modal-card {
+      max-width:min(1040px, 92vw);
+      height:min(540px, 82dvh); min-height:min(540px, 82dvh); max-height:82dvh;
+    }
     .rating-modal-body { flex-direction:row; overflow:hidden; }
     .rating-modal-img-wrap {
       width:auto; aspect-ratio:auto; flex:0 0 42%;

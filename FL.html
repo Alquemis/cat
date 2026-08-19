@@ -830,6 +830,7 @@ async function flSubmitRating() {
   await loadRatingsSummary();
   flRenderGrid();
   loadFlRatingReviews(codigo);
+  setTimeout(() => { if (_flRatingModalCodigo === codigo) flCloseRatingModal(); }, 3000);
 }
 
 async function loadFlRatingReviews(codigo) {
@@ -844,7 +845,7 @@ async function loadFlRatingReviews(codigo) {
   wrap.innerHTML = data.map(r => {
     const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
     const autor = r.familiar_nombre
-      ? `${escHtml(r.familiar_nombre)} <span style="font-weight:400;color:#9ca3af;">por</span> ${escHtml(shortName(r.usuario_nombre||''))}`
+      ? escHtml(r.familiar_nombre)
       : escHtml(shortName(r.usuario_nombre || '—'));
     return `<div class="rating-review-item">
       <div class="rating-review-item-top">

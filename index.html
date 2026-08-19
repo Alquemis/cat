@@ -3940,6 +3940,7 @@ async function submitRating() {
     }
   });
   loadRatingReviews(codigo);
+  setTimeout(() => { if (_ratingModalCodigo === codigo) closeRatingModal(); }, 3000);
 }
 
 async function loadRatingReviews(codigo) {
@@ -3953,9 +3954,11 @@ async function loadRatingReviews(codigo) {
   wrap.innerHTML = data.map(r => {
     const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
     // Si la reseña vino de FL.html (un familiar externo sin cuenta, desde el
-    // link de "Compartir con familia"), se muestra "Fulano por Colaborador".
+    // link de "Compartir con familia"), se muestra solo el nombre que el
+    // familiar escribió — el "Fulano por Colaborador" queda solo para la
+    // sección de Valoraciones de admin, no de cara al usuario final.
     const autor = r.familiar_nombre
-      ? `${escHtml(r.familiar_nombre)} <span style="font-weight:400;color:#9ca3af;">por</span> ${escHtml(r.usuario_nombre ? displayName(r.usuario_nombre) : '—')}`
+      ? escHtml(r.familiar_nombre)
       : escHtml(r.usuario_nombre ? displayName(r.usuario_nombre) : '—');
     return `<div class="rating-review-item">
       <div class="rating-review-item-top">

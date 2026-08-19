@@ -676,7 +676,13 @@
   .rating-empty-msg { text-align:center;padding:20px 4px;color:#9ca3af;font-size:13px; }
 
   /* Imagen grande arriba del modal de valoración + mismo efecto "zoom"
-     que usaba el lightbox al abrir/cerrar (escala con rebote + fade). */
+     que usaba el lightbox al abrir/cerrar (escala con rebote + fade).
+     En móvil todo el contenido (imagen incluida) es un solo bloque que
+     scrollea junto (.rating-modal-body en columna). En pantallas anchas
+     (ver media query más abajo) cambia a una fila: imagen fija a la
+     izquierda, contenido con su propio scroll a la derecha. */
+  .rating-modal-body { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; overflow-y:auto; }
+  .rating-modal-content { display:flex; flex-direction:column; }
   .rating-modal-img-wrap {
     width:100%; aspect-ratio:1/1; background:#fff; overflow:hidden;
     display:flex; align-items:center; justify-content:center;
@@ -687,11 +693,24 @@
   #modal-rating.open { background:rgba(0,0,0,.5); }
   #modal-rating .modal-card {
     transform:scale(0.4); opacity:0;
-    min-height:min(760px, 98vh); max-height:98vh;
-    min-height:min(760px, 98dvh); max-height:98dvh;
+    height:min(760px, 98vh); min-height:min(760px, 98vh); max-height:98vh;
+    height:min(760px, 98dvh); min-height:min(760px, 98dvh); max-height:98dvh;
     transition:transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s;
   }
   #modal-rating.open .modal-card { transform:scale(1); opacity:1; }
+
+  /* Desktop / pantalla horizontal: layout de dos columnas */
+  @media (min-width:768px) and (min-aspect-ratio:1/1) {
+    #modal-rating .modal-card.rating-modal-card { max-width:840px; }
+    .rating-modal-body { flex-direction:row; overflow:hidden; }
+    .rating-modal-img-wrap {
+      width:auto; aspect-ratio:auto; flex:0 0 42%;
+      align-self:stretch;
+      border-top-left-radius:20px; border-bottom-left-radius:20px;
+      border-top-right-radius:0; border-bottom-right-radius:0;
+    }
+    .rating-modal-content { flex:1 1 auto; min-width:0; overflow-y:auto; }
+  }
 
   /* Lightbox */
   #img-lightbox {
@@ -1411,34 +1430,36 @@
 
 <!-- ========== MODAL DE VALORACIÓN ========== -->
 <div class="modal-overlay" id="modal-rating" onclick="if(event.target===this)closeRatingModal()">
-  <div class="modal-card" style="max-width:460px;">
-    <div style="overflow-y:auto;flex:1 1 auto;min-height:0;">
+  <div class="modal-card rating-modal-card" style="max-width:460px;">
+    <div class="rating-modal-body">
       <div class="rating-modal-img-wrap" id="rating-modal-img-wrap" style="display:none;">
         <img id="rating-modal-img" src="" alt="">
       </div>
-      <div class="modal-hd" style="padding-bottom:0;text-align:center;">
-        <div class="modal-title">¡Valora este producto!</div>
-        <div id="rating-again-note" style="display:none;font-size:12px;color:#6b7280;margin-top:6px;">Ya valoraste este producto — si quieres, deja otro comentario y dale otra valoración.</div>
-      </div>
-      <div style="padding:16px 28px 18px;">
-        <div id="rating-picker" class="rating-picker" style="justify-content:center;">
-          <span class="rating-picker-star" data-val="1" onclick="setRatingPick(1)">★</span>
-          <span class="rating-picker-star" data-val="2" onclick="setRatingPick(2)">★</span>
-          <span class="rating-picker-star" data-val="3" onclick="setRatingPick(3)">★</span>
-          <span class="rating-picker-star" data-val="4" onclick="setRatingPick(4)">★</span>
-          <span class="rating-picker-star" data-val="5" onclick="setRatingPick(5)">★</span>
+      <div class="rating-modal-content">
+        <div class="modal-hd" style="padding-bottom:0;text-align:center;">
+          <div class="modal-title">¡Valora este producto!</div>
+          <div id="rating-again-note" style="display:none;font-size:12px;color:#6b7280;margin-top:6px;">Ya valoraste este producto — si quieres, deja otro comentario y dale otra valoración.</div>
         </div>
-        <textarea id="rating-comment-input" placeholder="Deja tu comentario acerca de este producto" rows="3"
-          style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;outline:none;margin-top:12px;box-sizing:border-box;"></textarea>
-        <div class="modal-btns" style="margin-top:14px;">
-          <button class="modal-cancel" onclick="closeRatingModal()">Cerrar</button>
-          <button class="modal-confirm" id="rating-accept-btn" onclick="submitRating()">Aceptar</button>
+        <div style="padding:16px 28px 18px;">
+          <div id="rating-picker" class="rating-picker" style="justify-content:center;">
+            <span class="rating-picker-star" data-val="1" onclick="setRatingPick(1)">★</span>
+            <span class="rating-picker-star" data-val="2" onclick="setRatingPick(2)">★</span>
+            <span class="rating-picker-star" data-val="3" onclick="setRatingPick(3)">★</span>
+            <span class="rating-picker-star" data-val="4" onclick="setRatingPick(4)">★</span>
+            <span class="rating-picker-star" data-val="5" onclick="setRatingPick(5)">★</span>
+          </div>
+          <textarea id="rating-comment-input" placeholder="Deja tu comentario acerca de este producto" rows="3"
+            style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;outline:none;margin-top:12px;box-sizing:border-box;"></textarea>
+          <div class="modal-btns" style="margin-top:14px;">
+            <button class="modal-cancel" onclick="closeRatingModal()">Cerrar</button>
+            <button class="modal-confirm" id="rating-accept-btn" onclick="submitRating()">Aceptar</button>
+          </div>
         </div>
+        <div style="padding:12px 28px 8px;border-top:1px solid #f3f4f6;">
+          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Reseñas</div>
+        </div>
+        <div id="rating-reviews-list" class="modal-items" style="flex:none;overflow:visible;margin:0 28px 24px;"></div>
       </div>
-      <div style="padding:12px 28px 8px;border-top:1px solid #f3f4f6;">
-        <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Reseñas</div>
-      </div>
-      <div id="rating-reviews-list" class="modal-items" style="flex:none;overflow:visible;margin:0 28px 24px;"></div>
     </div>
   </div>
 </div>

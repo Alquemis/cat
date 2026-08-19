@@ -1862,6 +1862,20 @@
   </div>
 </div>
 
+<!-- RULE DASHBOARD — DETALLE COMPLETO DE UN RANKING -->
+<div id="rule-detail-modal" class="collab-modal" onclick="if(event.target===this)closeRuleDetailList()">
+  <div class="collab-modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div id="rule-detail-title" style="font-size:17px;font-weight:700;color:#fff;">Detalle</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="rule-detail-search" placeholder="Buscar…" oninput="filterRuleDetailList()" style="padding:7px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <button onclick="closeRuleDetailList()" style="background:rgba(255,255,255,.12);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;color:#fff;">×</button>
+      </div>
+    </div>
+    <div id="rule-detail-body" style="margin-top:12px;"></div>
+  </div>
+</div>
+
 <!-- ORDER DETAIL MODAL -->
 <div class="modal-overlay" id="order-detail-modal" style="z-index:850">
   <div class="modal-card" id="order-detail-card"></div>
@@ -2813,6 +2827,9 @@ function deleteRule(id) {
 // ── DASHBOARD POR REGLA ─────────────────────────────────────
 let _ruleDashChart = null;
 let _ruleDashProds = null;
+// Rankings completos (sin recortar a top N) del dashboard de la regla activa,
+// para el botón "Ver detalle" de cada gráfico.
+let _ruleDashDetail = { type:null, productos:[], unidades:[], monto:[], mxProd:1, mxUnid:1, mxMonto:1, start:0, end:0 };
 
 async function openRuleDashboard(id) {
   const rule = _promoRules.find(r => r.id === id);
@@ -2873,20 +2890,25 @@ async function openRuleDashboard(id) {
     byProd[k].unidades += l.cantidad || 0;
     byProd[k].revenue  += l.subtotal || 0;
   });
-  const rankProductos = Object.entries(byProd).sort((a, b) => b[1].unidades - a[1].unidades).slice(0, 8);
+  const rankProductosFull = Object.entries(byProd).sort((a, b) => b[1].unidades - a[1].unidades);
+  const rankProductos = rankProductosFull.slice(0, 8);
   const mxProd = rankProductos[0]?.[1].unidades || 1;
 
   // Unidades compradas (por colaborador)
   const byUserUnid = {};
   lines.forEach(l => { const k = l.usuario_nombre || l.usuario_email; byUserUnid[k] = (byUserUnid[k] || 0) + (l.cantidad || 0); });
-  const rankUnidades = Object.entries(byUserUnid).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const rankUnidadesFull = Object.entries(byUserUnid).sort((a, b) => b[1] - a[1]);
+  const rankUnidades = rankUnidadesFull.slice(0, 8);
   const mxUnid = rankUnidades[0]?.[1] || 1;
 
   // Mayor compra (por colaborador, monto gastado en productos de la regla)
   const byUserMonto = {};
   lines.forEach(l => { const k = l.usuario_nombre || l.usuario_email; byUserMonto[k] = (byUserMonto[k] || 0) + (l.subtotal || 0); });
-  const rankMonto = Object.entries(byUserMonto).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const rankMontoFull = Object.entries(byUserMonto).sort((a, b) => b[1] - a[1]);
+  const rankMonto = rankMontoFull.slice(0, 8);
   const mxMonto = rankMonto[0]?.[1] || 1;
+
+  _ruleDashDetail = { type:null, productos:rankProductosFull, unidades:rankUnidadesFull, monto:rankMontoFull, mxProd, mxUnid, mxMonto, start, end };
 
   const byDay = {};
   lines.forEach(l => {
@@ -2918,6 +2940,7 @@ async function openRuleDashboard(id) {
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin ventas registradas en el periodo activo.</div>'}
         </div>
+        ${rankProductosFull.length ? `<div style="padding-top:10px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;text-align:center;"><button onclick="openRuleDetailList('productos')" style="background:none;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;width:100%;" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background='none'">Ver detalle →</button></div>` : ''}
       </div>
       <div class="su-section">
         <div class="su-section-title" style="font-size:14px;">Unidades compradas</div>
@@ -2931,6 +2954,7 @@ async function openRuleDashboard(id) {
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
         </div>
+        ${rankUnidadesFull.length ? `<div style="padding-top:10px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;text-align:center;"><button onclick="openRuleDetailList('unidades')" style="background:none;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;width:100%;" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background='none'">Ver detalle →</button></div>` : ''}
       </div>
       <div class="su-section">
         <div class="su-section-title" style="font-size:14px;">Mayor compra</div>
@@ -2944,6 +2968,7 @@ async function openRuleDashboard(id) {
             </div>`).join('')
             : '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">Sin datos.</div>'}
         </div>
+        ${rankMontoFull.length ? `<div style="padding-top:10px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;text-align:center;"><button onclick="openRuleDetailList('monto')" style="background:none;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:7px 20px;font-size:12px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;width:100%;" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background='none'">Ver detalle →</button></div>` : ''}
       </div>
     </div>`;
 
@@ -2964,6 +2989,50 @@ async function openRuleDashboard(id) {
 function closeRuleDashboard() {
   document.getElementById('rule-dash-modal').classList.remove('open');
   if (_ruleDashChart) { _ruleDashChart.destroy(); _ruleDashChart = null; }
+}
+
+// ── DASHBOARD DE REGLA: "Ver detalle" → lista completa de un ranking ──
+function openRuleDetailList(type) {
+  const titles = { productos: 'Más vendidos — detalle completo', unidades: 'Unidades compradas — detalle completo', monto: 'Mayor compra — detalle completo' };
+  document.getElementById('rule-detail-title').textContent = titles[type] || 'Detalle';
+  document.getElementById('rule-detail-search').value = '';
+  _ruleDashDetail.type = type;
+  document.getElementById('rule-detail-modal').classList.add('open');
+  filterRuleDetailList();
+}
+
+function closeRuleDetailList() {
+  document.getElementById('rule-detail-modal').classList.remove('open');
+}
+
+function filterRuleDetailList() {
+  const q = (document.getElementById('rule-detail-search').value || '').trim().toLowerCase();
+  const { type, start, end } = _ruleDashDetail;
+  const body = document.getElementById('rule-detail-body');
+  const rows = _ruleDashDetail[type] || [];
+  const mx = type === 'productos' ? _ruleDashDetail.mxProd : type === 'unidades' ? _ruleDashDetail.mxUnid : _ruleDashDetail.mxMonto;
+  const filtered = q
+    ? rows.filter(([k, v]) => (type === 'productos' ? (v.nombre || '') : k).toLowerCase().includes(q))
+    : rows;
+  if (!filtered.length) { body.innerHTML = '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">Sin resultados</div>'; return; }
+  body.innerHTML = filtered.map(([k, v], i) => {
+    if (type === 'productos') {
+      return `<div class="rank-row"><span class="rank-num">${i + 1}</span><div class="rank-mid">
+        <div class="rank-name">${esc(v.nombre)}</div>
+        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v.unidades / mx * 100)}%"></div></div>
+      </div><span class="rank-val">${v.unidades} u.</span>
+      <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuProdDetail('${esc(k).replace(/'/g, "\\'")}','${esc(v.nombre).replace(/'/g, "\\'")}',${start},${end})">Detalles</button>
+      </div>`;
+    }
+    const val = type === 'unidades' ? `${v} u.` : `<span class="col-sign">₡</span>${Math.round(v / 1000)}k`;
+    const detailFn = type === 'unidades' ? 'openSuUserDetail' : 'openSuMontoDetail';
+    return `<div class="rank-row"><span class="rank-num">${i + 1}</span>${userAvatar(k, k)}<div class="rank-mid">
+      <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(k)}${moraUserChip(k, null)}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mx * 100)}%"></div></div>
+    </div><span class="rank-val">${val}</span>
+    <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="${detailFn}('${esc(k).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
+    </div>`;
+  }).join('');
 }
 
 function openProductModal(product) {

@@ -1,5 +1,5 @@
-// Service Worker — v20260817-124
-const CACHE = 'ventas-20260817-124';
+// Service Worker — v20260817-125
+const CACHE = 'ventas-20260817-125';
 
 const PRECACHE = [
   'index.html', 'su.html', 'admin.html',

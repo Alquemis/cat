@@ -28,6 +28,40 @@
     transition: background .2s;
   }
   .fl-header-cart-btn:hover { background: rgba(255,255,255,.28); }
+  .fl-help-btn {
+    background: rgba(255,255,255,.15); color: #fff;
+    border: 1.5px solid rgba(255,255,255,.35); border-radius: 999px;
+    padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0; transition: background .2s;
+  }
+  .fl-help-btn:hover { background: rgba(255,255,255,.28); }
+  .fl-help-steps { text-align: left; }
+  .fl-help-step { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+  .fl-help-step:last-child { margin-bottom: 0; }
+  .fl-help-step-num {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: #143c5a; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+  }
+  .fl-help-step-txt { font-size: 14px; color: #374151; line-height: 1.5; padding-top: 3px; }
+  .fl-help-render-add {
+    display: inline-flex; vertical-align: middle; margin: 0 1px;
+    background: #e5e7eb; border: 1.3px solid #e5e7eb; border-radius: 7px;
+    padding: 3px 9px; font-size: 11px; font-weight: 600; color: #374151;
+  }
+  .fl-help-render-cart-wrap {
+    display: inline-flex; vertical-align: middle; margin: 0 1px;
+    background: #143c5a; border-radius: 999px; padding: 3px;
+  }
+  .fl-help-render-cart {
+    position: relative; display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.15); color: #fff;
+    border: 1.3px solid rgba(255,255,255,.35); border-radius: 999px;
+    padding: 4px 9px; font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .fl-help-render-badge {
+    position: absolute; top: -5px; right: -5px;
+    background: #dc2626; border-radius: 999px; width: 12px; height: 12px;
+  }
 
   /* Categorías — se extiende de lado a lado (compensa el padding del header) y
      los botones se encogen para caber todos sin scroll en ventanas angostas */
@@ -111,9 +145,9 @@
   .add-btn.added { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
 
   .fl-cart-badge {
-    position: absolute; top: -6px; right: -6px;
-    background: #dc2626; color: #fff; border-radius: 999px; font-size: 11px; font-weight: 800;
-    min-width: 18px; height: 18px; padding: 0 4px;
+    position: absolute; top: -9px; right: -9px;
+    background: #dc2626; color: #fff; border-radius: 999px; font-size: 13px; font-weight: 800;
+    min-width: 24px; height: 24px; padding: 0 5px;
     display: none; align-items: center; justify-content: center;
   }
 
@@ -197,6 +231,24 @@
     border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
   }
 
+  /* ── Transición de salida (bienvenida) y entrada (catálogo) ── */
+  @keyframes flWaveHand {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(18deg); }
+    50% { transform: rotate(0deg); }
+    75% { transform: rotate(-12deg); }
+  }
+  #fl-welcome .fl-fullscreen-icon { display: inline-block; transform-origin: 70% 70%; animation: flWaveHand .5s ease-in-out 3; }
+  #fl-welcome { transition: opacity .28s ease; }
+  #fl-welcome .fl-fullscreen-card { transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .28s ease; }
+  #fl-welcome.fl-welcome-out { opacity: 0; }
+  #fl-welcome.fl-welcome-out .fl-fullscreen-card { transform: scale(.9) translateY(-10px); opacity: 0; }
+  @keyframes flAppIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #fl-app.fl-app-in { animation: flAppIn .38s cubic-bezier(.34,1.2,.64,1) both; }
+
   .fl-toast {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0.92);
     background: #1a1a1a; color: #fff; padding: 14px 22px; border-radius: 12px; font-size: 13px;
@@ -223,6 +275,15 @@
   </div>
 </div>
 
+<div id="fl-welcome" class="fl-fullscreen" style="display:none;">
+  <div class="fl-fullscreen-card">
+    <div class="fl-fullscreen-icon">👋</div>
+    <div class="fl-fullscreen-title" style="margin-bottom:2px;">¡Hola!</div>
+    <div class="fl-fullscreen-msg" style="font-weight:700;"><span id="fl-welcome-nombre"></span> te ha enviado este catálogo<br>para que hagas tu lista de deseos.</div>
+    <button class="fl-fullscreen-btn" onclick="flStartFromWelcome()">Comenzar</button>
+  </div>
+</div>
+
 <div id="fl-success" class="fl-fullscreen" style="display:none;">
   <div class="fl-fullscreen-card">
     <div class="fl-fullscreen-icon">✅</div>
@@ -239,10 +300,13 @@
         <h1>🎁 Lista de deseos</h1>
         <div class="fl-sub" id="fl-header-sub">Se enviará a: —</div>
       </div>
-      <button class="fl-header-cart-btn" id="fl-cart-btn" onclick="flOpenCart()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-        Ver lista <span class="fl-cart-badge" id="fl-cart-badge">0</span>
-      </button>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+        <button class="fl-help-btn" onclick="openFlHelpModal()">Ayuda</button>
+        <button class="fl-header-cart-btn" id="fl-cart-btn" onclick="flOpenCart()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Ver lista <span class="fl-cart-badge" id="fl-cart-badge">0</span>
+        </button>
+      </div>
     </div>
     <div class="fl-nav-tabs" id="fl-nav-tabs">
       <button class="fl-nav-tab active" data-tab="TODOS" onclick="flSelectTab('TODOS')">TODOS</button>
@@ -310,6 +374,37 @@
       <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Valoraciones de otros usuarios</div>
     </div>
     <div id="fl-rating-reviews-list"></div>
+  </div>
+</div>
+
+<div class="fl-modal" id="fl-help-modal" onclick="if(event.target===this)closeFlHelpModal()">
+  <div class="fl-modal-card" onclick="event.stopPropagation()">
+    <div class="fl-modal-hd">
+      <h2>¿Cómo funciona?</h2>
+      <button class="fl-modal-close" onclick="closeFlHelpModal()">✕</button>
+    </div>
+    <div class="fl-help-steps">
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">1</div>
+        <div class="fl-help-step-txt">Explora el catálogo y toca el botón <span class="fl-help-render-add">Agregar</span> del producto que te guste para elegir la cantidad y agregarlo a tu lista.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">2</div>
+        <div class="fl-help-step-txt">Repite con todos los productos que quieras. Toca <span class="fl-help-render-cart-wrap"><span class="fl-help-render-cart"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Ver lista<span class="fl-help-render-badge"></span></span></span> arriba a la derecha en cualquier momento para revisar o ajustar las cantidades.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">3</div>
+        <div class="fl-help-step-txt">Cuando termines, toca <span class="fl-help-render-cart-wrap"><span class="fl-help-render-cart"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Ver lista<span class="fl-help-render-badge"></span></span></span> y luego el botón <strong>"Enviar lista a <span id="fl-help-colab-nombre"></span>"</strong> para que le llegue.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">4</div>
+        <div class="fl-help-step-txt">No olvides colocar <strong>tu nombre</strong> para que <strong id="fl-help-colab-nombre2"></strong> sepa quién eres.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">5</div>
+        <div class="fl-help-step-txt">Puedes ayudarnos a mejorar si calificas el producto ⭐ y dejando un comentario.</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -748,8 +843,31 @@ async function flInit() {
   await Promise.all([loadCatalog(), loadRatingsSummary()]);
 
   document.getElementById('fl-loading').style.display = 'none';
-  document.getElementById('fl-app').style.display = 'block';
-  flRenderGrid();
+  document.getElementById('fl-welcome-nombre').innerHTML = `<strong>${escHtml(flColaboradorNombre)}</strong>`;
+  document.getElementById('fl-help-colab-nombre').textContent = flColaboradorPrimerNombre;
+  document.getElementById('fl-help-colab-nombre2').textContent = flColaboradorPrimerNombre;
+  document.getElementById('fl-welcome').style.display = 'flex';
+}
+
+function flStartFromWelcome() {
+  const welcome = document.getElementById('fl-welcome');
+  const app = document.getElementById('fl-app');
+  welcome.classList.add('fl-welcome-out');
+  setTimeout(() => {
+    welcome.style.display = 'none';
+    welcome.classList.remove('fl-welcome-out');
+    app.style.display = 'block';
+    app.classList.add('fl-app-in');
+    flRenderGrid();
+    setTimeout(() => app.classList.remove('fl-app-in'), 400);
+  }, 280);
+}
+
+function openFlHelpModal() {
+  document.getElementById('fl-help-modal').classList.add('open');
+}
+function closeFlHelpModal() {
+  document.getElementById('fl-help-modal').classList.remove('open');
 }
 
 function flShowInvalid(reason) {

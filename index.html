@@ -4706,7 +4706,7 @@ function _renderAdminNotifItem(n) {
         </div>
         <button class="notif-close" onclick="event.stopPropagation();_dismissUserNotif('${n.id}')">✕</button>
       </div>
-      <div class="notif-msg"><strong>${_escHtmlUser(n.title)}</strong>${n.subtitle ? '<br>' + _escHtmlUser(n.subtitle) : ''}</div>
+      <div class="notif-msg"><strong>${n.title}</strong>${n.subtitle ? '<br>' + n.subtitle : ''}</div>
     </div>`;
 }
 

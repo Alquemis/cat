@@ -6625,8 +6625,8 @@ async function loadNotifications() {
 
     return `<div class="notif-hist-card${cancelled ? ' cancelled' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
-        <div class="notif-hist-title">${_escHtml(n.title)} ${chips}</div>
-        ${n.subtitle ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">${_escHtml(n.subtitle)}</div>` : ''}
+        <div class="notif-hist-title">${n.title} ${chips}</div>
+        ${n.subtitle ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">${n.subtitle}</div>` : ''}
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
           ${!cancelled ? `<button class="btn btn-danger btn-sm" onclick="cancelNotification('${n.id}')">🚫 Cancelar</button>` : ''}
           <button class="btn btn-secondary btn-sm" onclick="editNotification('${n.id}')">✏️ Editar</button>

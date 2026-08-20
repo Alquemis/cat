@@ -6111,15 +6111,16 @@ function exportProductsExcel() {
   if (!allProducts.length) { showToast('No hay productos para exportar.', false); return; }
 
   const rows = allProducts.map(p => ({
-    'Código':       p.codigo       || '',
-    'Nombre':       p.nombre       || '',
-    'Marca':        p.marca        || '',
-    'Categoría':    p.categoria    || '',
-    'Subcategoría': p.subcategoria || '',
-    'Línea':        p.spc          || '',
-    'Precio (₡)':   p.precio       || 0,
-    'IVA (%)':      p.iva          ?? '',
-    'Activo':       p.activo ? 'Sí' : 'No',
+    'Código':          p.codigo         || '',
+    'Nombre':          p.nombre         || '',
+    'Nombre catálogo': p.nombre_catalogo || '',
+    'Marca':           p.marca          || '',
+    'Categoría':       p.categoria      || '',
+    'Subcategoría':    p.subcategoria   || '',
+    'Línea':           p.spc            || '',
+    'Precio (₡)':      p.precio         || 0,
+    'IVA (%)':         p.iva            ?? '',
+    'Activo':          p.activo ? 'Sí' : 'No',
   }));
 
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -6127,6 +6128,7 @@ function exportProductsExcel() {
   ws['!cols'] = [
     { wch: 14 }, // Código
     { wch: 40 }, // Nombre
+    { wch: 40 }, // Nombre catálogo
     { wch: 20 }, // Marca
     { wch: 14 }, // Categoría
     { wch: 20 }, // Subcategoría

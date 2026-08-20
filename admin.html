@@ -1215,7 +1215,7 @@
           <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
             <table>
               <thead><tr>
-                <th>Nombre</th><th>Cédula</th><th>Estado</th><th>Fecha</th><th style="width:120px;text-align:center;">Acción</th>
+                <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Estado</th><th>Fecha</th><th style="width:120px;text-align:center;">Acción</th>
               </tr></thead>
               <tbody id="cfg-banned-tbody">
                 <tr><td colspan="5" class="empty-table">Cargando…</td></tr>
@@ -3528,13 +3528,13 @@ function renderCfgUsers(list) {
     <td>${esc(u.departamento||'—')}</td>
     <td>${esc(u.lugar||'—')}</td>
     <td style="text-align:center">
-      <button class="btn btn-sm btn-danger" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🗑</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}','${esc(u.departamento||'').replace(/'/g,"\\'")}','${esc(u.lugar||'').replace(/'/g,"\\'")}')">🗑</button>
     </td>
   </tr>`;
   }).join('');
 }
 
-function deleteCfgUser(cedula, nombre) {
+function deleteCfgUser(cedula, nombre, departamento, lugar) {
   showConfirm(
     `¿Eliminar a ${nombre}?`,
     'Perderá el acceso al catálogo de inmediato, quedará baneado (hay que desbanearlo para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.',
@@ -3550,7 +3550,7 @@ function deleteCfgUser(cedula, nombre) {
       renderUsers(allUsers);
       // Eliminar implica banear de inmediato — hay que desbanear explícitamente
       // para que la cédula pueda volver a registrarse.
-      await _cfgSetBaneado(cedula, nombre, true);
+      await _cfgSetBaneado(cedula, nombre, true, departamento, lugar);
       showCfgUserTab('banear');
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
@@ -3598,10 +3598,11 @@ function filterCfgBannedUsers() {
 function renderCfgBannedUsers(list) {
   const tbody = document.getElementById('cfg-banned-tbody');
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No hay usuarios eliminados ni baneados.</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">No hay usuarios eliminados ni baneados.</td></tr>'; return;
   }
   tbody.innerHTML = list.map(b => {
     const fecha = b.baneado_at ? new Date(b.baneado_at).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+    const ini = (b.nombre || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const estado = b.baneado
       ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 Baneado</span>'
       : '<span style="font-size:10px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:2px 6px;border-radius:6px;white-space:nowrap;">🗑 Eliminado</span>';
@@ -3609,8 +3610,12 @@ function renderCfgBannedUsers(list) {
       ? `<button class="btn btn-sm btn-secondary" onclick="unbanCfgUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">✅ Desbanear</button>`
       : `<button class="btn btn-sm btn-danger" onclick="banCfgUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">🚫 Banear</button>`;
     return `<tr>
-    <td style="font-weight:600">${esc(b.nombre || '—')}</td>
+    <td style="font-weight:600"><div style="display:flex;align-items:center;gap:8px;">
+      <div class="collab-avatar" style="width:26px;height:26px;font-size:10px;cursor:pointer;" onclick="openCollabProfile('${esc(b.cedula).replace(/'/g,"\\'")}')">${ini}</div>
+      <span>${esc(b.nombre || '—')}</span>
+    </div></td>
     <td>${esc(b.cedula)}</td>
+    <td style="font-size:12px;color:#6b7280">${esc(b.lugar || '—')}</td>
     <td>${estado}</td>
     <td style="font-size:12px;color:#6b7280">${fecha}</td>
     <td style="text-align:center">${action}</td>
@@ -3619,13 +3624,21 @@ function renderCfgBannedUsers(list) {
 }
 
 
-async function _cfgSetBaneado(cedula, nombre, baneado) {
+async function _cfgSetBaneado(cedula, nombre, baneado, departamento, lugar) {
   // Al desbanear se elimina el registro por completo (no se deja con
   // baneado:false) para que desaparezca de "Usuarios eliminados/baneados":
   // la cédula queda realmente en blanco, como si nunca se hubiera registrado.
-  const { error } = baneado
-    ? await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() })
-    : await sb.from('usuarios_baneados').delete().eq('cedula', cedula);
+  let error;
+  if (baneado) {
+    const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() };
+    // Solo se incluyen si se pasaron explícitamente, para no borrar el
+    // departamento/lugar ya guardado cuando se re-banea sin esa info a mano.
+    if (departamento !== undefined) row.departamento = departamento || null;
+    if (lugar !== undefined) row.lugar = lugar || null;
+    ({ error } = await sb.from('usuarios_baneados').upsert(row));
+  } else {
+    ({ error } = await sb.from('usuarios_baneados').delete().eq('cedula', cedula));
+  }
   if (error) { showToast('Error: ' + error.message, 'error'); return false; }
   showToast(baneado ? `${nombre || cedula} baneado ✓` : 'Baneo removido ✓', 'ok');
   await loadCfgBannedUsers();
@@ -3649,10 +3662,12 @@ function banCfgUserManual() {
   const foundActive = allCfgUsers.find(u => u.cedula === cedula);
   const foundHist   = allCfgBanned.find(b => b.cedula === cedula);
   const nombre = foundActive ? foundActive.nombre : (foundHist ? foundHist.nombre : null);
+  const departamento = foundActive ? foundActive.departamento : undefined;
+  const lugar = foundActive ? foundActive.lugar : undefined;
   showConfirm(
     `¿Banear la cédula ${cedula}${nombre ? ' (' + nombre + ')' : ''}?`,
     'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
-    async () => { const ok = await _cfgSetBaneado(cedula, nombre, true); if (ok) inp.value = ''; },
+    async () => { const ok = await _cfgSetBaneado(cedula, nombre, true, departamento, lugar); if (ok) inp.value = ''; },
     { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
   );
 }
@@ -4812,8 +4827,18 @@ async function openCollabProfile(cedulaOrNombre) {
     if (!allUsers.length) await loadUsers();
     _collabListData = allUsers.map(u => ({ nombre:u.nombre, cedula:u.cedula, departamento:u.departamento, lugar:u.lugar, created_at:u.created_at, ultimo_acceso:u.ultimo_acceso }));
   }
-  const user = _collabListData.find(u => u.cedula === cedulaOrNombre || u.nombre === cedulaOrNombre);
-  if (!user) return;
+  let user = _collabListData.find(u => u.cedula === cedulaOrNombre || u.nombre === cedulaOrNombre);
+  if (!user) {
+    // Puede ser un usuario eliminado/baneado que ya no existe en `usuarios`;
+    // se arma una ficha mínima con lo que quedó guardado en usuarios_baneados.
+    const banned = (allCfgBanned || []).find(b => b.cedula === cedulaOrNombre || b.nombre === cedulaOrNombre);
+    if (banned) {
+      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: null, ultimo_acceso: null };
+    } else {
+      showToast('No hay información de perfil para este usuario.', 'warn');
+      return;
+    }
+  }
 
   const _ordersSource = _dashData && _dashData.length ? _dashData : [...(allAdminPend||[]), ...(allAdminHist||[])];
   const pedidos = _ordersSource.filter(o =>
@@ -4825,6 +4850,10 @@ async function openCollabProfile(cedulaOrNombre) {
   const totalUnid  = activos.reduce((s,o)=>s+(o.lineas_pedido||[]).reduce((a,l)=>a+(l.cantidad||0),0),0);
   const avgPedido  = activos.length ? Math.round(totalMonto/activos.length) : 0;
   const fechaReg   = user.created_at ? new Date(user.created_at).toLocaleDateString('es-CR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const uaDate     = user.ultimo_acceso ? new Date(user.ultimo_acceso) : null;
+  const fechaUA    = uaDate
+    ? `${uaDate.toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric'})}, ${uaDate.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'})}`
+    : 'Nunca';
   const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const { count: wishlistCount } = await sb.from('family_wishlists').select('id', { count:'exact', head:true }).eq('colaborador_cedula', user.cedula);
 
@@ -4851,7 +4880,7 @@ async function openCollabProfile(cedulaOrNombre) {
       <div style="flex:1;min-width:0;">
         <div style="font-size:18px;font-weight:800;color:#143c5a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
-        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg}</div>
+        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}</div>
       </div>
       <button onclick="closeCollabProfile()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
     </div>

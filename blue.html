@@ -4070,7 +4070,7 @@ function renderSuBannedUsers(list) {
       ? '<span style="font-size:10px;font-weight:700;color:#ff8f7a;background:rgba(220,38,38,.18);padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 Baneado</span>'
       : '<span style="font-size:10px;font-weight:700;color:var(--lb-text3);background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;white-space:nowrap;">🗑 Eliminado</span>';
     const action = b.baneado
-      ? `<button class="btn btn-sm btn-secondary" onclick="unbanSuUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">✅ Desbanear</button>`
+      ? `<button class="btn btn-sm btn-secondary" onclick="unbanSuUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">Desbanear</button>`
       : `<button class="btn btn-sm btn-danger" onclick="banSuUser('${esc(b.cedula)}','${esc(b.nombre||'')}')">🚫 Banear</button>`;
     return `<tr>
       <td style="font-weight:600"><div style="display:flex;align-items:center;gap:8px;">

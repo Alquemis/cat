@@ -1006,14 +1006,23 @@ async function saveConfig() {
   btn.disabled = true; btn.textContent = 'Guardando…';
 
   const updates = [{ key: 'fact_user', value: user }];
-  if (pass) updates.push({ key: 'fact_pass', value: pass });
+  if (pass) {
+    const newToken = Date.now().toString();
+    updates.push({ key: 'fact_pass', value: pass });
+    updates.push({ key: 'fact_session_token', value: newToken });
+  }
 
   const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
   btn.disabled = false; btn.textContent = 'Guardar cambios';
 
   if (error) { showMsg('Error al guardar: ' + error.message, false); }
   else {
-    showMsg('✅ Credenciales actualizadas correctamente.', true);
+    // Actualizar token local para no cerrar el dispositivo actual
+    if (pass) {
+      const { data: td } = await sb.from('app_config').select('value').eq('key', 'fact_session_token').maybeSingle();
+      if (td?.value) localStorage.setItem(SESSION_KEY, td.value);
+    }
+    showMsg('✅ Credenciales actualizadas. Otros dispositivos deberán iniciar sesión de nuevo.', true);
     document.getElementById('cfg-pass').value  = '';
     document.getElementById('cfg-pass2').value = '';
   }

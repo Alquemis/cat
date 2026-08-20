@@ -904,30 +904,6 @@
     <div class="pagination" id="su-users-pagination"></div>
   </div>
 
-  <!-- ── PAGE: SETTINGS ── -->
-  <div id="page-settings" style="display:none">
-    <div style="max-width:480px;margin:0 auto;padding-top:8px;">
-      <div class="stat-card" style="margin-bottom:24px;">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Credenciales de acceso — Admin</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:24px;">Cambia el usuario y la contraseña del panel administrativo.</div>
-        <div class="form-field" style="margin-bottom:14px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario actual</label>
-          <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
-        </div>
-        <div class="form-field" style="margin-bottom:14px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Nueva contraseña</label>
-          <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
-        </div>
-        <div class="form-field" style="margin-bottom:20px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirmar nueva contraseña</label>
-          <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
-        </div>
-        <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
-        <button class="btn btn-primary" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ── PAGE: DASHBOARD ── -->
   <div id="page-dashboard" style="display:none">
     <div class="dash-grid">
@@ -4242,40 +4218,6 @@ function deleteFraudCase(deviceId) {
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
   );
-}
-
-// ── CONFIGURACIÓN (Admin) ─────────────────────────────────────
-async function loadConfig() {
-  const { data } = await sb.from('app_config').select('key, value').in('key',['admin_user','admin_pass']);
-  const cfg = {};
-  (data || []).forEach(r => { cfg[r.key] = r.value; });
-  document.getElementById('cfg-user').value = cfg.admin_user || 'admin';
-  document.getElementById('cfg-pass').value  = '';
-  document.getElementById('cfg-pass2').value = '';
-  document.getElementById('cfg-msg').style.display = 'none';
-}
-
-async function saveConfig() {
-  const user  = document.getElementById('cfg-user').value.trim();
-  const pass  = document.getElementById('cfg-pass').value.trim();
-  const pass2 = document.getElementById('cfg-pass2').value.trim();
-  const btn   = document.getElementById('cfg-btn');
-  const msg   = document.getElementById('cfg-msg');
-  const showMsg = (text, ok) => {
-    msg.textContent = text; msg.style.display = 'block';
-    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
-    msg.style.border = `1px solid ${ok ? '#86efac' : '#fca5a5'}`;
-    msg.style.color  = ok ? '#166534' : '#dc2626';
-  };
-  if (!user) { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
-  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
-  btn.disabled = true; btn.textContent = 'Guardando…';
-  const updates = [{ key: 'admin_user', value: user }];
-  if (pass) updates.push({ key: 'admin_pass', value: pass });
-  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
-  btn.disabled = false; btn.textContent = 'Guardar cambios';
-  if (error) { showMsg('Error al guardar: ' + error.message, false); }
-  else { showMsg('✅ Credenciales actualizadas.', true); document.getElementById('cfg-pass').value = ''; document.getElementById('cfg-pass2').value = ''; }
 }
 
 // ── SUPERUSUARIO — PANEL ──────────────────────────────────────

@@ -1352,7 +1352,7 @@
   <!-- NOTIFICATION COMPOSE MODAL -->
   <div class="modal-overlay" id="notif-modal">
     <div class="modal-card" style="max-width:640px;">
-      <div class="modal-title">✉️ Nueva notificación</div>
+      <div class="modal-title" id="notif-modal-title">✉️ Nueva notificación</div>
 
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Título</label>
@@ -6458,7 +6458,12 @@ function removeNotifImage() {
   document.getElementById('notif-img-preview').src = '';
 }
 
+let _editingNotifId = null;
+
 function openNotifModal() {
+  _editingNotifId = null;
+  document.getElementById('notif-modal-title').textContent = '✉️ Nueva notificación';
+  document.getElementById('notif-send-btn').textContent = '📤 Enviar notificación';
   initSchedDropdowns();
   isoToDropdowns('notif-inicio', null);
   isoToDropdowns('notif-fin', null);
@@ -6477,23 +6482,34 @@ async function sendNotification() {
   if (!title) { showToast('Escribe un título para la notificación', 'warn'); return; }
   if (!body || body === '<br>') { showToast('Escribe el contenido de la notificación', 'warn'); return; }
 
+  const editing = _editingNotifId;
   const btn = document.getElementById('notif-send-btn');
-  btn.disabled = true; btn.textContent = 'Enviando…';
+  btn.disabled = true; btn.textContent = editing ? 'Guardando…' : 'Enviando…';
 
   const createdBy = (typeof currentUser === 'string' && currentUser) ? currentUser : 'superusuario';
   const fecha_inicio = dropdownsToIso('notif-inicio');
   const fecha_fin    = dropdownsToIso('notif-fin');
 
-  const { error } = await sb.from('notifications').insert({
-    title: titleHtml, subtitle, body,
-    image_url:  _notifImageData || null,
-    created_by: createdBy,
-    fecha_inicio, fecha_fin
-  });
+  let error;
+  if (editing) {
+    ({ error } = await sb.from('notifications').update({
+      title: titleHtml, subtitle, body,
+      image_url: _notifImageData || null,
+      fecha_inicio, fecha_fin
+    }).eq('id', editing));
+  } else {
+    ({ error } = await sb.from('notifications').insert({
+      title: titleHtml, subtitle, body,
+      image_url:  _notifImageData || null,
+      created_by: createdBy,
+      fecha_inicio, fecha_fin
+    }));
+  }
 
-  btn.disabled = false; btn.textContent = '📤 Enviar notificación';
-  if (error) { showToast('Error al enviar: ' + error.message, 'error'); return; }
-  showToast('Notificación enviada correctamente ✓', 'ok');
+  btn.disabled = false; btn.textContent = editing ? '💾 Guardar cambios' : '📤 Enviar notificación';
+  if (error) { showToast('Error al ' + (editing ? 'guardar' : 'enviar') + ': ' + error.message, 'error'); return; }
+  showToast(editing ? 'Notificación actualizada correctamente ✓' : 'Notificación enviada correctamente ✓', 'ok');
+  _editingNotifId = null;
   clearNotifCompose();
   closeNotifModal();
   loadNotifications();
@@ -6593,12 +6609,19 @@ async function loadNotifications() {
       ? `<b style="color:#143c5a;">${readers.length} lectura${readers.length === 1 ? '' : 's'}</b> <button class="btn btn-secondary btn-sm" onclick="openNotifReaders('${n.id}')" style="margin-left:4px;">Ver detalle</button>`
       : '<span style="font-style:italic;">Ningún colaborador lo ha abierto aún.</span>';
 
+    const fmtDT = iso => new Date(iso).toLocaleString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
     const vigenciaTxt = (n.fecha_inicio || n.fecha_fin) ? schedSuffix(n.fecha_inicio, n.fecha_fin).replace(/\n/g, ' · ').replace(/^\s*·\s*/, '') : '';
     const chips = [
       cancelled ? `<span class="badge badge-red">CANCELADA</span>` : '',
       n.image_url ? `<span class="badge badge-gray">📎 imagen</span>` : '',
       vigenciaTxt ? `<span class="badge badge-gray" title="${_escHtml(vigenciaTxt)}">🗓 Programada</span>` : ''
     ].filter(Boolean).join(' ');
+    const progParts = [];
+    if (n.fecha_inicio) progParts.push(`<b>Inicio:</b> ${fmtDT(n.fecha_inicio)}`);
+    if (n.fecha_fin)    progParts.push(`<b>Final:</b> ${fmtDT(n.fecha_fin)}`);
+    const progHtml = progParts.length
+      ? `<div class="notif-hist-meta">Programada: ${progParts.join('&nbsp;&nbsp;·&nbsp;&nbsp;')}</div>`
+      : '';
 
     return `<div class="notif-hist-card${cancelled ? ' cancelled' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
@@ -6606,14 +6629,16 @@ async function loadNotifications() {
         ${n.subtitle ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">${_escHtml(n.subtitle)}</div>` : ''}
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
           ${!cancelled ? `<button class="btn btn-danger btn-sm" onclick="cancelNotification('${n.id}')">🚫 Cancelar</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="editNotification('${n.id}')">✏️ Editar</button>
           <button class="btn btn-purple btn-sm" onclick="renotify('${n.id}')">↩ Reenviar</button>
           <button class="btn btn-secondary btn-sm" onclick="previewNotifAdmin('${n.id}')">👁 Ver</button>
         </div>
       </div>
       <div class="notif-hist-meta">
-        Enviada por <b>${_escHtml(n.created_by)}</b> el ${dateStr}
+        Enviada por <b>${_escHtml(n.created_by)}</b> el ${dateStr}.
         ${cancelled ? ` · <span style="color:#dc2626;">Cancelada el ${new Date(n.cancelled_at).toLocaleDateString('es-CR')}</span>` : ''}
       </div>
+      ${progHtml}
       <div style="font-size:12px;color:#6b7280;">
         ${readersHtml}
       </div>
@@ -6736,6 +6761,29 @@ function renotify(id) {
   isoToDropdowns('notif-fin', n.fecha_fin || null);
   setTimeout(() => document.getElementById('notif-title').focus(), 400);
   showToast('Contenido cargado — edita y reenvía cuando quieras', 'ok');
+}
+
+function editNotification(id) {
+  const n = _notifHistData[id]; if (!n) return;
+  openNotifModal();
+  document.getElementById('notif-title').innerHTML = n.title;
+  document.getElementById('notif-subtitle').innerHTML = n.subtitle || '';
+  document.getElementById('notif-body').innerHTML = n.body;
+  if (n.image_url) {
+    _notifImageData = n.image_url;
+    document.getElementById('notif-img-preview').src = n.image_url;
+    document.getElementById('notif-img-preview-wrap').style.display = '';
+    document.getElementById('notif-img-remove').style.display = '';
+    document.getElementById('notif-img-status').textContent = 'imagen adjunta';
+  } else {
+    removeNotifImage();
+  }
+  isoToDropdowns('notif-inicio', n.fecha_inicio || null);
+  isoToDropdowns('notif-fin', n.fecha_fin || null);
+  _editingNotifId = id;
+  document.getElementById('notif-modal-title').textContent = '✏️ Editar notificación';
+  document.getElementById('notif-send-btn').textContent = '💾 Guardar cambios';
+  setTimeout(() => document.getElementById('notif-title').focus(), 400);
 }
 
 function previewNotifAdmin(id) {

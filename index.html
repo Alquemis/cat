@@ -2008,7 +2008,8 @@ async function onLogin(session, isRestore = false) {
           cedula:       session.cedula,
           nombre:       session.nombre,
           departamento: session.departamento,
-          lugar:        session.lugar
+          lugar:        session.lugar,
+          revisado:     false
         });
         _logIntento(session.cedula, session.nombre, 'registro');
       }

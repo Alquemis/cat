@@ -335,28 +335,50 @@
 
   <!-- ── PAGE: COLABORADORES ── -->
   <div id="page-colaboradores" style="display:none">
-    <div style="max-width:860px;margin:0 auto;padding-top:8px;">
-      <div class="stat-card">
-        <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Colaboradores</div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Lista de colaboradores de Grecia. Puedes buscar y eliminar un colaborador de la base de datos.</div>
-        <div class="toolbar" style="margin-bottom:16px;">
-          <div class="search-field" style="flex:1;">
-            <span>🔍</span>
-            <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
-          </div>
-          <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+    <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Colaboradores</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">Lista de colaboradores de Grecia. Puedes buscar y eliminar un colaborador de la base de datos.</div>
+
+    <div class="order-tabs">
+      <button class="order-tab active" id="ctab-actuales" onclick="showColabTab('actuales')">
+        Colaboradores
+      </button>
+      <button class="order-tab" id="ctab-nuevos" onclick="showColabTab('nuevos')">
+        Nuevos colaboradores <span class="badge badge-red" id="cbadge-nuevos" style="display:none">0</span>
+      </button>
+    </div>
+
+    <div id="cpage-actuales">
+      <div class="toolbar">
+        <div class="search-field"><span>🔍</span>
+          <input type="text" id="cfg-user-search" placeholder="Buscar colaborador…" oninput="filterCfgUsers()">
         </div>
-        <div class="table-wrap">
-          <table style="table-layout:fixed">
-            <colgroup><col style="width:40%"><col style="width:22%"><col><col style="width:80px"></colgroup>
-            <thead><tr>
-              <th>Nombre</th><th>Cédula</th><th>Departamento</th><th style="text-align:center;">Acción</th>
-            </tr></thead>
-            <tbody id="cfg-users-tbody">
-              <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <button class="btn btn-secondary" onclick="loadCfgUsers()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table style="table-layout:fixed">
+          <colgroup><col style="width:40%"><col style="width:22%"><col><col style="width:80px"></colgroup>
+          <thead><tr>
+            <th>Nombre</th><th>Cédula</th><th>Departamento</th><th style="text-align:center;">Acción</th>
+          </tr></thead>
+          <tbody id="cfg-users-tbody">
+            <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="cpage-nuevos" style="display:none">
+      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Registros recientes pendientes de revisión. Aprueba a los colaboradores válidos o elimina los que no reconozcas.</div>
+      <div class="table-wrap">
+        <table style="table-layout:fixed">
+          <colgroup><col style="width:40%"><col style="width:22%"><col><col style="width:118px"></colgroup>
+          <thead><tr>
+            <th>Nombre</th><th>Cédula</th><th>Departamento</th><th style="text-align:center;">Acción</th>
+          </tr></thead>
+          <tbody id="cfg-nuevos-tbody">
+            <tr><td colspan="4" class="empty-table">Cargando…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -1003,15 +1025,35 @@ function openOrderDetail(id) {
 
 // ── ELIMINAR COLABORADOR (sección settings) ───────────────
 let allCfgUsers = [];
+let allCfgNuevos = [];
 
 async function loadCfgUsers() {
   const { data, error } = await sb.from('usuarios')
-    .select('cedula, nombre, departamento, lugar')
+    .select('cedula, nombre, departamento, lugar, revisado')
     .eq('lugar', LUGAR)
     .order('nombre');
   if (error) { console.error(error); return; }
-  allCfgUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
+  const all = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
+  allCfgUsers  = all.filter(u => u.revisado !== false);
+  allCfgNuevos = all.filter(u => u.revisado === false);
   renderCfgUsers(allCfgUsers);
+  renderCfgNuevos(allCfgNuevos);
+  _updateCfgNuevosBadge();
+}
+
+function _updateCfgNuevosBadge() {
+  const badge = document.getElementById('cbadge-nuevos');
+  if (!badge) return;
+  if (allCfgNuevos.length > 0) { badge.style.display = 'inline-block'; badge.textContent = allCfgNuevos.length; }
+  else { badge.style.display = 'none'; }
+}
+
+function showColabTab(tab) {
+  ['actuales','nuevos'].forEach(t => {
+    document.getElementById('cpage-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('ctab-' + t).classList.toggle('active', t === tab);
+  });
+  loadCfgUsers();
 }
 
 function filterCfgUsers() {
@@ -1037,10 +1079,43 @@ function renderCfgUsers(list) {
   </tr>`).join('');
 }
 
+function renderCfgNuevos(list) {
+  const tbody = document.getElementById('cfg-nuevos-tbody');
+  if (!tbody) return;
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-table">No hay registros nuevos por revisar</td></tr>'; return;
+  }
+  tbody.innerHTML = list.map(u => `<tr>
+    <td style="font-weight:600">${esc(u.nombre||'—')}</td>
+    <td>${esc(u.cedula||'—')}</td>
+    <td>${esc(u.departamento||'—')}</td>
+    <td style="text-align:center;white-space:nowrap;padding-right:14px;">
+      <button class="btn btn-sm btn-success" style="margin-right:4px;" title="Aprobar" onclick="aprobarCfgNuevo('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">✅</button>
+      <button class="btn btn-sm btn-danger" title="Eliminar" onclick="deleteCfgUser('${esc(u.cedula||'')}','${esc(u.nombre||'')}')">🗑</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function aprobarCfgNuevo(cedula, nombre) {
+  const { error } = await sb.from('usuarios').update({ revisado: true }).eq('cedula', cedula);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast(`${nombre} aprobado ✓`, 'ok');
+  const u = allCfgNuevos.find(x => x.cedula === cedula);
+  allCfgNuevos = allCfgNuevos.filter(x => x.cedula !== cedula);
+  if (u) {
+    u.revisado = true;
+    allCfgUsers.push(u);
+    allCfgUsers.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+  }
+  renderCfgNuevos(allCfgNuevos);
+  renderCfgUsers(allCfgUsers);
+  _updateCfgNuevosBadge();
+}
+
 function deleteCfgUser(cedula, nombre) {
   showConfirm(
     `¿Eliminar a ${nombre}?`,
-    'Perderá el acceso al catálogo de inmediato, quedará baneado (se desbanea desde admin/su para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.',
+    'Perderá el acceso al catálogo de inmediato. Si desea volver a registrarse o se eliminó por error, por favor comuníquese con el Administrador de la aplicación.',
     async () => {
       const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
       if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
@@ -1050,7 +1125,10 @@ function deleteCfgUser(cedula, nombre) {
       await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() });
       showToast(`${nombre} eliminado.`, 'ok');
       allCfgUsers = allCfgUsers.filter(u => u.cedula !== cedula);
+      allCfgNuevos = allCfgNuevos.filter(u => u.cedula !== cedula);
       renderCfgUsers(allCfgUsers);
+      renderCfgNuevos(allCfgNuevos);
+      _updateCfgNuevosBadge();
     },
     { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
   );

@@ -2094,7 +2094,7 @@
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;">Pedidos en mora</div>
-        <div style="font-size:17px;font-weight:700;color:#111827;margin-top:4px;line-height:1.2;" id="mora-modal-name"></div>
+        <div style="font-size:17px;font-weight:700;color:#111827;margin-top:4px;line-height:1.2;display:flex;align-items:center;gap:8px;" id="mora-modal-name"></div>
         <div style="font-size:13px;color:#6b7280;margin-top:3px;" id="mora-modal-sub"></div>
       </div>
       <div style="display:flex;align-items:flex-start;gap:8px;flex-shrink:0;">
@@ -3946,7 +3946,7 @@ function openMoraModal(userKey, nombre) {
   );
   const totalMora = pedidosMora.reduce((s, o) => s + (o.total || 0), 0);
   const maxDias   = pedidosMora.length ? Math.max(...pedidosMora.map(o => Math.max(0, Math.floor((now - getMoraThreshold(o.facturado_at || o.fecha)) / 86400000)))) : 0;
-  document.getElementById('mora-modal-name').textContent  = nombre;
+  document.getElementById('mora-modal-name').innerHTML    = userAvatar(nombre, userKey) + `<span>${esc(nombre||'—')}</span>`;
   document.getElementById('mora-modal-sub').textContent   = `${pedidosMora.length} pedido${pedidosMora.length !== 1 ? 's' : ''} · ${maxDias} día${maxDias !== 1 ? 's' : ''} sin pago`;
   document.getElementById('mora-modal-total').innerHTML   = `<span style="font-size:13px;">₡</span>${totalMora.toLocaleString('es-CR')}`;
   document.getElementById('mora-modal-body').innerHTML = pedidosMora.map(o => {
@@ -3983,7 +3983,7 @@ function openOrderDetail(id) {
       <div style="font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px">${fecha}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px">
-      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(o.usuario_nombre||'—')}${moraUserChip(o.usuario_nombre,o.usuario_email||o.usuario_nombre)}</span></div>
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}${esc(o.usuario_nombre||'—')}${moraUserChip(o.usuario_nombre,o.usuario_email||o.usuario_nombre)}</span></div>
       <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cédula</strong>${esc(o.usuario_email||'—')}</div>
       <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Departamento</strong>${esc(o.usuario_departamento||'—')}</div>
       <div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Lugar</strong>${esc(o.usuario_lugar||'—')}</div>
@@ -4185,7 +4185,7 @@ async function loadFraudDevices() {
     const porCedula = {};
     eventos.forEach(e => { if (!porCedula[e.cedula]) porCedula[e.cedula] = { nombre: e.nombre, resultados: [] }; porCedula[e.cedula].resultados.push(e.resultado); });
     const cedulas = Object.keys(porCedula).map(c => esc(c)).join('<br>');
-    const nombres = Object.values(porCedula).map(v => esc(v.nombre || '—')).join('<br>');
+    const nombres = Object.entries(porCedula).map(([c, v]) => `<span style="display:inline-flex;align-items:center;gap:5px;">${userAvatar(v.nombre, c)}${esc(v.nombre || '—')}</span>`).join('<br>');
     const badge = r => r === 'bloqueado'
       ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 bloqueado</span>'
       : r === 'registro'
@@ -4452,7 +4452,7 @@ function sortSuDeleteUsers(col) {
 }
 
 async function loadSuUsers() {
-  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
+  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso').order('nombre');
   if (error) { console.error(error); return; }
   allSuUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   filterSuUsers();
@@ -4496,6 +4496,9 @@ function renderSuUsers(list) {
 }
 
 async function deleteUser(cedula, nombre, departamento, lugar) {
+  const found = allSuUsers.find(u => u.cedula === cedula) || allUsers.find(u => u.cedula === cedula);
+  const registrado_at = found ? found.created_at : undefined;
+  const ultima_actividad_at = found ? found.ultimo_acceso : undefined;
   showConfirm(
     '¿Eliminar colaborador?',
     `Se eliminará a "${nombre}" (${cedula}). Perderá el acceso de inmediato, quedará baneado (hay que desbanearlo para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.`,
@@ -4510,7 +4513,7 @@ async function deleteUser(cedula, nombre, departamento, lugar) {
       renderUsers(allUsers);
       // Eliminar implica banear de inmediato — hay que desbanear explícitamente
       // para que la cédula pueda volver a registrarse.
-      await _suSetBaneado(cedula, nombre, true, departamento, lugar);
+      await _suSetBaneado(cedula, nombre, true, departamento, lugar, registrado_at, ultima_actividad_at);
       showSuUserTab('banear');
     }
   );
@@ -4582,7 +4585,7 @@ function renderSuBannedUsers(list) {
 }
 
 
-async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar) {
+async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar, registrado_at, ultima_actividad_at) {
   // Al desbanear se elimina el registro por completo (no se deja con
   // baneado:false) para que desaparezca de "Usuarios eliminados/baneados":
   // la cédula queda realmente en blanco, como si nunca se hubiera registrado.
@@ -4591,6 +4594,8 @@ async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar) {
     const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() };
     if (departamento !== undefined) row.departamento = departamento || null;
     if (lugar !== undefined) row.lugar = lugar || null;
+    if (registrado_at !== undefined) row.registrado_at = registrado_at || null;
+    if (ultima_actividad_at !== undefined) row.ultima_actividad_at = ultima_actividad_at || null;
     ({ error } = await sb.from('usuarios_baneados').upsert(row));
   } else {
     ({ error } = await sb.from('usuarios_baneados').delete().eq('cedula', cedula));
@@ -4620,10 +4625,12 @@ function banSuUserManual() {
   const nombre = foundActive ? foundActive.nombre : (foundHist ? foundHist.nombre : null);
   const departamento = foundActive ? foundActive.departamento : undefined;
   const lugar = foundActive ? foundActive.lugar : undefined;
+  const registrado_at = foundActive ? foundActive.created_at : undefined;
+  const ultima_actividad_at = foundActive ? foundActive.ultimo_acceso : undefined;
   showConfirm(
     `¿Banear la cédula ${cedula}${nombre ? ' (' + nombre + ')' : ''}?`,
     'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
-    async () => { const ok = await _suSetBaneado(cedula, nombre, true, departamento, lugar); if (ok) inp.value = ''; },
+    async () => { const ok = await _suSetBaneado(cedula, nombre, true, departamento, lugar, registrado_at, ultima_actividad_at); if (ok) inp.value = ''; },
     { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
   );
 }
@@ -4808,8 +4815,8 @@ function filterRatings() {
 // del link (`usuario_nombre`). Se muestra "Fulano por Colaborador".
 function ratingReviewerHtml(r) {
   return r.familiar_nombre
-    ? `${esc(r.familiar_nombre)} <span style="font-weight:400;color:#9ca3af;">por</span> ${esc(r.usuario_nombre||'—')}`
-    : esc(r.usuario_nombre||'—');
+    ? `${esc(r.familiar_nombre)} <span style="font-weight:400;color:#9ca3af;">por</span> ${userAvatar(r.usuario_nombre, r.usuario_nombre)}${esc(r.usuario_nombre||'—')}`
+    : `${userAvatar(r.usuario_nombre, r.usuario_nombre)}${esc(r.usuario_nombre||'—')}`;
 }
 
 function renderRatingsList(items) {
@@ -5336,7 +5343,7 @@ function renderSuProdDetail() {
     _suProdDetailRowData[idx] = pedidos;
     return `<div style="border-bottom:1px solid #f3f4f6;">
       <div onclick="toggleProdDetailOrders(this,${idx})" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-        <span style="flex:1;font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;">${esc(n)}${moraUserChip(n,null)}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;">${userAvatar(n, n)}${esc(n)}${moraUserChip(n,null)}</span>
         <span style="width:44px;text-align:right;font-size:13px;font-weight:700;color:#143c5a;white-space:nowrap;">${v.total} u.</span>
         <span style="width:56px;text-align:right;font-size:11px;color:#9ca3af;white-space:nowrap;">${fecha}</span>
         <span style="width:14px;font-size:11px;color:#9ca3af;text-align:right;">›</span>
@@ -5517,7 +5524,7 @@ function _renderSuWishlistsPage() {
     const items = w.items || [];
     const unidades = items.reduce((s,i) => s + (i.cantidad||0), 0);
     const total = items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0);
-    const recipientLine = _suWlFilterCedula ? '' : `<div class="ud-order-meta">Para: ${esc(_suWlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '—')}</div>`;
+    const recipientLine = _suWlFilterCedula ? '' : `<div class="ud-order-meta" style="display:flex;align-items:center;gap:4px;">Para: ${userAvatar(_suWlNombreMap[w.colaborador_cedula] || w.colaborador_cedula, w.colaborador_cedula)}${esc(_suWlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '—')}</div>`;
     const lines = items.map(i => {
       const pct = _suWlDiscMap[i.codigo];
       const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
@@ -5622,7 +5629,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
     // se arma una ficha mínima con lo que quedó guardado en usuarios_baneados.
     const banned = (allSuBanned || []).find(b => b.cedula === cedulaOrNombre || b.nombre === cedulaOrNombre);
     if (banned) {
-      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: null, ultimo_acceso: null };
+      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: banned.registrado_at || null, ultimo_acceso: banned.ultima_actividad_at || null, baneado_at: banned.baneado_at || null };
     } else {
       showToast('No hay información de perfil para este usuario.', 'warn');
       return;
@@ -5639,6 +5646,9 @@ async function openSuCollabProfile(cedulaOrNombre) {
   const fechaUA    = uaDate
     ? `${uaDate.toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric'})}, ${uaDate.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'})}`
     : 'Nunca';
+  const eliminadoLine = user.baneado_at
+    ? ` · Eliminado el ${new Date(user.baneado_at).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric'})}`
+    : '';
   const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const { count: wishlistCount } = await sb.from('family_wishlists').select('id', { count:'exact', head:true }).eq('colaborador_cedula', user.cedula);
   const prodMap={};
@@ -5657,7 +5667,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
       <div style="flex:1;min-width:0;">
         <div style="font-size:18px;font-weight:800;color:#143c5a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
-        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}</div>
+        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}${eliminadoLine}</div>
       </div>
       <button onclick="closeSuCollabProfile()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
     </div>
@@ -6739,7 +6749,8 @@ function filterNotifReaders() {
     const nombre = r.user_nombre || r.user_cedula || '—';
     const ini    = nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const fecha  = new Date(r.read_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
-    return `<div class="collab-list-row" style="cursor:default;">
+    const key    = esc(r.user_cedula || r.user_nombre || '').replace(/'/g,"\\'");
+    return `<div class="collab-list-row" onclick="openSuCollabProfile('${key}')">
       <div class="collab-avatar">${ini}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(nombre)}</div>

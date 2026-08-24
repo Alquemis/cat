@@ -3957,7 +3957,7 @@ function sortSuDeleteUsers(col) {
 }
 
 async function loadSuUsers() {
-  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at').order('nombre');
+  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso').order('nombre');
   if (error) { console.error(error); return; }
   allSuUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
   filterSuUsers();
@@ -4001,6 +4001,9 @@ function renderSuUsers(list) {
 }
 
 async function deleteUser(cedula, nombre, departamento, lugar) {
+  const found = allSuUsers.find(u => u.cedula === cedula) || allUsers.find(u => u.cedula === cedula);
+  const registrado_at = found ? found.created_at : undefined;
+  const ultima_actividad_at = found ? found.ultimo_acceso : undefined;
   showConfirm(
     '¿Eliminar colaborador?',
     `Se eliminará a "${nombre}" (${cedula}). Perderá el acceso de inmediato, quedará baneado (hay que desbanearlo para que pueda volver a registrarse) y su historial de pedidos se desvinculará: si vuelve a registrarse con la misma cédula, entrará como un usuario nuevo. Los pedidos no se borran, siguen disponibles para reportes.`,
@@ -4015,7 +4018,7 @@ async function deleteUser(cedula, nombre, departamento, lugar) {
       renderUsers(allUsers);
       // Eliminar implica banear de inmediato — hay que desbanear explícitamente
       // para que la cédula pueda volver a registrarse.
-      await _suSetBaneado(cedula, nombre, true, departamento, lugar);
+      await _suSetBaneado(cedula, nombre, true, departamento, lugar, registrado_at, ultima_actividad_at);
       showSuUserTab('banear');
     }
   );
@@ -4087,7 +4090,7 @@ function renderSuBannedUsers(list) {
 }
 
 
-async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar) {
+async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar, registrado_at, ultima_actividad_at) {
   // Al desbanear se elimina el registro por completo (no se deja con
   // baneado:false) para que desaparezca de "Usuarios eliminados/baneados":
   // la cédula queda realmente en blanco, como si nunca se hubiera registrado.
@@ -4096,6 +4099,8 @@ async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar) {
     const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() };
     if (departamento !== undefined) row.departamento = departamento || null;
     if (lugar !== undefined) row.lugar = lugar || null;
+    if (registrado_at !== undefined) row.registrado_at = registrado_at || null;
+    if (ultima_actividad_at !== undefined) row.ultima_actividad_at = ultima_actividad_at || null;
     ({ error } = await sb.from('usuarios_baneados').upsert(row));
   } else {
     ({ error } = await sb.from('usuarios_baneados').delete().eq('cedula', cedula));
@@ -4125,10 +4130,12 @@ function banSuUserManual() {
   const nombre = foundActive ? foundActive.nombre : (foundHist ? foundHist.nombre : null);
   const departamento = foundActive ? foundActive.departamento : undefined;
   const lugar = foundActive ? foundActive.lugar : undefined;
+  const registrado_at = foundActive ? foundActive.created_at : undefined;
+  const ultima_actividad_at = foundActive ? foundActive.ultimo_acceso : undefined;
   showConfirm(
     `¿Banear la cédula ${cedula}${nombre ? ' (' + nombre + ')' : ''}?`,
     'No podrá iniciar sesión ni registrarse de nuevo mientras esté baneado.',
-    async () => { const ok = await _suSetBaneado(cedula, nombre, true, departamento, lugar); if (ok) inp.value = ''; },
+    async () => { const ok = await _suSetBaneado(cedula, nombre, true, departamento, lugar, registrado_at, ultima_actividad_at); if (ok) inp.value = ''; },
     { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
   );
 }
@@ -5127,7 +5134,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
     // se arma una ficha mínima con lo que quedó guardado en usuarios_baneados.
     const banned = (allSuBanned || []).find(b => b.cedula === cedulaOrNombre || b.nombre === cedulaOrNombre);
     if (banned) {
-      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: null, ultimo_acceso: null };
+      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: banned.registrado_at || null, ultimo_acceso: banned.ultima_actividad_at || null, baneado_at: banned.baneado_at || null };
     } else {
       showToast('No hay información de perfil para este usuario.', 'warn');
       return;
@@ -5144,6 +5151,9 @@ async function openSuCollabProfile(cedulaOrNombre) {
   const fechaUA    = uaDate
     ? `${uaDate.toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric'})}, ${uaDate.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'})}`
     : 'Nunca';
+  const eliminadoLine = user.baneado_at
+    ? ` · Eliminado el ${new Date(user.baneado_at).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric'})}`
+    : '';
   const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const { count: wishlistCount } = await sb.from('family_wishlists').select('id', { count:'exact', head:true }).eq('colaborador_cedula', user.cedula);
   const prodMap={};
@@ -5162,7 +5172,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
       <div style="flex:1;min-width:0;">
         <div style="font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:rgba(255,255,255,.45);">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}${eliminadoLine}</div>
       </div>
       <button onclick="closeSuCollabProfile()" style="background:rgba(255,255,255,.12);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;color:#fff;">×</button>
     </div>

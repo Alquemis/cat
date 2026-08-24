@@ -1025,7 +1025,7 @@ let allCfgNuevos = [];
 
 async function loadCfgUsers() {
   const { data, error } = await sb.from('usuarios')
-    .select('cedula, nombre, departamento, lugar, revisado')
+    .select('cedula, nombre, departamento, lugar, revisado, created_at, ultimo_acceso')
     .eq('lugar', LUGAR)
     .order('nombre');
   if (error) { console.error(error); return; }
@@ -1109,6 +1109,11 @@ async function aprobarCfgNuevo(cedula, nombre) {
 }
 
 function deleteCfgUser(cedula, nombre) {
+  const found = allCfgUsers.find(u => u.cedula === cedula) || allCfgNuevos.find(u => u.cedula === cedula);
+  const departamento = found ? found.departamento : undefined;
+  const lugar = found ? found.lugar : LUGAR;
+  const registrado_at = found ? found.created_at : undefined;
+  const ultima_actividad_at = found ? found.ultimo_acceso : undefined;
   showConfirm(
     `¿Eliminar a ${nombre}?`,
     'Perderá el acceso al catálogo de inmediato. Si desea volver a registrarse o se eliminó por error, por favor comuníquese con el Administrador de la aplicación.',
@@ -1118,7 +1123,12 @@ function deleteCfgUser(cedula, nombre) {
       await _detachUserHistory(cedula);
       // Eliminar implica banear de inmediato — hay que desbanear desde
       // admin.html/su.html/blue.html para que la cédula pueda registrarse.
-      await sb.from('usuarios_baneados').upsert({ cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() });
+      const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() };
+      if (departamento !== undefined) row.departamento = departamento || null;
+      if (lugar !== undefined) row.lugar = lugar || null;
+      if (registrado_at !== undefined) row.registrado_at = registrado_at || null;
+      if (ultima_actividad_at !== undefined) row.ultima_actividad_at = ultima_actividad_at || null;
+      await sb.from('usuarios_baneados').upsert(row);
       showToast(`${nombre} eliminado.`, 'ok');
       allCfgUsers = allCfgUsers.filter(u => u.cedula !== cedula);
       allCfgNuevos = allCfgNuevos.filter(u => u.cedula !== cedula);

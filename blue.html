@@ -1129,6 +1129,10 @@
             style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:rgba(255,255,255,.5);">
             🗑 Usuarios eliminados/baneados
           </button>
+          <button id="suutab-suspender" onclick="showSuUserTab('suspender')"
+            style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:rgba(255,255,255,.5);">
+            ⏸ Usuarios suspendidos
+          </button>
         </div>
 
         <div style="padding:24px;">
@@ -1182,6 +1186,35 @@
                 <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Estado</th><th>Fecha</th><th style="width:120px;text-align:center;">Acción</th>
               </tr></thead>
               <tbody id="su-banned-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Usuarios suspendidos -->
+        <div id="suupage-suspender" style="display:none">
+          <div class="su-section-sub">Un usuario <strong>suspendido</strong> no puede iniciar sesión mientras dure la suspensión, pero a diferencia de eliminar/banear, conserva su cuenta, su historial de pedidos y todos sus datos intactos. Actívalo en cualquier momento para que recupere el acceso.</div>
+
+          <div style="font-size:12px;font-weight:700;color:var(--lb-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suspender por cédula</div>
+          <div class="toolbar" style="margin-bottom:24px;">
+            <div class="search-field" style="flex:1;max-width:280px;">
+              <span>🪪</span>
+              <input type="text" id="su-suspend-cedula-input" placeholder="Número de cédula…">
+            </div>
+            <button class="btn btn-danger" onclick="suspendSuUserManual()">⏸ Suspender</button>
+          </div>
+
+          <div class="toolbar" style="margin-bottom:16px;">
+            <div class="search-field">
+              <span>🔍</span>
+              <input type="text" id="su-suspended-search" placeholder="Buscar entre suspendidos…" oninput="filterSuSuspendedUsers()">
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
+            <table>
+              <thead><tr>
+                <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Fecha</th><th style="width:100px;text-align:center;">Acción</th>
+              </tr></thead>
+              <tbody id="su-suspended-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -2923,7 +2956,7 @@ async function openRuleDashboard(id) {
         <div style="margin-top:8px;">
           ${rankUnidades.length ? rankUnidades.map(([n, v], i) => `
             <div class="rank-row"><span class="rank-num">${i + 1}</span>${userAvatar(n, n)}<div class="rank-mid">
-              <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
+              <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}${suspendedChip(n)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxUnid * 100)}%"></div></div>
             </div><span class="rank-val">${v} u.</span>
             <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${esc(n).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
@@ -2937,7 +2970,7 @@ async function openRuleDashboard(id) {
         <div style="margin-top:8px;">
           ${rankMonto.length ? rankMonto.map(([n, v], i) => `
             <div class="rank-row"><span class="rank-num">${i + 1}</span>${userAvatar(n, n)}<div class="rank-mid">
-              <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}</div>
+              <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n, null)}${suspendedChip(n)}</div>
               <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mxMonto * 100)}%"></div></div>
             </div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v / 1000)}k</span>
             <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${esc(n).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
@@ -3003,7 +3036,7 @@ function filterRuleDetailList() {
     const val = type === 'unidades' ? `${v} u.` : `<span class="col-sign">₡</span>${Math.round(v / 1000)}k`;
     const detailFn = type === 'unidades' ? 'openSuUserDetail' : 'openSuMontoDetail';
     return `<div class="rank-row"><span class="rank-num">${i + 1}</span>${userAvatar(k, k)}<div class="rank-mid">
-      <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(k)}${moraUserChip(k, null)}</div>
+      <div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(k)}${moraUserChip(k, null)}${suspendedChip(k)}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v / mx * 100)}%"></div></div>
     </div><span class="rank-val">${val}</span>
     <button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="${detailFn}('${esc(k).replace(/'/g, "\\'")}',${start},${end},_ruleDashProds)">Detalles</button>
@@ -3514,7 +3547,7 @@ function renderAdminOrders(tbodyId, list) {
     return `<tr class="${rowClass}" style="${rowStyle}">
       <td style="${(pagado || facturado) ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : facturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
-      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}${suspendedChip(o.usuario_email||o.usuario_nombre)}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
@@ -3707,7 +3740,7 @@ function openOrderDetail(id) {
       <div style="font-size:13px;color:rgba(255,255,255,.55);text-align:right;white-space:nowrap;padding-top:2px">${fecha}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px">
-      <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(o.usuario_nombre||'—')}${moraUserChip(o.usuario_nombre,o.usuario_email||o.usuario_nombre)}</span></div>
+      <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Colaborador</strong><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(o.usuario_nombre||'—')}${moraUserChip(o.usuario_nombre,o.usuario_email||o.usuario_nombre)}${suspendedChip(o.usuario_email||o.usuario_nombre)}</span></div>
       <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Cédula</strong>${esc(o.usuario_email||'—')}</div>
       <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Departamento</strong>${esc(o.usuario_departamento||'—')}</div>
       <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px"><strong style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Lugar</strong>${esc(o.usuario_lugar||'—')}</div>
@@ -3745,7 +3778,7 @@ function openOrderDetail(id) {
 // ── COLABORADORES ─────────────────────────────────────────────
 async function loadUsers() {
   const [{ data, error }, bannedRes] = await Promise.all([
-    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso').order('nombre'),
+    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso, suspendido, suspendido_at').order('nombre'),
     sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
   ]);
   if (error) { console.error(error); return; }
@@ -3755,6 +3788,7 @@ async function loadUsers() {
   allUsers = (data || [])
     .filter(u => !_suBannedSet.has(u.cedula))
     .map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
+  _setSuSuspended(data || []);
   document.getElementById('stat-users').textContent = allUsers.length;
 
   // Poblar departamentos dinámicamente
@@ -3847,7 +3881,7 @@ function _renderSuUsersPage() {
       ? `<button class="chip-mora" onclick="openMoraModal('${esc(u.cedula||u.nombre)}','${esc(u.nombre||'—')}')">⚠ En mora (${pedidosMora.length})</button>`
       : '';
     return `<tr>
-      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span></div>${chipMora}</div></td>
+      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span>${suspendedChip(u.cedula||u.nombre)}</div>${chipMora}</div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
@@ -3935,7 +3969,7 @@ async function saveSuCred(type) {
 
 // ── SUPERUSUARIO — ELIMINAR/BANEAR COLABORADORES ─────────────
 function showSuUserTab(tab) {
-  ['eliminar','banear'].forEach(t => {
+  ['eliminar','banear','suspender'].forEach(t => {
     document.getElementById('suupage-' + t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('suutab-' + t);
     btn.style.borderBottom = t === tab ? '3px solid #5db8e8' : '3px solid transparent';
@@ -3956,11 +3990,34 @@ function sortSuDeleteUsers(col) {
   filterSuUsers();
 }
 
+let allSuSuspended = [];
+
 async function loadSuUsers() {
-  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso').order('nombre');
+  const { data, error } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso, suspendido, suspendido_at').order('nombre');
   if (error) { console.error(error); return; }
   allSuUsers = (data || []).map(u => ({ ...u, nombre: toTitleCase(u.nombre) }));
+  _setSuSuspended(allSuUsers);
+  allSuSuspended = allSuUsers.filter(u => u.suspendido);
   filterSuUsers();
+  filterSuSuspendedUsers();
+}
+
+// Conjunto global de cédulas/nombres suspendidos, usado por suspendedChip()
+// en cualquier parte de blue.html donde aparezca un colaborador.
+let _suSuspendedSet = new Set();
+let _suSuspendedNombreSet = new Set();
+function _setSuSuspended(list) {
+  _suSuspendedSet = new Set(list.filter(u => u.suspendido).map(u => u.cedula));
+  _suSuspendedNombreSet = new Set(list.filter(u => u.suspendido).map(u => u.nombre));
+}
+function isSuSuspended(idOrName) {
+  if (!idOrName) return false;
+  return _suSuspendedSet.has(idOrName) || _suSuspendedNombreSet.has(idOrName);
+}
+function suspendedChip(idOrName) {
+  return isSuSuspended(idOrName)
+    ? ' <span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(245,158,11,.18);padding:2px 6px;border-radius:6px;white-space:nowrap;">⏸ Suspendido</span>'
+    : '';
 }
 
 function filterSuUsers() {
@@ -3990,7 +4047,7 @@ function renderSuUsers(list) {
     const banned = _suBannedSet.has(u.cedula);
     const badge = banned ? ' <span style="font-size:10px;font-weight:700;color:#ff8f7a;background:rgba(220,38,38,.18);padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 Baneado</span>' : '';
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span>${badge}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span>${badge}${suspendedChip(u.cedula)}</div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
@@ -3998,6 +4055,70 @@ function renderSuUsers(list) {
       <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}','${esc(u.departamento||'').replace(/'/g,"\\'")}','${esc(u.lugar||'').replace(/'/g,"\\'")}')">🗑 Eliminar</button></td>
     </tr>`;
   }).join('');
+}
+
+// ── USUARIOS SUSPENDIDOS ──────────────────────────────────
+function filterSuSuspendedUsers() {
+  const q = (document.getElementById('su-suspended-search')?.value || '').toLowerCase();
+  const list = allSuSuspended.filter(u =>
+    (u.nombre || '').toLowerCase().includes(q) ||
+    (u.cedula || '').toLowerCase().includes(q)
+  );
+  renderSuSuspendedUsers(list);
+}
+
+function renderSuSuspendedUsers(list) {
+  const tbody = document.getElementById('su-suspended-tbody');
+  if (!tbody) return;
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No hay usuarios suspendidos.</td></tr>'; return; }
+  tbody.innerHTML = list.map(u => {
+    const fecha = u.suspendido_at ? new Date(u.suspendido_at).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+    const ini = (u.nombre || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    return `<tr>
+      <td style="font-weight:600"><div style="display:flex;align-items:center;gap:8px;">
+        <div class="collab-avatar" style="width:26px;height:26px;font-size:10px;cursor:pointer;" onclick="openSuCollabProfile('${esc(u.cedula).replace(/'/g,"\\'")}')">${ini}</div>
+        <span>${esc(u.nombre || '—')}</span>
+      </div></td>
+      <td>${esc(u.cedula)}</td>
+      <td style="font-size:12px;color:rgba(255,255,255,.5)">${esc(u.lugar || '—')}</td>
+      <td style="font-size:12px;color:rgba(255,255,255,.5)">${fecha}</td>
+      <td style="text-align:center"><button class="btn btn-sm btn-secondary" onclick="unsuspendSuUser('${esc(u.cedula)}','${esc(u.nombre||'')}')">Activar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function _suSetSuspendido(cedula, nombre, suspendido) {
+  const { error } = await sb.from('usuarios')
+    .update({ suspendido, suspendido_at: suspendido ? new Date().toISOString() : null })
+    .eq('cedula', cedula);
+  if (error) { showToast('Error: ' + error.message); return false; }
+  showToast(suspendido ? `${nombre || cedula} suspendido ✓` : `${nombre || cedula} activado ✓`, 'ok');
+  await loadSuUsers();
+  return true;
+}
+
+function suspendSuUserManual() {
+  const inp = document.getElementById('su-suspend-cedula-input');
+  const cedula = (inp.value || '').trim();
+  if (!cedula) { showToast('Ingresa un número de cédula.', 'warn'); return; }
+  const found = allSuUsers.find(u => u.cedula === cedula);
+  if (!found) { showToast('Esa cédula no corresponde a un colaborador activo.', 'warn'); return; }
+  if (found.suspendido) { showToast('Ese colaborador ya está suspendido.', 'warn'); return; }
+  showConfirm(
+    `¿Suspender a ${found.nombre || cedula}?`,
+    'No podrá iniciar sesión mientras esté suspendido, pero su cuenta e historial de pedidos se mantienen intactos.',
+    async () => { const ok = await _suSetSuspendido(cedula, found.nombre, true); if (ok) inp.value = ''; },
+    { icon: '⏸', okLabel: 'Suspender', okColor: '#dc2626' }
+  );
+}
+
+function unsuspendSuUser(cedula, nombre) {
+  showConfirm(
+    '¿Activar de nuevo a este colaborador?',
+    `"${nombre || cedula}" podrá volver a iniciar sesión con normalidad.`,
+    async () => { await _suSetSuspendido(cedula, nombre, false); },
+    { icon: '✅', okLabel: 'Activar', okColor: '#16a34a' }
+  );
 }
 
 async function deleteUser(cedula, nombre, departamento, lugar) {
@@ -4848,7 +4969,7 @@ function renderSuProdDetail() {
     _suProdDetailRowData[idx] = pedidos;
     return `<div style="border-bottom:1px solid rgba(255,255,255,.07);">
       <div onclick="toggleProdDetailOrders(this,${idx})" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.07)'" onmouseout="this.style.background=''">
-        <span style="flex:1;font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;">${esc(n)}${moraUserChip(n,null)}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;">${esc(n)}${moraUserChip(n,null)}${suspendedChip(n)}${suspendedChip(n)}</span>
         <span style="width:44px;text-align:right;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">${v.total} u.</span>
         <span style="width:56px;text-align:right;font-size:11px;color:rgba(255,255,255,.4);white-space:nowrap;">${fecha}</span>
         <span style="width:14px;font-size:11px;color:rgba(255,255,255,.4);text-align:right;">›</span>
@@ -4933,7 +5054,7 @@ function renderSuRankUnidades() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}${suspendedChip(n)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 // ── LISTA Y FICHA COLABORADORES SU ───────────────────────
@@ -5170,7 +5291,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
       <div style="width:52px;height:52px;border-radius:50%;background:#5db8e8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">${ini}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}${suspendedChip(user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:rgba(255,255,255,.45);">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
         <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}${eliminadoLine}</div>
       </div>
@@ -5469,7 +5590,7 @@ function renderSuRankMonto() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.total||0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}${suspendedChip(n)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 function setSuUnidPeriod(p) {

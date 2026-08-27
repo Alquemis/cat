@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Facturación – Martimac</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
+
+  /* ── LOGIN ── */
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#143c5a,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:400px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
+  .login-logo { height:52px;margin-bottom:10px; }
+  .login-title { font-size:20px;font-weight:700;color:#143c5a;margin-bottom:4px; }
+  .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
+  .login-field { margin-bottom:16px;text-align:left; }
+  .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
+  .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
+  .login-field input:focus { border-color:#143c5a; }
+  .login-btn { width:100%;padding:13px;background:#143c5a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s; }
+  .login-btn:hover { background:#111827; }
+  .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
+  .login-error.show { display:block; }
+
+  /* ── TOPBAR ── */
+  .topbar { background:#143c5a;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#9ca3af;margin-left:10px; }
+  .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s; }
+  .topbar-logout:hover { background:#4b5563; }
+
+  /* ── TABS ── */
+  .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;align-items:center;gap:0; }
+  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s;display:flex;align-items:center;gap:8px; }
+  .page-tab:hover { color:#143c5a; }
+  .page-tab.active { color:#143c5a;border-bottom:3px solid #143c5a; }
+  .tab-badge { background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px; }
+  .tab-badge.hidden { display:none; }
+
+  /* ── LAYOUT ── */
+  .container { max-width:1280px;margin:0 auto;padding:32px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px; }
+  .search-field { flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#143c5a; }
+  .filter-select { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#143c5a;cursor:pointer; }
+  .filter-date { padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;background:#fff;color:#143c5a; }
+
+  /* ── TABLE ── */
+  .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  table { width:100%;border-collapse:collapse; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;white-space:nowrap; }
+  .th-sort { cursor:pointer;user-select:none; }
+  .th-sort:hover { background:#f3f4f6;color:#143c5a; }
+  .sort-icon { font-size:10px;color:#d1d5db;margin-left:3px; }
+  .sort-asc .sort-icon::after  { content:'↑';color:#143c5a; }
+  .sort-desc .sort-icon::after { content:'↓';color:#143c5a; }
+  .sort-asc .sort-icon, .sort-desc .sort-icon { display:none; }
+  tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr.hold-divider td { border-top:2px dashed #f97316; }
+  .empty-table { text-align:center;color:#9ca3af;padding:48px 20px; }
+
+  /* ── BOTONES ── */
+  .btn { padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;white-space:nowrap; }
+  .btn-dark { background:#143c5a;color:#fff; }
+  .btn-dark:hover { background:#111827; }
+  .btn-ghost { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
+  .btn-ghost:hover { background:#e5e7eb; }
+  .btn-green { background:#16a34a;color:#fff; }
+  .btn-green:hover { background:#15803d; }
+  .btn-green:disabled { background:#9ca3af;cursor:not-allowed; }
+  .btn-danger-soft { background:#16a34a;color:#fff;border:1.5px solid #fca5a5; }
+  .btn-danger-soft:hover { background:#fecaca; }
+  .btn-danger-soft:disabled { background:#f3f4f6;color:#9ca3af;cursor:not-allowed; }
+  .btn-ghost.viewed { background:#ffedd5;color:#c2410c;border-color:#fdba74; }
+  .btn-ghost.viewed:hover { background:#fed7aa; }
+  .btn-hold { background:#f97316;color:#fff;padding:8px 14px;flex-shrink:0; }
+  .btn-hold:hover { background:#ea580c; }
+
+  /* ── BADGES ── */
+  .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap; }
+  .badge-yellow { background:#fef3c7;color:#92400e; }
+  .badge-green  { background:#d1fae5;color:#065f46; }
+
+  /* ── MODAL DETALLE ── */
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:50px; }
+  .modal-overlay.open { display:flex; }
+  .modal-card { background:#fff;border-radius:20px;padding:32px;width:100%;max-width:860px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2); }
+  .modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px; }
+  .modal-title { font-size:18px;font-weight:700;color:#143c5a; }
+  .modal-fecha { font-size:13px;color:#6b7280;text-align:right;white-space:nowrap;padding-top:2px; }
+  .detail-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;font-size:14px; }
+  .detail-grid div { background:#f9fafb;border-radius:8px;padding:6px 12px; }
+  .detail-grid strong { display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px; }
+
+  /* ── STAT ── */
+  .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px; }
+  .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:22px;font-weight:800;color:#143c5a; }
+  .stat-label { font-size:12px;color:#6b7280;margin-top:2px; }
+
+  /* ── TOAST ── */
+  #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#143c5a;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
+    white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
+  #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  #app-toast.toast-error { background:#dc2626; }
+  #app-toast.toast-ok    { background:#16a34a; }
+  #app-toast.toast-warn  { background:#d97706; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width:900px) {
+    .topbar { padding:12px 16px; }
+    .topbar-brand span { display:none; }
+    .container { padding:20px; }
+    .modal-overlay { padding:16px; }
+    .modal-card { padding:24px 20px; max-width:100% !important; }
+    .detail-grid { grid-template-columns:1fr 1fr; }
+    .table-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
+    table { min-width:520px; }
+  }
+  .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <img src="https://jdifschnvycvxlcbexdl.supabase.co/storage/v1/object/public/imagenes/Martimac_Logo.webp" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
+    <div class="login-title">Facturación</div>
+    <div class="login-sub">Martimac Distribuidora — Área de Facturación</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">Facturación <span>Martimac Distribuidora</span></div>
+  <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
+</div>
+
+<!-- TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" id="tab-pendientes" onclick="showTab('pendientes')">
+    Pendientes <span class="tab-badge hidden" id="badge-pendientes">0</span>
+  </button>
+  <button class="page-tab" id="tab-historial" onclick="showTab('historial')">
+    Historial
+  </button>
+  <button class="page-tab" id="tab-settings" onclick="showTab('settings')">
+    Configuración
+  </button>
+</div>
+
+<!-- ── PENDIENTES ── -->
+<div id="page-pendientes" class="container">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-count">—</div>
+      <div class="stat-label">Pedidos nuevos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total a facturar</div>
+    </div>
+    <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;">
+      <div class="stat-value" style="color:#15803d" id="chip-total-mes"><span class="col-sign">₡</span>0</div>
+      <div class="stat-label" style="color:#15803d">Facturado este mes</div>
+    </div>
+    <div class="stat-card" style="border-color:#86efac;background:#f0fdf4;">
+      <div class="stat-value" style="color:#15803d" id="chip-total-facturado"><span class="col-sign">₡</span>0</div>
+      <div class="stat-label" style="color:#15803d">Total facturado</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-field">
+      <span>🔍</span>
+      <input type="text" id="pend-search" placeholder="Buscar por nombre, departamento…" oninput="filterPendientes()">
+    </div>
+    <select class="filter-select" id="pend-lugar" onchange="filterPendientes()">
+      <option value="">Todos los lugares</option>
+      <option>Tres Ríos</option>
+      <option>Heredia</option>
+      <option>Grecia</option>
+    </select>
+    <button class="btn btn-ghost" onclick="loadPendientes()">↻ Actualizar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="th-sort" onclick="sortFact('pend','fecha')"                id="fpth-fecha">Fecha <span class="sort-icon">↕</span></th>
+        <th>Pedido #</th>
+        <th class="th-sort" onclick="sortFact('pend','usuario_nombre')"       id="fpth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('pend','usuario_departamento')" id="fpth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('pend','usuario_lugar')"        id="fpth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('pend','total')"                id="fpth-total">Total <span class="sort-icon">↕</span></th>
+        <th>Detalle</th>
+        <th>Acción</th>
+      </tr></thead>
+      <tbody id="pend-tbody">
+        <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── HISTORIAL ── -->
+<div id="page-historial" class="container" style="display:none">
+  <div class="stat-grid" style="margin-bottom:20px">
+    <div class="stat-card">
+      <div class="stat-value" id="chip-total-pedidos">—</div>
+      <div class="stat-label">Total pedidos</div>
+    </div>
+    <div class="stat-card" style="border-color:#fca5a5;background:#fef2f2;">
+      <div class="stat-value" style="color:#dc2626" id="chip-total-cancelados">0</div>
+      <div class="stat-label" style="color:#dc2626">Cancelados</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-field">
+      <span>🔍</span>
+      <input type="text" id="hist-search" placeholder="Buscar por nombre, departamento…" oninput="filterHistorial()">
+    </div>
+    <select class="filter-select" id="hist-lugar" onchange="filterHistorial()">
+      <option value="">Todos los lugares</option>
+      <option>Tres Ríos</option>
+      <option>Heredia</option>
+      <option>Grecia</option>
+    </select>
+    <input type="date" class="filter-date" id="hist-desde" onchange="filterHistorial()" title="Desde fecha">
+    <button class="btn btn-ghost" onclick="loadHistorial()">↻ Actualizar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="th-sort" onclick="sortFact('hist','fecha')"                id="fhth-fecha">Fecha pedido <span class="sort-icon">↕</span></th>
+        <th>Pedido #</th>
+        <th class="th-sort" onclick="sortFact('hist','usuario_nombre')"       id="fhth-usuario_nombre">Colaborador <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('hist','usuario_departamento')" id="fhth-usuario_departamento">Departamento <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('hist','usuario_lugar')"        id="fhth-usuario_lugar">Lugar <span class="sort-icon">↕</span></th>
+        <th class="th-sort" onclick="sortFact('hist','total')"                id="fhth-total">Total <span class="sort-icon">↕</span></th>
+        <th>Detalle</th>
+        <th>Acción</th>
+      </tr></thead>
+      <tbody id="hist-tbody">
+        <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="hist-pager"></div>
+</div>
+
+<!-- ── CONFIGURACIÓN ── -->
+<div id="page-settings" class="container" style="display:none">
+  <div style="max-width:480px;background:#fff;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.07)">
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:6px">Acceso a Facturación</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:24px">Cambia el usuario y contraseña de este panel de facturación.</div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Usuario</label>
+      <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Nueva contraseña</label>
+      <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Confirmar nueva contraseña</label>
+      <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
+    <button class="btn btn-dark" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="detail-modal" onclick="closeDetailModal()">
+  <div class="modal-card" onclick="event.stopPropagation()" id="detail-card"></div>
+</div>
+
+<!-- TOAST -->
+<div id="app-toast"></div>
+
+<!-- CONFIRMAR CANCELACIÓN -->
+<div class="modal-overlay" id="cancel-confirm-modal">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:380px;padding:28px 28px 24px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:8px;">¿Cancelar este pedido?</div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:24px;" id="cancel-confirm-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" style="flex:1;padding:12px;" onclick="closeCancelConfirm()">No, volver</button>
+      <button class="btn" id="cancel-confirm-btn" style="flex:1;padding:12px;background:#dc2626;color:#fff;" onclick="confirmCancelar()">Sí, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── TOAST ────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('app-toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+const SUPABASE_URL = 'https://jdifschnvycvxlcbexdl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkaWZzY2hudnljdnhsY2JleGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4Njk0ODcsImV4cCI6MjEwMzQ0NTQ4N30.sUfYan-cWLmFdSFh8mciFHlVin8Z7Pib8m3zcZIepJw';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SESSION_KEY  = 'fact_session';
+const OWNER_CEDULA = '116000127'; // Dueño — exento de pago, no suma a ventas
+
+let allPendientes = [];
+let allHistorial  = [];
+let _prodMap      = {};  // codigo → nombre actual del catálogo
+
+/* ── Detección de duplicados ── */
+const _DUP_COLORS = [
+  '#ffe0b255', // naranja claro
+  '#c8e6c955', // verde claro
+  '#bbdefb55', // azul claro
+  '#f8bbd055', // rosa claro
+  '#e1bee755', // morado claro
+  '#fff9c455', // amarillo claro
+  '#b2ebf255', // cian claro
+  '#ffccbc55', // salmón claro
+  '#dcedc855', // lima claro
+  '#d7ccc855', // arena claro
+];
+let _factDupMap = {}; // orderId → color
+
+function _factDupFingerprint(order) {
+  return (order.lineas_pedido || [])
+    .map(l => `${(l.producto_codigo || l.producto_nombre || '').trim()}:${l.cantidad}`)
+    .sort().join('|');
+}
+
+function _rebuildDupMap() {
+  const cutoff = Date.now() - 6 * 24 * 60 * 60 * 1000;
+  const all = [...allPendientes, ...allHistorial].filter(o =>
+    o.estado !== 'cancelado' && new Date(o.fecha).getTime() >= cutoff
+  );
+  const groups = {};
+  for (const o of all) {
+    const fp = _factDupFingerprint(o);
+    if (!fp) continue;
+    const user = (o.usuario_cedula || o.usuario_email || o.usuario_nombre || '').trim();
+    const key  = user + '||' + fp;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o.id);
+  }
+  _factDupMap = {};
+  let ci = 0;
+  for (const ids of Object.values(groups)) {
+    if (ids.length < 2) continue;
+    const color = _DUP_COLORS[ci % _DUP_COLORS.length];
+    ci++;
+    for (const id of ids) _factDupMap[id] = color;
+  }
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err  = document.getElementById('login-error');
+  err.classList.remove('show');
+  if (!user || !pass) { showErr('Ingresa usuario y contraseña.'); return; }
+
+  const { data, error } = await sb.from('app_config')
+    .select('key, value').in('key', ['fact_user', 'fact_pass']);
+
+  if (error) { showErr('Error de conexión. Intenta de nuevo.'); return; }
+
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  const okUser = (cfg.fact_user || 'admin') === user;
+  const okPass = (cfg.fact_pass || 'admin') === pass;
+
+  if (!okUser || !okPass) { showErr('Usuario o contraseña incorrectos.'); return; }
+
+  // Obtener o generar token de sesión
+  let token;
+  const { data: td } = await sb.from('app_config').select('value').eq('key', 'fact_session_token').maybeSingle();
+  if (td?.value) {
+    token = td.value;
+  } else {
+    token = Date.now().toString();
+    await sb.from('app_config').upsert([{ key: 'fact_session_token', value: token }], { onConflict: 'key' });
+  }
+  localStorage.setItem(SESSION_KEY, token);
+  document.getElementById('login-overlay').classList.add('hidden');
+  init();
+}
+
+function doLogout() {
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.classList.add('show');
+}
+
+async function checkSession() {
+  const saved = localStorage.getItem(SESSION_KEY);
+  if (saved && saved !== '1') {
+    try {
+      const { data } = await sb.from('app_config').select('value').eq('key', 'fact_session_token').maybeSingle();
+      if (data?.value === saved) {
+        document.getElementById('login-overlay').classList.add('hidden');
+        init();
+        return;
+      }
+      localStorage.removeItem(SESSION_KEY);
+    } catch(e) {
+      // Sin red → mantener sesión
+      document.getElementById('login-overlay').classList.add('hidden');
+      init();
+      return;
+    }
+  } else if (saved === '1') {
+    // Sesión antigua → forzar re-login
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  const [,, resProd] = await Promise.all([
+    loadPendientes(),
+    loadHistorial(),
+    sb.from('productos').select('codigo, nombre')
+  ]);
+  _prodMap = {};
+  (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
+  startRealtimeOrders();
+}
+
+// ── TIEMPO REAL — recarga automática al cambiar pedidos, en silencio ──
+// No borra la tabla ni muestra "Cargando…": se refresca de fondo para que
+// no haya parpadeo visible mientras se está viendo la lista.
+let _rtOrdersChannel = null;
+let _rtReloadT = null;
+function _rtScheduleReload() {
+  clearTimeout(_rtReloadT);
+  _rtReloadT = setTimeout(() => { loadPendientes(true); loadHistorial(true); }, 800); // debounce
+}
+function startRealtimeOrders() {
+  if (_rtOrdersChannel || !sb.channel) return;
+  _rtOrdersChannel = sb.channel('rt-pedidos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, _rtScheduleReload)
+    .subscribe();
+}
+// Al volver a la pestaña, refrescar en silencio por si hubo cambios mientras estaba oculta
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _rtOrdersChannel) _rtScheduleReload();
+});
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(tab) {
+  ['pendientes','historial','settings'].forEach(t => {
+    document.getElementById('page-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'historial' && allHistorial.length === 0) loadHistorial();
+  if (tab === 'settings') loadConfig();
+}
+
+// ── PENDIENTES ────────────────────────────────────────────────
+async function loadPendientes(silent) {
+  if (!silent) {
+    document.getElementById('pend-tbody').innerHTML =
+      '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+  }
+
+  const { data, error } = await sb.from('pedidos')
+    .select('*, lineas_pedido(*)')
+    .eq('estado', 'pendiente')
+    .order('fecha', { ascending: true });
+
+  if (error) { console.error(error); return; }
+  allPendientes = data || [];
+  updatePendienteStats();
+  document.getElementById('chip-total-pedidos').textContent = allPendientes.length + allHistorial.length;
+  filterPendientes();
+}
+
+function updatePendienteStats() { recalcStats(); }
+
+const _factSort = { pend: { col:'fecha', dir:'asc' }, hist: { col:'fecha', dir:'desc' } };
+let _histPage = 1;
+const HIST_PER_PAGE = 20;
+let _histFullList = [];
+
+function sortFact(tab, col) {
+  const s = _factSort[tab];
+  if (s.col===col) { s.dir = s.dir==='asc'?'desc':'asc'; }
+  else { s.col=col; s.dir=col==='total'?'desc':'asc'; }
+  const prefix = tab==='pend'?'fpth-':'fhth-';
+  ['fecha','usuario_nombre','usuario_departamento','usuario_lugar','total'].forEach(c=>{
+    const th=document.getElementById(prefix+c); if(!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if(c===s.col) th.classList.add(s.dir==='asc'?'sort-asc':'sort-desc');
+  });
+  if (tab==='pend') filterPendientes(); else filterHistorial();
+}
+
+function _sortList(list, col, dir) {
+  return [...list].sort((a,b)=>{
+    let va=a[col]??'', vb=b[col]??'';
+    if(col==='total'){va=Number(va);vb=Number(vb);}
+    else{va=String(va).toLowerCase();vb=String(vb).toLowerCase();}
+    if(va<vb) return dir==='asc'?-1:1;
+    if(va>vb) return dir==='asc'?1:-1;
+    return 0;
+  });
+}
+
+// Pedidos cuyo detalle ya se miró (se pinta el botón "Ver detalle" de naranja
+// claro). Es de UI únicamente, se resetea al pasar el pedido a historial.
+// El estado de "hold" (o.en_hold) sí se guarda en la DB para sobrevivir un
+// refresh — ver toggleHold().
+let _factViewedPend = new Set();
+
+function filterPendientes() {
+  const q     = document.getElementById('pend-search').value.toLowerCase();
+  const lugar = document.getElementById('pend-lugar').value;
+  const list  = allPendientes.filter(o => {
+    const matchQ = !q ||
+      (o.usuario_nombre     ||'').toLowerCase().includes(q) ||
+      (o.usuario_departamento||'').toLowerCase().includes(q) ||
+      (o.usuario_email      ||'').toLowerCase().includes(q);
+    const matchL = !lugar || (o.usuario_lugar||'') === lugar;
+    return matchQ && matchL;
+  });
+  const sorted = _sortList(list, _factSort.pend.col, _factSort.pend.dir);
+  // Los pedidos en hold van siempre al final, sin importar el orden/filtro activo
+  // (sort estable: preserva el orden relativo dentro de cada grupo).
+  sorted.sort((a, b) => (a.en_hold ? 1 : 0) - (b.en_hold ? 1 : 0));
+  renderPendientes(sorted);
+}
+
+async function toggleHold(id) {
+  const o = allPendientes.find(x => x.id === id);
+  if (!o) return;
+  const nuevo = !o.en_hold;
+  o.en_hold = nuevo; // optimista
+  filterPendientes();
+  const { error } = await sb.from('pedidos').update({ en_hold: nuevo }).eq('id', id);
+  if (error) {
+    o.en_hold = !nuevo; // revertir si falla
+    filterPendientes();
+    showToast('Error al guardar hold: ' + error.message);
+  }
+}
+
+function renderPendientes(list) {
+  _rebuildDupMap();
+  const tbody = document.getElementById('pend-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos pendientes</td></tr>';
+    return;
+  }
+  let _sawHold = false;
+  tbody.innerHTML = list.map((o, i) => {
+    const fecha    = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const num      = o.id.slice(0,8).toUpperCase();
+    const held     = !!o.en_hold;
+    // Línea divisoria justo antes del primer pedido en hold (la lista ya
+    // viene con los "hold" empujados al final, sin importar el orden/filtro).
+    const isFirstHold = held && !_sawHold;
+    if (held) _sawHold = true;
+    const dupColor = _factDupMap[o.id] || '';
+    const rowStyle = dupColor ? `background:${dupColor};` : '';
+    const dupChip  = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+    const viewedCls = _factViewedPend.has(o.id) ? ' viewed' : '';
+    return '<tr class="' + (isFirstHold ? 'hold-divider' : '') + '" style="' + rowStyle + '">' +
+      '<td>' + fecha + dupChip + '</td>' +
+      '<td><code style="font-size:12px">' + esc(num) + '</code></td>' +
+      '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
+      '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
+      '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
+      '<td style="font-weight:700"><span class="col-sign">₡</span>' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td><button class="btn btn-ghost' + viewedCls + '" onclick="openDetail(\'' + o.id + '\',\'pend\')">Ver detalle</button></td>' +
+      '<td style="display:flex;gap:20px;align-items:center">' +
+        '<button class="btn btn-green" id="listo-' + o.id + '" onclick="marcarListo(\'' + o.id + '\')">✓ Listo</button>' +
+        '<button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'pend\')" style="width:36px;padding:8px 0;text-align:center;font-size:15px;flex-shrink:0;" title="Cancelar pedido">✕</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ── CANCELAR PEDIDO ───────────────────────────────────────────
+let _cancelPendingId   = null;
+let _cancelPendingFrom = null;
+
+function cancelarPedido(id, from) {
+  _cancelPendingId   = id;
+  _cancelPendingFrom = from;
+  const msg = document.getElementById('cancel-confirm-msg');
+  if (from === 'pend') {
+    msg.innerHTML = 'Esta acción moverá el pedido al historial como <strong>Cancelado</strong> y no se tomará en cuenta en el total de facturación.';
+  } else {
+    msg.innerHTML = 'El pedido quedará marcado como <strong>Cancelado</strong> y no se tomará en cuenta en el total de facturación.';
+  }
+  document.getElementById('cancel-confirm-modal').classList.add('open');
+}
+
+function closeCancelConfirm() {
+  document.getElementById('cancel-confirm-modal').classList.remove('open');
+  _cancelPendingId   = null;
+  _cancelPendingFrom = null;
+}
+
+async function confirmCancelar() {
+  const id   = _cancelPendingId;
+  const from = _cancelPendingFrom;
+  if (!id) return;
+
+  const confirmBtn = document.getElementById('cancel-confirm-btn');
+  confirmBtn.disabled = true; confirmBtn.textContent = 'Cancelando…';
+
+  const { error } = await sb.from('pedidos').update({ estado: 'cancelado' }).eq('id', id);
+
+  confirmBtn.disabled = false; confirmBtn.textContent = 'Sí, cancelar';
+  closeCancelConfirm();
+
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  if (from === 'pend') {
+    const moved = allPendientes.find(o => o.id === id);
+    allPendientes = allPendientes.filter(o => o.id !== id);
+    _factViewedPend.delete(id);
+    if (moved) { moved.estado = 'cancelado'; allHistorial = [moved, ...allHistorial]; }
+    filterPendientes();
+  } else {
+    const o = allHistorial.find(x => x.id === id);
+    if (o) o.estado = 'cancelado';
+  }
+
+  // Restaurar stock de productos con límite al cancelar
+  const { data: lineasCanceladas } = await sb.from('lineas_pedido')
+    .select('producto_codigo, cantidad').eq('pedido_id', id);
+  if (lineasCanceladas && lineasCanceladas.length > 0) {
+    const codigos = lineasCanceladas.map(l => l.producto_codigo);
+    const { data: prodsConStock } = await sb.from('productos')
+      .select('codigo, stock').in('codigo', codigos).not('stock', 'is', null);
+    for (const prod of (prodsConStock || [])) {
+      const linea = lineasCanceladas.find(l => l.producto_codigo === prod.codigo);
+      if (!linea) continue;
+      const newStock = (prod.stock ?? 0) + linea.cantidad;
+      await sb.from('productos').update({ stock: newStock, activo: true }).eq('codigo', prod.codigo);
+    }
+  }
+
+  recalcStats();
+  filterHistorial();
+}
+
+async function marcarListo(id) {
+  const btn = document.getElementById('listo-' + id);
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  const { error } = await sb.from('pedidos')
+    .update({ estado: 'facturado', facturado_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) {
+    showToast('Error: ' + error.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Listo'; }
+    return;
+  }
+
+  const moved = allPendientes.find(o => o.id === id);
+  allPendientes = allPendientes.filter(o => o.id !== id);
+  _factViewedPend.delete(id);
+  if (moved) {
+    // Dueño exento: auto-transición a pagado+exento sin esperar pago
+    if (moved.usuario_email === OWNER_CEDULA) {
+      const now_iso = new Date().toISOString();
+      await sb.from('pedidos').update({ estado: 'pagado', exento_pago: true, pagado_at: now_iso }).eq('id', id);
+      moved.estado = 'pagado';
+      moved.exento_pago = true;
+      moved.pagado_at = now_iso;
+    } else {
+      moved.estado = 'facturado';
+    }
+    allHistorial = [moved, ...allHistorial];
+    filterHistorial();
+  }
+  recalcStats();
+  filterPendientes();
+}
+
+function recalcStats() {
+  const count    = allPendientes.length;
+  const totalPend = allPendientes.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('stat-count').textContent = count;
+  document.getElementById('stat-total').innerHTML = '<span class="col-sign">₡</span>' + totalPend.toLocaleString('es-CR');
+  const badge = document.getElementById('badge-pendientes');
+  badge.textContent = count; badge.classList.toggle('hidden', count === 0);
+
+  const facturados = allHistorial.filter(o => o.estado === 'facturado' && !o.exento_pago);
+  const pagados    = allHistorial.filter(o => o.estado === 'pagado'    && !o.exento_pago);
+  const cancelados  = allHistorial.filter(o => o.estado === 'cancelado');
+  // Gran total: solo lo ya facturado o pagado (excluye pendientes / "total a facturar" / exentos)
+  const granTotal  = facturados.reduce((s, o) => s + (o.total || 0), 0)
+                   + pagados.reduce((s, o) => s + (o.total || 0), 0);
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth();
+  const inMes = o => { const d = new Date(o.fecha); return d.getFullYear() === curY && d.getMonth() === curM; };
+  // Facturado este mes: solo facturados + pagados del mes actual (excluye pendientes / exentos)
+  const granTotalMes = facturados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0)
+                     + pagados.filter(inMes).reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('chip-total-facturado').innerHTML = '<span class="col-sign">₡</span>' + granTotal.toLocaleString('es-CR');
+  document.getElementById('chip-total-mes').innerHTML      = '<span class="col-sign">₡</span>' + granTotalMes.toLocaleString('es-CR');
+  document.getElementById('chip-total-cancelados').textContent = cancelados.length;
+  document.getElementById('chip-total-pedidos').textContent   = allPendientes.length + allHistorial.length;
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────
+async function loadHistorial(silent) {
+  if (!silent) {
+    document.getElementById('hist-tbody').innerHTML =
+      '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+  }
+
+  const { data, error } = await sb.from('pedidos')
+    .select('*, lineas_pedido(*)')
+    .in('estado', ['facturado', 'cancelado', 'pagado'])
+    .order('fecha', { ascending: false });
+
+  if (error) { console.error(error); return; }
+  allHistorial = data || [];
+  recalcStats();
+  filterHistorial();
+}
+
+function filterHistorial() {
+  const q     = document.getElementById('hist-search').value.toLowerCase();
+  const lugar = document.getElementById('hist-lugar').value;
+  const desde = document.getElementById('hist-desde').value;
+
+  const list = allHistorial.filter(o => {
+    const matchQ = !q ||
+      (o.usuario_nombre     ||'').toLowerCase().includes(q) ||
+      (o.usuario_departamento||'').toLowerCase().includes(q) ||
+      (o.usuario_email      ||'').toLowerCase().includes(q);
+    const matchL = !lugar || (o.usuario_lugar||'') === lugar;
+    const fecha  = (o.fecha||'').slice(0,10);
+    const matchD = !desde || fecha >= desde;
+    return matchQ && matchL && matchD;
+  });
+  _histFullList = _sortList(list, _factSort.hist.col, _factSort.hist.dir);
+  _histPage = 1;
+  renderHistorial(_histFullList.slice(0, HIST_PER_PAGE));
+  renderHistPager();
+}
+
+function renderHistPager() {
+  const total = _histFullList.length;
+  const pages = Math.ceil(total / HIST_PER_PAGE);
+  const el = document.getElementById('hist-pager');
+  if (!el) return;
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '<div style="display:flex;align-items:center;gap:6px;padding:10px 0;justify-content:center;flex-wrap:wrap;font-size:13px;">';
+  html += `<button class="btn btn-secondary" style="padding:4px 10px" onclick="goPageHist(${_histPage-1})" ${_histPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="btn ${i===_histPage?'btn-primary':'btn-secondary'}" style="padding:4px 10px;min-width:34px" onclick="goPageHist(${i})">${i}</button>`;
+  }
+  html += `<button class="btn btn-secondary" style="padding:4px 10px" onclick="goPageHist(${_histPage+1})" ${_histPage===pages?'disabled':''}>›</button>`;
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function goPageHist(page) {
+  const pages = Math.ceil(_histFullList.length / HIST_PER_PAGE);
+  if (page < 1 || page > pages) return;
+  _histPage = page;
+  const from = (_histPage - 1) * HIST_PER_PAGE;
+  renderHistorial(_histFullList.slice(from, from + HIST_PER_PAGE));
+  renderHistPager();
+}
+
+function renderHistorial(list) {
+  _rebuildDupMap();
+  const tbody = document.getElementById('hist-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin pedidos en historial</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(o => {
+    const cancelado = o.estado === 'cancelado';
+    const pagado    = o.estado === 'pagado';
+    const exento    = !!o.exento_pago;
+    const fecha     = new Date(o.fecha).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const num       = o.id.slice(0,8).toUpperCase();
+    const dupColor  = !cancelado ? (_factDupMap[o.id] || '') : '';
+    const rowStyle  = cancelado ? 'background:#fef2f2;' : exento ? 'background:#eff6ff;' : pagado ? 'background:#f0fdf4;' : (dupColor ? `background:${dupColor};` : '');
+    const dupChip   = dupColor ? '<br><span style="display:inline-block;margin-top:4px;background:rgba(0,0,0,0.08);color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;">⚠️ POSIBLE DUPLICADO</span>' : '';
+    const badgeIgn  = cancelado ? ' <span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">CANCELADO</span>'
+                    : exento    ? ' <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">EXENTO</span>'
+                    : pagado    ? ' <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px">PAGADO</span>'
+                    : '';
+    const accionBtn = (cancelado || pagado)
+      ? '<td></td>'
+      : '<td><button class="btn btn-danger-soft" id="cancelar-' + o.id + '" onclick="cancelarPedido(\'' + o.id + '\',\'hist\')">Cancelar</button></td>';
+    return '<tr style="' + rowStyle + '">' +
+      '<td>' + fecha + dupChip + '</td>' +
+      '<td><code style="font-size:12px">' + esc(num) + '</code>' + badgeIgn + '</td>' +
+      '<td style="font-weight:600">' + esc(o.usuario_nombre||'—') + '</td>' +
+      '<td>' + esc(o.usuario_departamento||'—') + '</td>' +
+      '<td>' + esc(o.usuario_lugar||'—') + '</td>' +
+      '<td style="font-weight:700;' + (cancelado ? 'color:#dc2626;text-decoration:line-through' : '') + '"><span class="col-sign">₡</span>' + (o.total||0).toLocaleString('es-CR') + '</td>' +
+      '<td><button class="btn btn-ghost" onclick="openDetail(\'' + o.id + '\',\'hist\')">Ver detalle</button></td>' +
+      accionBtn +
+    '</tr>';
+  }).join('');
+}
+
+// ── DETALLE ───────────────────────────────────────────────────
+let _detailOpenId     = null;
+let _detailOpenSource = null;
+
+function openDetail(id, source) {
+  _detailOpenId     = id;
+  _detailOpenSource = source;
+  const list = source === 'pend' ? allPendientes : allHistorial;
+  const o = list.find(x => x.id === id);
+  if (!o) return;
+
+  const fecha  = new Date(o.fecha).toLocaleString('es-CR');
+  const lineas = o.lineas_pedido || [];
+  const totalAmt = o.total || 0;
+  const totalDescuento = lineas.reduce((s, l) => s + ((l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0)), 0);
+  const total  = totalAmt.toLocaleString('es-CR');
+  const subtotalSinIva = Math.round(totalAmt / 1.13).toLocaleString('es-CR');
+  const iva    = (totalAmt - Math.round(totalAmt / 1.13)).toLocaleString('es-CR');
+
+  document.getElementById('detail-card').innerHTML =
+    '<div class="modal-header">' +
+      '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<div class="modal-title" style="margin-right:4px;">Pedido&nbsp;' + o.id.slice(0,8).toUpperCase() + '</div>' +
+        '<button class="btn btn-sm btn-secondary" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-hd-' + o.id + '" style="padding:5px 14px;font-size:12px;">📋 Copiar pedido</button>' +
+        '<div style="font-size:16px;font-weight:800;color:#143c5a;white-space:nowrap;margin-left:auto;"><span class="col-sign">₡</span>' + total + '</div>' +
+      '</div>' +
+      '<div class="modal-fecha">' + fecha + '</div>' +
+    '</div>' +
+    '<div class="detail-grid" style="grid-template-columns:3fr 2fr;">' +
+      '<div><strong>Colaborador</strong>' + esc((o.usuario_nombre||'—').toUpperCase()) + '</div>' +
+      '<div><strong>Cédula</strong>' + esc(o.usuario_email||'—') + '</div>' +
+      '<div><strong>Departamento</strong>' + esc(o.usuario_departamento||'—') + '</div>' +
+      '<div><strong>Lugar</strong>' + esc(o.usuario_lugar||'—') + '</div>' +
+    '</div>' +
+    (o.observaciones ? '<div style="background:#fffbeb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px;border:1px solid #fde68a"><strong>Observaciones:</strong> ' + esc(o.observaciones) + '</div>' : '') +
+    '<div class="table-wrap" style="margin-bottom:16px">' +
+      '<table>' +
+        '<thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Precio</th></tr></thead>' +
+        '<tbody>' +
+          lineas.map(l => {
+            const descAmt = (l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0);
+            return '<tr>' +
+              '<td><code style="font-size:12px">' + esc(l.producto_codigo||'') + '</code></td>' +
+              '<td style="text-align:center;font-weight:600">' + (l.cantidad||0) + '</td>' +
+              '<td>' + esc(_pNombre(l.producto_codigo, l.producto_nombre)) + (descAmt > 0 ? ' <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-' + (l.descuento_porcentaje||0) + '%</span>' : '') + '</td>' +
+              '<td><span class="col-sign">₡</span>' + (l.precio_unitario||0).toLocaleString('es-CR') + '</td>' +
+              '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.subtotal||0).toLocaleString('es-CR') + '</td>' +
+            '</tr>';
+          }).join('') +
+        '</tbody>' +
+      '</table>' +
+    '</div>' +
+    '<div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px">' +
+      (totalDescuento > 0
+        ? '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio</span><span><span class="col-sign">₡</span>' + (totalAmt + totalDescuento).toLocaleString('es-CR') + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>' + totalDescuento.toLocaleString('es-CR') + '</span></div>' +
+          '<div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>'
+        : '') +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>' + subtotalSinIva + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>' + iva + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>' + total + '</span></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;margin-top:16px">' +
+      '<button class="btn btn-ghost" style="flex:1;padding:13px" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-' + o.id + '">📋 Copiar pedido</button>' +
+      '<button class="btn btn-dark" style="flex:1;padding:13px" onclick="closeDetailModal()">Cerrar</button>' +
+      (source === 'pend' ? '<button class="btn btn-hold" style="padding:13px 18px;" onclick="toggleHold(\'' + o.id + '\');closeDetailModal();">Hold</button>' : '') +
+    '</div>';
+
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+// Marca el pedido como "ya visto" (solo aplica en pendientes — se pinta el
+// botón "Ver detalle" de naranja claro) y cierra el modal. Al pasar el
+// pedido a historial este estado no se conserva (es otra lista/render).
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  if (_detailOpenSource === 'pend' && _detailOpenId) {
+    _factViewedPend.add(_detailOpenId);
+    filterPendientes();
+  }
+  _detailOpenId     = null;
+  _detailOpenSource = null;
+}
+
+// ── COPIAR PEDIDO ─────────────────────────────────────────────
+function copiarPedido(id) {
+  const allOrders = [...allPendientes, ...allHistorial];
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+
+  const lineas = o.lineas_pedido || [];
+
+  // Texto plano: tabs entre columnas, salto de línea entre filas (igual que Excel)
+  const textoPlano = lineas.map(l =>
+    (l.producto_codigo || '') + '\t' + (l.cantidad || 0)
+  ).join('\r\n');
+
+  // HTML tabla: formato que apps empresariales leen al pegar desde Excel
+  const filas = lineas.map(l =>
+    '<tr><td>' + (l.producto_codigo || '') + '</td><td>' + (l.cantidad || 0) + '</td></tr>'
+  ).join('');
+  const tablaHtml = '<html><body><table>' + filas + '</table></body></html>';
+
+  function confirmarCopia() {
+    const btn = document.getElementById('copy-btn-' + id);
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ ¡Copiado!';
+      btn.disabled = true;
+      setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2000);
+    }
+  }
+
+  // Intentar con ClipboardItem (multi-formato, como Excel)
+  if (navigator.clipboard && window.ClipboardItem) {
+    const item = new ClipboardItem({
+      'text/plain': new Blob([textoPlano], { type: 'text/plain' }),
+      'text/html':  new Blob([tablaHtml],  { type: 'text/html' }),
+    });
+    navigator.clipboard.write([item]).then(confirmarCopia).catch(() => {
+      // Fallback a writeText si falla el multi-formato
+      navigator.clipboard.writeText(textoPlano).then(confirmarCopia);
+    });
+  } else {
+    // Fallback execCommand para browsers sin clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = textoPlano;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    confirmarCopia();
+  }
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+async function loadConfig() {
+  const { data } = await sb.from('app_config').select('key, value').in('key',['fact_user','fact_pass']);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('cfg-user').value  = cfg.fact_user || 'admin';
+  document.getElementById('cfg-pass').value  = '';
+  document.getElementById('cfg-pass2').value = '';
+  document.getElementById('cfg-msg').style.display = 'none';
+}
+
+async function saveConfig() {
+  const user  = document.getElementById('cfg-user').value.trim();
+  const pass  = document.getElementById('cfg-pass').value.trim();
+  const pass2 = document.getElementById('cfg-pass2').value.trim();
+  const btn   = document.getElementById('cfg-btn');
+  const msg   = document.getElementById('cfg-msg');
+
+  const showMsg = (text, ok) => {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = ok ? '1px solid #86efac' : '1px solid #fca5a5';
+    msg.style.color  = ok ? '#15803d' : '#dc2626';
+  };
+
+  if (!user) { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
+  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const updates = [{ key: 'fact_user', value: user }];
+  if (pass) {
+    const newToken = Date.now().toString();
+    updates.push({ key: 'fact_pass', value: pass });
+    updates.push({ key: 'fact_session_token', value: newToken });
+  }
+
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (error) { showMsg('Error al guardar: ' + error.message, false); }
+  else {
+    // Actualizar token local para no cerrar el dispositivo actual
+    if (pass) {
+      const { data: td } = await sb.from('app_config').select('value').eq('key', 'fact_session_token').maybeSingle();
+      if (td?.value) localStorage.setItem(SESSION_KEY, td.value);
+    }
+    showMsg('✅ Credenciales actualizadas. Otros dispositivos deberán iniciar sesión de nuevo.', true);
+    document.getElementById('cfg-pass').value  = '';
+    document.getElementById('cfg-pass2').value = '';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+function _pNombre(codigo, fallback) { return (codigo && _prodMap[codigo]) || fallback || codigo || ''; }
+
+// ── TOUCH GESTURES ────────────────────────────────────────────
+(function() {
+  var sx = 0, sy = 0, tgt = null;
+  var TABS_ORDER = ['pendientes','historial','settings'];
+
+  function currentTab() {
+    for (var i = 0; i < TABS_ORDER.length; i++) {
+      var el = document.getElementById('page-' + TABS_ORDER[i]);
+      if (el && el.style.display !== 'none') return TABS_ORDER[i];
+    }
+    return 'pendientes';
+  }
+  function isScrollableX(el) {
+    while (el && el !== document.body) {
+      var s = window.getComputedStyle(el);
+      if (s.overflowX === 'auto' || s.overflowX === 'scroll') return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+
+    // Swipe abajo sobre el fondo del modal → cerrar
+    if (ady > 70 && dy > 0 && ady > adx) {
+      var m = document.getElementById('detail-modal');
+      var card = document.getElementById('detail-card');
+      if (m && m.classList.contains('open') && card && !card.contains(tgt))
+        closeDetailModal();
+      return;
+    }
+
+    // Swipe horizontal → cambiar pestaña
+    if (adx < 60 || ady > adx * 0.65 || isScrollableX(tgt)) return;
+    var idx = TABS_ORDER.indexOf(currentTab());
+    if (dx < 0 && idx < TABS_ORDER.length - 1) showTab(TABS_ORDER[idx + 1]);
+    else if (dx > 0 && idx > 0) showTab(TABS_ORDER[idx - 1]);
+  }, { passive: true });
+})();
+
+// ── VIEWPORT ZOOM — pantallas menores a 580px ─────────────────
+(function() {
+  var DESIGN_W = 580;
+  function applyZoom() {
+    var vw = window.innerWidth;
+    if (vw < DESIGN_W) {
+      document.documentElement.style.zoom = (vw / DESIGN_W).toFixed(4);
+    } else {
+      document.documentElement.style.zoom = '';
+    }
+  }
+  window.addEventListener('resize', applyZoom);
+  applyZoom();
+})();
+
+// ── ARRANQUE ──────────────────────────────────────────────────
+// ── TECLADO MÓVIL — subir login ──────────────────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    const overlay = document.getElementById('login-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const kbHeight = window.innerHeight - window.visualViewport.height;
+    if (kbHeight > 100) {
+      overlay.style.alignItems  = 'flex-start';
+      overlay.style.paddingTop  = Math.max(12, (window.visualViewport.height - 480) / 2) + 'px';
+    } else {
+      overlay.style.alignItems  = '';
+      overlay.style.paddingTop  = '';
+    }
+  });
+}
+
+checkSession();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#143c5a">
+<title>Lista de deseos – Martimac</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f0f0f0; color: #1a1a1a; min-height: 100vh;
+  }
+  .fl-header {
+    background: #143c5a; color: #fff; padding: 16px 16px 0;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .fl-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; }
+  .fl-header h1 { font-size: 18px; font-weight: 700; }
+  .fl-header .fl-sub { font-size: 16px; color: rgba(255,255,255,.75); margin-top: 3px; }
+  .fl-header-cart-btn {
+    position: relative; background: rgba(255,255,255,.15); color: #fff;
+    border: 1.5px solid rgba(255,255,255,.35); border-radius: 999px;
+    padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 7px; white-space: nowrap; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .fl-header-cart-btn:hover { background: rgba(255,255,255,.28); }
+  .fl-help-btn {
+    background: rgba(255,255,255,.15); color: #fff;
+    border: 1.5px solid rgba(255,255,255,.35); border-radius: 999px;
+    padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0; transition: background .2s;
+  }
+  .fl-help-btn:hover { background: rgba(255,255,255,.28); }
+  .fl-help-steps { text-align: left; }
+  .fl-help-step { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+  .fl-help-step:last-child { margin-bottom: 0; }
+  .fl-help-step-num {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: #143c5a; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+  }
+  .fl-help-step-txt { font-size: 14px; color: #374151; line-height: 1.5; padding-top: 3px; }
+  .fl-help-render-add {
+    display: inline-flex; vertical-align: middle; margin: 0 1px;
+    background: #e5e7eb; border: 1.3px solid #e5e7eb; border-radius: 7px;
+    padding: 3px 9px; font-size: 11px; font-weight: 600; color: #374151;
+  }
+  .fl-help-render-cart-wrap {
+    display: inline-flex; vertical-align: middle; margin: 0 1px;
+    background: #143c5a; border-radius: 999px; padding: 3px;
+  }
+  .fl-help-render-cart {
+    position: relative; display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.15); color: #fff;
+    border: 1.3px solid rgba(255,255,255,.35); border-radius: 999px;
+    padding: 4px 9px; font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .fl-help-render-badge {
+    position: absolute; top: -5px; right: -5px;
+    background: #dc2626; border-radius: 999px; width: 12px; height: 12px;
+  }
+
+  /* Categorías — se extiende de lado a lado (compensa el padding del header) y
+     los botones se encogen para caber todos sin scroll en ventanas angostas */
+  .fl-nav-tabs {
+    display: flex; gap: 0; background: #fff; border-bottom: 1px solid #e5e7eb;
+    margin: 0 -16px; padding: 0 4px;
+  }
+  .fl-nav-tab {
+    flex: 1 1 auto; min-width: 0; background: none; border: none; padding: 12px 2px;
+    font-size: 12px; font-weight: 700; color: #6b7280; cursor: pointer;
+    border-bottom: 2.5px solid transparent; white-space: nowrap; letter-spacing: 0;
+    text-align: center; overflow: hidden; text-overflow: clip;
+  }
+  .fl-nav-tab:hover { color: #143c5a; }
+  .fl-nav-tab.active { color: #143c5a; border-bottom-color: #143c5a; }
+
+  .fl-search-wrap { padding: 12px 16px 0; }
+  .fl-search {
+    width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #e5e7eb;
+    font-size: 14px; outline: none; background: #fff;
+  }
+  .fl-search:focus { border-color: #143c5a; }
+  .fl-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px; padding: 14px 16px 40px;
+  }
+  .fl-empty { text-align: center; padding: 60px 20px; color: #9ca3af; font-size: 14px; }
+
+  .product-card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+    overflow: hidden; transition: all .2s; display: flex; flex-direction: column;
+    container-type: inline-size; container-name: product-card;
+  }
+  .product-card.desc-card { border: 2px solid #dc2626; }
+  .product-img-wrap {
+    position: relative; aspect-ratio: 1/1; background: #fff;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .product-img { max-width: 96%; max-height: 96%; object-fit: contain; cursor: zoom-in; }
+
+  /* Lightbox — igual que el catálogo original */
+  #img-lightbox {
+    position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0);
+    display: none; align-items: center; justify-content: center; padding: 6px;
+    cursor: zoom-out; transition: background .25s;
+  }
+  #img-lightbox.open { display: flex; background: rgba(0,0,0,.75); }
+  #img-lightbox-wrap {
+    background: #fff; border-radius: 16px; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    width: min(576px,96vw); height: min(576px,96vw); flex-shrink: 0; cursor: zoom-out;
+    transform: scale(0.4); opacity: 0;
+    transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+  }
+  #img-lightbox.open #img-lightbox-wrap { transform: scale(1); opacity: 1; }
+  #img-lightbox.closing #img-lightbox-wrap { transform: scale(0.4); opacity: 0; }
+  #img-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .product-img-placeholder { font-size: 48px; opacity: .4; }
+  .product-info { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .product-name {
+    font-size: clamp(12px, 6.3cqw, 16.5px); font-weight: 600; color: #143c5a; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; min-height: 4.05em;
+  }
+  .product-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .product-code { font-size: clamp(10px, 5.2cqw, 15px); font-weight: 700; color: #143c5a; white-space: nowrap; }
+  .product-price { font-size: clamp(15px, 9cqw, 23px); font-weight: 700; color: #111827; }
+  .product-price .price-symbol { font-size: clamp(9px, 5.2cqw, 13px); font-weight: 600; }
+  .desc-original-price { font-size: 70%; color: #9ca3af; text-decoration: line-through; }
+  .desc-tag {
+    display: inline-block; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700;
+    padding: 3px 9px; border-radius: 999px; letter-spacing: .4px; white-space: nowrap; flex-shrink: 0;
+  }
+  .desc-limit-chip { font-size: 11px; color: #dc2626; font-weight: 600; margin-top: 3px; }
+  .add-btn {
+    width: 100%; padding: 9px; margin-top: 4px;
+    background: #e5e7eb; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    font-size: 13px; font-weight: 600; color: #374151; cursor: pointer; transition: all .2s;
+  }
+  .add-btn:hover { background: #143c5a; color: #fff; border-color: #143c5a; }
+  .add-btn.added { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+
+  .fl-cart-badge {
+    position: absolute; top: -9px; right: -9px;
+    background: #dc2626; color: #fff; border-radius: 999px; font-size: 13px; font-weight: 800;
+    min-width: 24px; height: 24px; padding: 0 5px;
+    display: none; align-items: center; justify-content: center;
+  }
+
+  .fl-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .fl-modal.open { display: flex; }
+  .fl-modal-card {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 500px;
+    max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 25px 60px rgba(0,0,0,.2);
+  }
+  .fl-modal-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
+  .fl-modal-hd h2 { font-size: 17px; font-weight: 700; color: #143c5a; }
+  .fl-modal-close {
+    border: none; background: #f3f4f6; color: #374151; border-radius: 8px;
+    padding: 6px 11px; cursor: pointer; font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .fl-cart-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+  }
+  .fl-cart-item:last-child { border-bottom: none; }
+  .fl-ci-info { flex: 1; min-width: 0; }
+  .fl-ci-name { font-size: 13px; font-weight: 600; color: #143c5a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fl-ci-price { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .fl-qty-stepper { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .fl-qty-btn {
+    width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid #e5e7eb; background: #fff;
+    font-size: 16px; font-weight: 700; color: #143c5a; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .fl-qty-btn:hover { background: #143c5a; color: #fff; }
+  .fl-qty-val { min-width: 20px; text-align: center; font-size: 14px; font-weight: 700; }
+  .fl-ci-remove { border: none; background: none; color: #dc2626; font-size: 16px; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+  .fl-ci-remove:hover { color: #991b1b; }
+  .fl-cart-total { display: flex; justify-content: space-between; align-items: center; padding: 14px 0 6px; font-size: 15px; font-weight: 700; color: #143c5a; }
+  .fl-name-field { margin: 10px 0 6px; }
+  .fl-name-field label { display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .fl-name-field input {
+    width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 14px; outline: none;
+  }
+  .fl-name-field input:focus { border-color: #143c5a; }
+  .fl-submit-btn {
+    width: 100%; padding: 13px; margin-top: 10px; background: #143c5a; color: #fff; border: none;
+    border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .fl-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .fl-cart-empty { text-align: center; padding: 40px 10px; color: #9ca3af; font-size: 14px; }
+
+  /* ── Estrellas de valoración (mismo patrón visual que el catálogo) ── */
+  .star-rating { position:relative;display:inline-block;line-height:1;letter-spacing:2.5px;
+    font-size:clamp(13px, 7.5cqw, 19px); }
+  .star-rating-bg { color:#e5e7eb; }
+  .star-rating-fg { position:absolute;top:0;left:0;overflow:hidden;color:#f59e0b;white-space:nowrap; }
+  .product-stars-row { display:flex;align-items:center;justify-content:center;gap:7px;padding:6px 8px 0;cursor:pointer;user-select:none; }
+  .product-stars-count { font-size:clamp(9px, 5cqw, 12px); color:#9ca3af;font-weight:600; }
+
+  .rating-picker { display:flex;gap:11px;font-size:38px;line-height:1;cursor:pointer;user-select:none;justify-content:center;margin-bottom:14px; }
+  .rating-picker-star { color:#e5e7eb;transition:color .1s; }
+  .rating-picker-star.filled { color:#f59e0b; }
+  .rating-review-item { padding:10px 0;border-bottom:1px solid #f3f4f6; }
+  .rating-review-item:last-child { border-bottom:none; }
+  .rating-review-item-top { display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px; }
+  .rating-review-item-user { font-size:13px;font-weight:700;color:#143c5a; }
+  .rating-review-item-date { font-size:11px;color:#9ca3af; }
+  .rating-review-item-comment { font-size:13px;color:#374151;line-height:1.5; }
+  .rating-empty-msg { text-align:center;padding:20px 4px;color:#9ca3af;font-size:13px; }
+  .rating-modal-img-wrap {
+    width:100%;aspect-ratio:4/3;background:#fff;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:12px;margin-bottom:14px;border:1px solid #f3f4f6;
+  }
+  .rating-modal-img-wrap img { max-width:92%;max-height:92%;object-fit:contain; }
+
+  .fl-fullscreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+  .fl-fullscreen-card { max-width: 380px; }
+  .fl-fullscreen-icon { font-size: 52px; margin-bottom: 14px; }
+  .fl-fullscreen-title { font-size: 19px; font-weight: 700; color: #143c5a; margin-bottom: 8px; }
+  .fl-fullscreen-msg { font-size: 14px; color: #6b7280; line-height: 1.6; }
+  .fl-fullscreen-btn {
+    margin-top: 20px; padding: 12px 24px; background: #143c5a; color: #fff; border: none;
+    border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+
+  /* ── Transición de salida (bienvenida) y entrada (catálogo) ── */
+  @keyframes flWaveHand {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(18deg); }
+    50% { transform: rotate(0deg); }
+    75% { transform: rotate(-12deg); }
+  }
+  #fl-welcome .fl-fullscreen-icon { display: inline-block; transform-origin: 70% 70%; animation: flWaveHand .5s ease-in-out 3; }
+  #fl-welcome { transition: opacity .28s ease; }
+  #fl-welcome .fl-fullscreen-card { transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .28s ease; }
+  #fl-welcome.fl-welcome-out { opacity: 0; }
+  #fl-welcome.fl-welcome-out .fl-fullscreen-card { transform: scale(.9) translateY(-10px); opacity: 0; }
+  @keyframes flAppIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #fl-app.fl-app-in { animation: flAppIn .38s cubic-bezier(.34,1.2,.64,1) both; }
+
+  .fl-toast {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0.92);
+    background: #1a1a1a; color: #fff; padding: 14px 22px; border-radius: 12px; font-size: 13px;
+    font-weight: 600; z-index: 999; opacity: 0; transition: all .25s; pointer-events: none;
+    text-align: center; max-width: 80vw;
+  }
+  .fl-toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+</style>
+</head>
+<body>
+
+<div id="fl-loading" class="fl-fullscreen">
+  <div class="fl-fullscreen-card">
+    <div class="fl-fullscreen-icon">🎁</div>
+    <div class="fl-fullscreen-title">Cargando…</div>
+  </div>
+</div>
+
+<div id="fl-invalid" class="fl-fullscreen" style="display:none;">
+  <div class="fl-fullscreen-card">
+    <div class="fl-fullscreen-icon">🔗</div>
+    <div class="fl-fullscreen-title" id="fl-invalid-title">Este link no es válido</div>
+    <div class="fl-fullscreen-msg" id="fl-invalid-msg">Pídele a tu familiar que te comparta el link de nuevo desde la app.</div>
+  </div>
+</div>
+
+<div id="fl-welcome" class="fl-fullscreen" style="display:none;">
+  <div class="fl-fullscreen-card">
+    <div class="fl-fullscreen-icon">👋</div>
+    <div class="fl-fullscreen-title" style="margin-bottom:2px;">¡Hola!</div>
+    <div class="fl-fullscreen-msg" style="font-weight:700;"><span id="fl-welcome-nombre"></span> te ha enviado este catálogo<br>para que hagas tu lista de deseos.</div>
+    <button class="fl-fullscreen-btn" onclick="flStartFromWelcome()">Comenzar</button>
+  </div>
+</div>
+
+<div id="fl-success" class="fl-fullscreen" style="display:none;">
+  <div class="fl-fullscreen-card">
+    <div class="fl-fullscreen-icon">✅</div>
+    <div class="fl-fullscreen-title">Lista enviada</div>
+    <div class="fl-fullscreen-msg" id="fl-success-msg"></div>
+    <button class="fl-fullscreen-btn" onclick="flReset()">Ir al catálogo</button>
+  </div>
+</div>
+
+<div id="fl-app" style="display:none;">
+  <div class="fl-header">
+    <div class="fl-header-row">
+      <div>
+        <h1>🎁 Lista de deseos</h1>
+        <div class="fl-sub" id="fl-header-sub">Se enviará a: —</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+        <button class="fl-help-btn" onclick="openFlHelpModal()">Ayuda</button>
+        <button class="fl-header-cart-btn" id="fl-cart-btn" onclick="flOpenCart()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Ver lista <span class="fl-cart-badge" id="fl-cart-badge">0</span>
+        </button>
+      </div>
+    </div>
+    <div class="fl-nav-tabs" id="fl-nav-tabs">
+      <button class="fl-nav-tab active" data-tab="TODOS" onclick="flSelectTab('TODOS')">TODOS</button>
+      <button class="fl-nav-tab" data-tab="ALIMENTOS" onclick="flSelectTab('ALIMENTOS')">ALIMENTOS</button>
+      <button class="fl-nav-tab" data-tab="CAPILAR" onclick="flSelectTab('CAPILAR')">CAPILAR</button>
+      <button class="fl-nav-tab" data-tab="FACIAL" onclick="flSelectTab('FACIAL')">FACIAL</button>
+      <button class="fl-nav-tab" data-tab="CORPORAL" onclick="flSelectTab('CORPORAL')">CORPORAL</button>
+      <button class="fl-nav-tab" data-tab="PACKS" onclick="flSelectTab('PACKS')">PACKS</button>
+      <button class="fl-nav-tab" data-tab="PROMOCIONES" onclick="flSelectTab('PROMOCIONES')">PROMOCIONES</button>
+    </div>
+  </div>
+  <div class="fl-search-wrap">
+    <input type="text" id="fl-search" class="fl-search" placeholder="Buscar producto…" oninput="flRenderGrid()">
+  </div>
+  <div id="fl-grid" class="fl-grid"></div>
+</div>
+
+<div class="fl-modal" id="fl-cart-modal" onclick="if(event.target===this)flCloseCart()">
+  <div class="fl-modal-card">
+    <div class="fl-modal-hd">
+      <h2>Tu lista de deseos</h2>
+      <button class="fl-modal-close" onclick="flCloseCart()">✕</button>
+    </div>
+    <div id="fl-cart-body"></div>
+    <div id="fl-cart-footer" style="display:none;">
+      <div class="fl-cart-total"><span>Total</span><span id="fl-cart-total-val">₡0</span></div>
+      <div class="fl-name-field">
+        <label>Tu nombre</label>
+        <input type="text" id="fl-name-input" placeholder="Ej: María Rodríguez" maxlength="80">
+      </div>
+      <button class="fl-submit-btn" id="fl-submit-btn" onclick="flSubmitWishlist()">📤 Enviar lista de deseos</button>
+    </div>
+  </div>
+</div>
+
+<div class="fl-modal" id="fl-qadd-modal" onclick="if(event.target===this)flCloseQadd()">
+  <div class="fl-modal-card" id="fl-qadd-card" onclick="event.stopPropagation()"></div>
+</div>
+
+<div class="fl-modal" id="fl-rating-modal" onclick="if(event.target===this)flCloseRatingModal()">
+  <div class="fl-modal-card" onclick="event.stopPropagation()">
+    <div class="fl-modal-hd">
+      <h2>¡Valora este producto!</h2>
+      <button class="fl-modal-close" onclick="flCloseRatingModal()">✕</button>
+    </div>
+    <div class="rating-modal-img-wrap" id="fl-rating-img-wrap" style="display:none;">
+      <img id="fl-rating-img" src="" alt="">
+    </div>
+    <div id="fl-rating-first-note" style="display:none;font-size:13px;font-weight:700;color:#143c5a;text-align:center;margin-bottom:12px;">Se el primero en valorar este producto</div>
+    <div id="fl-rating-picker" class="rating-picker">
+      <span class="rating-picker-star" data-val="1" onclick="flSetRatingPick(1)">★</span>
+      <span class="rating-picker-star" data-val="2" onclick="flSetRatingPick(2)">★</span>
+      <span class="rating-picker-star" data-val="3" onclick="flSetRatingPick(3)">★</span>
+      <span class="rating-picker-star" data-val="4" onclick="flSetRatingPick(4)">★</span>
+      <span class="rating-picker-star" data-val="5" onclick="flSetRatingPick(5)">★</span>
+    </div>
+    <div class="fl-name-field" style="margin-top:0;">
+      <label>Tu nombre</label>
+      <input type="text" id="fl-rating-name-input" placeholder="Ej: María Rodríguez" maxlength="80">
+    </div>
+    <textarea id="fl-rating-comment-input" placeholder="Deja un comentario acerca de este producto" rows="3"
+      style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;font-family:inherit;resize:vertical;outline:none;margin-top:10px;box-sizing:border-box;"></textarea>
+    <button class="fl-submit-btn" id="fl-rating-accept-btn" onclick="flSubmitRating()">Enviar valoración</button>
+    <div style="padding:16px 0 8px;border-top:1px solid #f3f4f6;margin-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Valoraciones de otros usuarios</div>
+    </div>
+    <div id="fl-rating-reviews-list"></div>
+  </div>
+</div>
+
+<div class="fl-modal" id="fl-help-modal" onclick="if(event.target===this)closeFlHelpModal()">
+  <div class="fl-modal-card" onclick="event.stopPropagation()">
+    <div class="fl-modal-hd">
+      <h2>¿Cómo funciona?</h2>
+      <button class="fl-modal-close" onclick="closeFlHelpModal()">✕</button>
+    </div>
+    <div class="fl-help-steps">
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">1</div>
+        <div class="fl-help-step-txt">Explora el catálogo y toca el botón <span class="fl-help-render-add">Agregar</span> del producto que te guste para elegir la cantidad y agregarlo a tu lista.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">2</div>
+        <div class="fl-help-step-txt">Repite con todos los productos que quieras. Toca <span class="fl-help-render-cart-wrap"><span class="fl-help-render-cart"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Ver lista<span class="fl-help-render-badge"></span></span></span> arriba a la derecha en cualquier momento para revisar o ajustar las cantidades.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">3</div>
+        <div class="fl-help-step-txt">Cuando termines, toca <span class="fl-help-render-cart-wrap"><span class="fl-help-render-cart"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Ver lista<span class="fl-help-render-badge"></span></span></span> y luego el botón <strong>"Enviar lista a <span id="fl-help-colab-nombre"></span>"</strong> para que le llegue.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">4</div>
+        <div class="fl-help-step-txt">No olvides colocar <strong>tu nombre</strong> para que <strong id="fl-help-colab-nombre2"></strong> sepa quién eres.</div>
+      </div>
+      <div class="fl-help-step">
+        <div class="fl-help-step-num">5</div>
+        <div class="fl-help-step-txt">Puedes ayudarnos a mejorar si calificas el producto ⭐ y dejando un comentario.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="fl-toast" class="fl-toast"></div>
+
+<div id="img-lightbox" onclick="closeLightbox()">
+  <div id="img-lightbox-wrap" onclick="closeLightbox()">
+    <img id="img-lightbox-img" src="" alt="">
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://jdifschnvycvxlcbexdl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkaWZzY2hudnljdnhsY2JleGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4Njk0ODcsImV4cCI6MjEwMzQ0NTQ4N30.sUfYan-cWLmFdSFh8mciFHlVin8Z7Pib8m3zcZIepJw';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let CATALOG = [];
+let flCart  = [];
+let flColaboradorCedula = null;
+let flColaboradorNombre = '';
+let flColaboradorNombreFull = '';
+let flColaboradorPrimerNombre = '';
+let flActiveTab = 'TODOS';
+
+/* ── Valoraciones: un familiar externo (sin cuenta) puede valorar un
+   producto escribiendo su nombre; la reseña queda asociada al
+   colaborador dueño del link (usuario_cedula/usuario_nombre), y se
+   guarda además el nombre del familiar (familiar_nombre) para mostrar
+   "Fulano por Colaborador" en la sección de Valoraciones de admin. ── */
+let _ratingsActivo      = true;
+let _ratingsSummary     = {};
+let _flRatingModalCodigo = null;
+let _flRatingPickValue   = 0;
+
+/* ── Categorías: mismo mapeo que TABS en index.html (solo lo necesario
+   para filtrar por categoría/marca/subcategoría/promo — sin las píldoras
+   de sub-filtro, que en el catálogo original tampoco se muestran). ── */
+const FL_TABS = {
+  ALIMENTOS:   { type: 'category',    spc_filter: 'Alimentos' },
+  CAPILAR:     { type: 'brand',       cat_filter: 'Capilar' },
+  FACIAL:      { type: 'subcategory', cat_filter: 'Facial' },
+  CORPORAL:    { type: 'subcategory', cat_filter: 'Corporal' },
+  PACKS:       { type: 'category',    cat_filter: 'Packs' },
+  PROMOCIONES: { type: 'promo' }
+};
+
+/* ── Catálogo: copiado tal cual de index.html (funciones puras, sin DOM) ──
+   No se comparte un archivo entre ambos a propósito, para no tocar el
+   index.html que ya está en producción. Si cambia la lógica de precios en
+   index.html, hay que replicar el cambio acá también. */
+function isScheduleActive(inicio, fin) {
+  const now = Date.now();
+  if (inicio && now < new Date(inicio).getTime()) return false;
+  if (fin && now > new Date(fin).getTime()) return false;
+  return true;
+}
+
+function mapProductRow(r) {
+  const promoRaw = !!r.promocion;
+  const descRaw = !!r.descuento;
+  return {
+    id: r.codigo, n: r.nombre_catalogo || r.nombre, b: r.marca,
+    spc: r.spc, c: r.categoria, s: r.subcategoria,
+    pr: r.precio, img: r.imagen,
+    iva: r.iva != null ? r.iva : 13,
+    activo: r.activo !== false,
+    promo: promoRaw && isScheduleActive(r.promo_inicio, r.promo_fin),
+    stock: r.stock != null ? r.stock : null,
+    descuento: descRaw && isScheduleActive(r.descuento_inicio, r.descuento_fin),
+    descPct: r.porcentaje_descuento || 0,
+    limite: (r.limite_por_usuario != null && isScheduleActive(r.limite_inicio, r.limite_fin)) ? r.limite_por_usuario : null,
+  };
+}
+
+async function loadCatalog() {
+  const { data, error } = await sb.from('productos').select('*').eq('activo', true).order('nombre');
+  if (error) { console.error(error); return; }
+  CATALOG = (data || []).map(mapProductRow);
+}
+
+// ============================================================
+//  VALORACIONES — resumen (promedio + conteo) por producto
+//  (misma lógica que index.html, copiada tal cual — ver nota arriba)
+// ============================================================
+async function loadRatingsSummary() {
+  try {
+    const { data: cfg } = await sb.from('app_config').select('value').eq('key','valoraciones_activo').maybeSingle();
+    _ratingsActivo = !cfg || cfg.value !== 'false';
+    const { data, error } = await sb.from('valoraciones').select('producto_codigo,estrellas').eq('oculto', false);
+    if (error) throw error;
+    const map = {};
+    (data||[]).forEach(r => {
+      if (!map[r.producto_codigo]) map[r.producto_codigo] = { sum:0, count:0 };
+      map[r.producto_codigo].sum += r.estrellas;
+      map[r.producto_codigo].count++;
+    });
+    Object.keys(map).forEach(k => { map[k].avg = map[k].sum / map[k].count; });
+    _ratingsSummary = map;
+  } catch(e) { console.error('Error cargando valoraciones:', e); }
+}
+
+function starsHtml(avg) {
+  const pct = Math.max(0, Math.min(100, (avg/5)*100));
+  return `<span class="star-rating"><span class="star-rating-bg">★★★★★</span><span class="star-rating-fg" style="width:${pct}%">★★★★★</span></span>`;
+}
+
+function productStarsRowHtml(codigo) {
+  if (!_ratingsActivo) return '';
+  const stat = _ratingsSummary[codigo];
+  const avg = stat ? stat.avg : 0;
+  const count = stat ? stat.count : 0;
+  return `<div class="product-stars-row" onclick="event.stopPropagation();openFlRatingModal('${escAttr(codigo)}')">
+    ${starsHtml(avg)}
+    <span class="product-stars-count">${count > 0 ? '('+count+')' : ''}</span>
+  </div>`;
+}
+
+function priceIva(p) {
+  const rate = p.iva != null ? p.iva : 13;
+  return Math.round(p.pr * (1 + rate / 100));
+}
+function priceDiscounted(p) {
+  if (p.descuento && p.descPct) return Math.round(priceIva(p) * (1 - p.descPct / 100));
+  return priceIva(p);
+}
+function priceEffective(p) { return p.descuento ? priceDiscounted(p) : priceIva(p); }
+
+function escHtml(s) { return String(s || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s) { return escHtml(s).replace(/"/g, '&quot;'); }
+
+/* ── Nombre: mismo formato que el chip de usuario del catálogo original
+   (toTitleCase + nombre corto para compuestos de 3+ palabras). ── */
+function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
+function shortName(str) {
+  const nombre = toTitleCase(str || '');
+  const nw = nombre.trim().split(/\s+/);
+  return nw.length >= 3 ? nw[0] + ' ' + nw[nw.length - 2] : nombre;
+}
+
+/* ── Toast ── */
+let _toastTimer = null;
+function flToast(msg) {
+  const el = document.getElementById('fl-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ── Categorías ── */
+function flSelectTab(tab) {
+  flActiveTab = tab;
+  document.querySelectorAll('.fl-nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  flRenderGrid();
+}
+
+function flGetFilteredProducts() {
+  if (flActiveTab === 'TODOS' || !FL_TABS[flActiveTab]) return CATALOG.slice();
+  const cfg = FL_TABS[flActiveTab];
+  if (cfg.type === 'promo') return CATALOG.filter(p => p.promo || p.descuento);
+  let pool = CATALOG;
+  if (cfg.spc_filter) pool = pool.filter(p => p.spc === cfg.spc_filter);
+  if (cfg.cat_filter) pool = pool.filter(p => p.c === cfg.cat_filter);
+  return pool;
+}
+
+/* ── Render de tarjetas (misma apariencia que el catálogo normal) ── */
+function renderFamilyCard(p) {
+  let priceHtml;
+  if (p.descuento && p.descPct && p.pr > 0) {
+    priceHtml = `<div class="desc-original-price"><span class="price-symbol">₡</span>${priceIva(p).toLocaleString('es-CR')}</div>`
+      + `<div class="product-price"><span class="price-symbol">₡</span>${priceDiscounted(p).toLocaleString('es-CR')}</div>`;
+  } else {
+    priceHtml = `<div class="product-price">${p.pr > 0 ? '<span class="price-symbol">₡</span>' + priceIva(p).toLocaleString('es-CR') : 'Consultar'}</div>`;
+  }
+  const descChip = p.descuento
+    ? `<div style="margin-top:5px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
+        <span class="desc-tag">DESCUENTO ${p.descPct}%</span>
+       </div>`
+    : '';
+  const inCart = flCart.find(i => i.product.id === p.id);
+  return `
+    <div class="product-card${p.descuento ? ' desc-card' : ''}">
+      <div class="product-img-wrap">
+        ${p.img ? `<img src="${escAttr(p.img)}" alt="${escAttr(p.n)}" class="product-img" loading="lazy" onclick="event.stopPropagation();flOnProductImageTap('${escAttr(p.id)}','${escAttr(p.img)}')" onerror="this.style.display='none';this.parentElement.querySelector('.product-img-placeholder').style.display='flex'">` : ''}
+        <div class="product-img-placeholder" style="${p.img ? 'display:none' : 'display:flex'}">🧴</div>
+      </div>
+      ${productStarsRowHtml(p.id)}
+      <div class="product-info">
+        <div class="product-name">${escHtml(p.n)}</div>
+        <div class="product-meta-row">
+          <div class="product-code">${escHtml(p.id)}</div>
+          <div>${priceHtml}</div>
+        </div>
+        ${descChip}
+        <button class="add-btn${inCart ? ' added' : ''}" onclick="flOpenAddModal('${p.id.replace(/'/g,"\\'")}')">
+          ${inCart ? `✓ En tu lista (${inCart.qty})` : 'Agregar'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function flRenderGrid() {
+  const grid = document.getElementById('fl-grid');
+  const q = (document.getElementById('fl-search').value || '').trim().toLowerCase();
+  let list = flGetFilteredProducts();
+  if (q) {
+    list = list.filter(p =>
+      (p.n || '').toLowerCase().includes(q) ||
+      (p.id || '').toLowerCase().includes(q) ||
+      (p.b || '').toLowerCase().includes(q)
+    );
+  }
+  if (!list.length) {
+    grid.innerHTML = '<div class="fl-empty" style="grid-column:1/-1;">No se encontraron productos.</div>';
+    return;
+  }
+  grid.innerHTML = list.map(renderFamilyCard).join('');
+}
+
+/* ── Carrito ── */
+function flOpenAddModal(id) {
+  const existing = flCart.find(i => i.product.id === id);
+  if (existing) {
+    flOpenQadd(id, false);
+  } else {
+    const p = CATALOG.find(x => x.id === id);
+    if (!p) return;
+    flCart.push({ product: p, qty: 1 });
+    flOpenQadd(id, true);
+  }
+}
+
+function flUpdateQty(id, delta) {
+  const item = flCart.find(i => i.product.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) flCart = flCart.filter(i => i.product.id !== id);
+  flUpdateCartUI();
+  flRenderCartBody();
+  flRenderGrid();
+}
+
+function flRemoveItem(id) {
+  flCart = flCart.filter(i => i.product.id !== id);
+  flUpdateCartUI();
+  flRenderCartBody();
+  flRenderGrid();
+}
+
+function flUpdateCartUI() {
+  const totalQty = flCart.reduce((s, i) => s + i.qty, 0);
+  const badge = document.getElementById('fl-cart-badge');
+  badge.textContent = totalQty;
+  badge.style.display = totalQty > 0 ? 'flex' : 'none';
+}
+
+function flOpenCart() {
+  flRenderCartBody();
+  document.getElementById('fl-cart-modal').classList.add('open');
+}
+function flCloseCart() {
+  document.getElementById('fl-cart-modal').classList.remove('open');
+}
+
+function flRenderCartBody() {
+  const body   = document.getElementById('fl-cart-body');
+  const footer = document.getElementById('fl-cart-footer');
+  if (!flCart.length) {
+    body.innerHTML = '<div class="fl-cart-empty">Todavía no agregaste ningún producto.</div>';
+    footer.style.display = 'none';
+    return;
+  }
+  footer.style.display = 'block';
+  body.innerHTML = flCart.map(i => {
+    const p = i.product;
+    const subtotal = priceEffective(p) * i.qty;
+    const descChip = p.descuento ? ` <span class="desc-tag" style="font-size:9px;">-${p.descPct}%</span>` : '';
+    return `<div class="fl-cart-item">
+      <div class="fl-ci-info">
+        <div class="fl-ci-name">${escHtml(p.n)}${descChip}</div>
+        <div class="fl-ci-price">₡${subtotal.toLocaleString('es-CR')}</div>
+      </div>
+      <div class="fl-qty-stepper">
+        <button class="fl-qty-btn" onclick="flUpdateQty('${p.id.replace(/'/g,"\\'")}',-1)">−</button>
+        <span class="fl-qty-val">${i.qty}</span>
+        <button class="fl-qty-btn" onclick="flUpdateQty('${p.id.replace(/'/g,"\\'")}',1)">+</button>
+      </div>
+      <button class="fl-ci-remove" onclick="flRemoveItem('${p.id.replace(/'/g,"\\'")}')">✕</button>
+    </div>`;
+  }).join('');
+  const total = flCart.reduce((s, i) => s + priceEffective(i.product) * i.qty, 0);
+  document.getElementById('fl-cart-total-val').textContent = '₡' + total.toLocaleString('es-CR');
+}
+
+/* ── Modal de cantidad al agregar (misma UX que el catálogo normal) ── */
+let flQaddId = null;
+let flQaddWasNew = false;
+let flQaddOrigQty = null;
+
+function flOpenQadd(id, wasNew) {
+  flQaddId = id;
+  flQaddWasNew = wasNew === true;
+  const existing = flCart.find(i => i.product.id === id);
+  flQaddOrigQty = (existing && !flQaddWasNew) ? existing.qty : null;
+  flRenderQaddCard();
+  document.getElementById('fl-qadd-modal').classList.add('open');
+}
+
+function flCloseQadd() {
+  if (flQaddWasNew && flQaddId) {
+    flCart = flCart.filter(i => i.product.id !== flQaddId);
+  } else if (flQaddOrigQty !== null && flQaddId) {
+    const item = flCart.find(i => i.product.id === flQaddId);
+    if (item) item.qty = flQaddOrigQty;
+  }
+  document.getElementById('fl-qadd-modal').classList.remove('open');
+  flQaddId = null; flQaddWasNew = false; flQaddOrigQty = null;
+  flUpdateCartUI();
+  flRenderGrid();
+}
+
+function flConfirmQadd() {
+  flQaddOrigQty = null;
+  flQaddWasNew = false;
+  document.getElementById('fl-qadd-modal').classList.remove('open');
+  flQaddId = null;
+  flUpdateCartUI();
+  flRenderGrid();
+  flToast('Agregado a tu lista');
+}
+
+function flUpdateQaddQty(delta) {
+  if (!flQaddId) return;
+  const item = flCart.find(i => i.product.id === flQaddId);
+  if (!item) return;
+  item.qty = Math.max(1, item.qty + delta);
+  flRenderQaddCard();
+}
+
+function flRenderQaddCard() {
+  const item = flCart.find(i => i.product.id === flQaddId);
+  if (!item) return;
+  const p = item.product;
+  const emoji = p.b === 'SEED' || p.b === 'SODIET' ? '🍪' : '🧴';
+  const priceLabel = '₡' + priceEffective(p).toLocaleString('es-CR');
+  const subtotal = '₡' + (priceEffective(p) * item.qty).toLocaleString('es-CR');
+  const isUpdate = flQaddOrigQty !== null && item.qty !== flQaddOrigQty;
+  document.getElementById('fl-qadd-card').innerHTML = `
+    <div class="fl-modal-hd">
+      <h2>${escHtml(p.n)}</h2>
+      <button class="fl-modal-close" onclick="flCloseQadd()">✕</button>
+    </div>
+    <div style="text-align:center;">
+      ${p.img
+        ? `<div style="width:100%;max-width:220px;aspect-ratio:1/1;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:14px;overflow:hidden;">
+             <img src="${escAttr(p.img)}" alt="" style="max-width:82%;max-height:82%;object-fit:contain;" onerror="this.parentElement.innerHTML='${emoji}';this.parentElement.style.fontSize='56px';">
+           </div>`
+        : `<div style="font-size:56px;margin-bottom:14px;">${emoji}</div>`}
+      <div style="font-size:13px;color:#6b7280;margin-bottom:18px;">${priceLabel} por unidad · ${escHtml(p.id)}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:18px;">
+        <button class="fl-qty-btn" style="width:42px;height:42px;font-size:20px;" onclick="flUpdateQaddQty(-1)">−</button>
+        <span style="font-size:22px;font-weight:700;min-width:32px;">${item.qty}</span>
+        <button class="fl-qty-btn" style="width:42px;height:42px;font-size:20px;" onclick="flUpdateQaddQty(1)">+</button>
+      </div>
+      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;font-weight:700;">Subtotal</div>
+      <div style="font-size:20px;font-weight:700;color:#143c5a;margin-bottom:18px;">${subtotal}</div>
+      <button class="fl-submit-btn" style="background:#16a34a;" onclick="flConfirmQadd()">${isUpdate ? 'Actualizar lista' : 'Agregar a tu lista'}</button>
+    </div>`;
+}
+
+async function flSubmitWishlist() {
+  const nombre = (document.getElementById('fl-name-input').value || '').trim();
+  if (!nombre) { flToast('Escribe tu nombre para poder identificar tu lista'); return; }
+  if (!flCart.length) { flToast('Tu lista está vacía'); return; }
+
+  const btn = document.getElementById('fl-submit-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  const items = flCart.map(i => ({
+    codigo: i.product.id,
+    nombre: i.product.n,
+    cantidad: i.qty,
+    precio_unitario: priceEffective(i.product)
+  }));
+
+  const { error } = await sb.from('family_wishlists').insert({
+    colaborador_cedula: flColaboradorCedula,
+    familiar_nombre: nombre,
+    items
+  });
+
+  btn.disabled = false; btn.textContent = '📤 Enviar lista a ' + (flColaboradorPrimerNombre || '');
+
+  if (error) { flToast('Error al enviar: ' + error.message); return; }
+
+  document.getElementById('fl-success-msg').innerHTML =
+    `<strong>${escHtml(flColaboradorNombre || 'Tu familiar')}</strong> recibirá la lista que armaste.<br>Espera a que la revise.`;
+  flCloseCart();
+  document.getElementById('fl-app').style.display = 'none';
+  document.getElementById('fl-success').style.display = 'flex';
+}
+
+function flReset() {
+  flCart = [];
+  document.getElementById('fl-name-input').value = '';
+  flUpdateCartUI();
+  document.getElementById('fl-success').style.display = 'none';
+  document.getElementById('fl-app').style.display = 'block';
+  flRenderGrid();
+}
+
+/* ── Arranque ── */
+async function flInit() {
+  const token = new URLSearchParams(location.search).get('t');
+  if (!token) { flShowInvalid(); return; }
+
+  const { data, error } = await sb.from('usuarios')
+    .select('cedula,nombre')
+    .eq('family_token', token)
+    .maybeSingle();
+
+  if (error || !data) { flShowInvalid(); return; }
+
+  // Si el colaborador que compartió el link está baneado, el link deja de funcionar.
+  const { data: baneo } = await sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', data.cedula).maybeSingle();
+  if (baneo && baneo.baneado) { flShowInvalid('baneado'); return; }
+
+  flColaboradorCedula = data.cedula;
+  flColaboradorNombre = shortName(data.nombre);
+  flColaboradorNombreFull = toTitleCase(data.nombre || '');
+  flColaboradorPrimerNombre = toTitleCase(data.nombre || '').trim().split(/\s+/)[0] || '';
+  document.getElementById('fl-header-sub').innerHTML = `Se enviará a: <strong>${escHtml(flColaboradorNombre)}</strong>`;
+  document.getElementById('fl-submit-btn').textContent = '📤 Enviar lista a ' + flColaboradorPrimerNombre;
+
+  await Promise.all([loadCatalog(), loadRatingsSummary()]);
+
+  document.getElementById('fl-loading').style.display = 'none';
+  document.getElementById('fl-welcome-nombre').innerHTML = `<strong>${escHtml(flColaboradorNombre)}</strong>`;
+  document.getElementById('fl-help-colab-nombre').textContent = flColaboradorPrimerNombre;
+  document.getElementById('fl-help-colab-nombre2').textContent = flColaboradorPrimerNombre;
+  document.getElementById('fl-welcome').style.display = 'flex';
+}
+
+function flStartFromWelcome() {
+  const welcome = document.getElementById('fl-welcome');
+  const app = document.getElementById('fl-app');
+  welcome.classList.add('fl-welcome-out');
+  setTimeout(() => {
+    welcome.style.display = 'none';
+    welcome.classList.remove('fl-welcome-out');
+    app.style.display = 'block';
+    app.classList.add('fl-app-in');
+    flRenderGrid();
+    setTimeout(() => app.classList.remove('fl-app-in'), 400);
+  }, 280);
+}
+
+function openFlHelpModal() {
+  document.getElementById('fl-help-modal').classList.add('open');
+}
+function closeFlHelpModal() {
+  document.getElementById('fl-help-modal').classList.remove('open');
+}
+
+function flShowInvalid(reason) {
+  document.getElementById('fl-loading').style.display = 'none';
+  if (reason === 'baneado') {
+    document.getElementById('fl-invalid-title').textContent = 'Este link ya no está disponible';
+    document.getElementById('fl-invalid-msg').textContent = 'El colaborador que lo compartió ya no tiene acceso activo.';
+  }
+  document.getElementById('fl-invalid').style.display = 'flex';
+}
+
+// ============================================================
+//  MODAL DE VALORACIÓN (familiares) — sin login: el familiar escribe
+//  su nombre y la reseña queda asociada al colaborador dueño del link.
+// ============================================================
+function flOnProductImageTap(codigo, img) {
+  if (_ratingsActivo) openFlRatingModal(codigo);
+  else openLightbox(img);
+}
+
+function openFlRatingModal(codigo) {
+  _flRatingModalCodigo = codigo;
+  _flRatingPickValue = 0;
+  document.getElementById('fl-rating-name-input').value = '';
+  document.getElementById('fl-rating-comment-input').value = '';
+  flUpdateRatingPickerUI();
+
+  const p = CATALOG.find(x => x.id === codigo);
+  const imgWrap = document.getElementById('fl-rating-img-wrap');
+  const imgEl   = document.getElementById('fl-rating-img');
+  if (p && p.img) { imgEl.src = p.img; imgEl.alt = p.n || ''; imgWrap.style.display = 'flex'; }
+  else { imgEl.src = ''; imgWrap.style.display = 'none'; }
+
+  document.getElementById('fl-rating-reviews-list').innerHTML = '<div class="rating-empty-msg">Cargando…</div>';
+  document.getElementById('fl-rating-modal').classList.add('open');
+  loadFlRatingReviews(codigo);
+}
+
+function flCloseRatingModal() {
+  document.getElementById('fl-rating-modal').classList.remove('open');
+  _flRatingModalCodigo = null;
+}
+
+function flSetRatingPick(v) {
+  _flRatingPickValue = v;
+  flUpdateRatingPickerUI();
+}
+function flUpdateRatingPickerUI() {
+  document.querySelectorAll('#fl-rating-picker .rating-picker-star').forEach(el => {
+    el.classList.toggle('filled', parseInt(el.dataset.val,10) <= _flRatingPickValue);
+  });
+}
+
+async function flSubmitRating() {
+  const nombre = (document.getElementById('fl-rating-name-input').value || '').trim();
+  if (!nombre) { flToast('Escribe tu nombre'); return; }
+  if (!_flRatingPickValue) { flToast('Selecciona de 1 a 5 estrellas'); return; }
+  const codigo = _flRatingModalCodigo;
+  if (!codigo) return;
+  const comentario = document.getElementById('fl-rating-comment-input').value.trim() || null;
+  const btn = document.getElementById('fl-rating-accept-btn');
+  btn.disabled = true;
+  const { error } = await sb.from('valoraciones').insert({
+    producto_codigo: codigo,
+    usuario_cedula:  flColaboradorCedula,
+    usuario_nombre:  flColaboradorNombreFull,
+    familiar_nombre: toTitleCase(nombre),
+    estrellas:       _flRatingPickValue,
+    comentario,
+    oculto: false
+  });
+  btn.disabled = false;
+  if (error) { flToast('No se pudo guardar tu valoración'); return; }
+  flToast('¡Gracias por tu valoración!');
+  _flRatingPickValue = 0;
+  document.getElementById('fl-rating-comment-input').value = '';
+  flUpdateRatingPickerUI();
+  await loadRatingsSummary();
+  flRenderGrid();
+  loadFlRatingReviews(codigo);
+  setTimeout(() => { if (_flRatingModalCodigo === codigo) flCloseRatingModal(); }, 3000);
+}
+
+async function loadFlRatingReviews(codigo) {
+  const wrap = document.getElementById('fl-rating-reviews-list');
+  const firstNote = document.getElementById('fl-rating-first-note');
+  const { data, error } = await sb.from('valoraciones').select('*')
+    .eq('producto_codigo', codigo).eq('oculto', false)
+    .order('created_at', { ascending:false });
+  if (error) { firstNote.style.display = 'none'; wrap.innerHTML = '<div class="rating-empty-msg">No se pudieron cargar las reseñas.</div>'; return; }
+  if (!data || data.length === 0) { firstNote.style.display = 'block'; wrap.innerHTML = '<div class="rating-empty-msg">Aún no hay reseñas</div>'; return; }
+  firstNote.style.display = 'none';
+  wrap.innerHTML = data.map(r => {
+    const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+    const autor = r.familiar_nombre
+      ? escHtml(r.familiar_nombre)
+      : escHtml(shortName(r.usuario_nombre || '—'));
+    return `<div class="rating-review-item">
+      <div class="rating-review-item-top">
+        ${starsHtml(r.estrellas)}
+        <span class="rating-review-item-user">${autor}</span>
+        <span class="rating-review-item-date">${fecha}</span>
+      </div>
+      ${r.comentario ? `<div class="rating-review-item-comment">${escHtml(r.comentario)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+flInit();
+
+// ── LIGHTBOX (igual que el catálogo original) ──
+function openLightbox(src) {
+  const lb = document.getElementById('img-lightbox');
+  lb.classList.remove('closing');
+  document.getElementById('img-lightbox-img').src = src;
+  lb.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => lb.classList.add('open')));
+}
+function closeLightbox() {
+  const lb = document.getElementById('img-lightbox');
+  lb.classList.remove('open');
+  lb.classList.add('closing');
+  setTimeout(() => { lb.style.display = 'none'; lb.classList.remove('closing'); }, 250);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ============================================================
+//  VIEWPORT ZOOM — pantallas angostas (misma técnica que index.html):
+//  encoge todo proporcionalmente en vez de reflotar cada elemento.
+// ============================================================
+(function() {
+  var DESIGN_W = 580;
+  function applyZoom() {
+    var vw = window.innerWidth;
+    if (vw < DESIGN_W) {
+      document.documentElement.style.zoom = (vw / DESIGN_W).toFixed(4);
+    } else {
+      document.documentElement.style.zoom = '';
+    }
+  }
+  window.addEventListener('resize', applyZoom);
+  applyZoom();
+})();
+</script>
+</body>
+</html>

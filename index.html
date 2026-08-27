@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitio en Mantenimiento</title>
+    <style>
+        /* Reseteo básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Configuración del fondo y centrado */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* Fondo azul elegante */
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Contenedor principal */
+        .mantenimiento-container {
+            max-width: 600px;
+            /* Aplicamos la animación de respiro al contenedor */
+            animation: respiro 4s ease-in-out infinite;
+        }
+
+        /* Estilos de la tipografía */
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem); /* Texto responsive */
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        p {
+            font-size: clamp(1rem, 2.5vw, 1.5rem); /* Texto responsive */
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        /* Keyframes para el efecto de respiro (Breathing effect) */
+        @keyframes respiro {
+            0% {
+                transform: scale(0.97);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.03);
+                opacity: 1;
+                text-shadow: 0 4px 25px rgba(255,255,255,0.2);
+            }
+            100% {
+                transform: scale(0.97);
+                opacity: 0.8;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mantenimiento-container">
+        <h1>Sitio en mantenimiento</h1>
+        <p>Volvemos pronto. Disculpa el inconveniente.</p>
+    </div>
+
+</body>
+</html>

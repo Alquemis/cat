@@ -526,11 +526,16 @@
   .star-rating-bg { color:#e5e7eb; }
   .star-rating-fg { position:absolute;top:0;left:0;overflow:hidden;color:#f59e0b;white-space:nowrap; }
   .rating-product-group { border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#fff; }
-  .rating-product-header { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f3f4f6; }
+  .rating-product-header { display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;user-select:none; }
+  .rating-product-group.expanded .rating-product-header { margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f3f4f6; }
+  .rating-group-caret { display:inline-block;font-size:11px;color:#9ca3af;transition:transform .15s;flex-shrink:0; }
+  .rating-product-group.expanded .rating-group-caret { transform:rotate(90deg); }
   .rating-product-name-wrap { display:flex;flex-direction:column;gap:1px; }
   .rating-product-name { font-size:14px;font-weight:700;color:#143c5a; }
   .rating-product-code { font-size:11px;color:#9ca3af;font-weight:600; }
   .rating-product-avg { font-size:12px;color:#6b7280;font-weight:600; }
+  .rating-product-reviews { display:none; }
+  .rating-product-group.expanded .rating-product-reviews { display:block; }
   .rating-review-row { padding:10px 0;border-bottom:1px solid #f9fafb;cursor:pointer; }
   .rating-review-row:last-child { border-bottom:none; }
   .rating-review-row.hidden-review { opacity:.6; }
@@ -542,6 +547,7 @@
   .rating-review-actions { display:none;gap:6px;flex-wrap:wrap;margin-top:6px; }
   .rating-review-row.actions-open .rating-review-actions { display:flex; }
   #ratings-detail-list .rank-val, #ratings-top8-wrap .rank-val { width:auto;min-width:48px; }
+  #ratings-list-wrap { overflow-y:auto;padding-right:6px; }
 
   /* ── Home Editor ── */
   .home-rich-editor { min-height:120px;border:1.5px solid #e5e7eb;border-top:none;border-bottom-left-radius:9px;border-bottom-right-radius:9px;padding:12px 14px;font-size:14px;line-height:1.6;outline:none;font-family:inherit; }
@@ -1465,7 +1471,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
         <div class="su-section-title">Reseñas</div>
       </div>
-      <div class="su-section-sub">Sin buscar se muestran las 5 más recientes. Busca por producto, código, usuario o palabras dentro de la reseña, o filtra por estrellas para ver el resto.</div>
+      <div class="su-section-sub">Ordenadas por mejor valorados. Toca un producto para ver sus reseñas. Busca por producto, código, usuario o palabras dentro de la reseña, o filtra por estrellas.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px;">
         <input id="ratings-search" type="text" placeholder="Buscar por producto, código, usuario o texto de la reseña…" oninput="filterRatings()"
           style="flex:1;min-width:220px;padding:9px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;box-sizing:border-box;outline:none;">
@@ -4065,10 +4071,8 @@ function renderRatingsTop8() {
 function filterRatings() {
   const q = (document.getElementById('ratings-search')?.value || '').trim().toLowerCase();
   const starsFilter = document.getElementById('ratings-star-filter')?.value || '';
-  let items;
-  if (!q && !starsFilter) {
-    items = [..._ratingsAll].sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)).slice(0,5);
-  } else {
+  let items = _ratingsAll;
+  if (q || starsFilter) {
     items = _ratingsAll.filter(r => {
       if (starsFilter && String(r.estrellas) !== starsFilter) return false;
       if (!q) return true;
@@ -4078,7 +4082,7 @@ function filterRatings() {
       const usuario = (r.usuario_nombre||'').toLowerCase();
       const familiar = (r.familiar_nombre||'').toLowerCase();
       return nombre.includes(q) || codigo.includes(q) || comentario.includes(q) || usuario.includes(q) || familiar.includes(q);
-    }).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+    });
   }
   renderRatingsList(items);
 }
@@ -4099,11 +4103,19 @@ function renderRatingsList(items) {
   if (items.length === 0) { wrap.innerHTML = '<div class="empty-table" style="padding:40px 20px;color:#9ca3af;">No hay reseñas que coincidan.</div>'; return; }
 
   const map = _ratingsProdStatsMap();
-  const groups = [];
-  const seen = {};
+  const groupsByCode = {};
   items.forEach(r => {
-    if (!seen[r.producto_codigo]) { seen[r.producto_codigo] = { codigo:r.producto_codigo, rows:[] }; groups.push(seen[r.producto_codigo]); }
-    seen[r.producto_codigo].rows.push(r);
+    if (!groupsByCode[r.producto_codigo]) groupsByCode[r.producto_codigo] = { codigo:r.producto_codigo, rows:[] };
+    groupsByCode[r.producto_codigo].rows.push(r);
+  });
+  const groups = Object.values(groupsByCode);
+  // Reseñas de cada producto: más recientes primero
+  groups.forEach(g => g.rows.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)));
+  // Productos: siempre los mejor valorados arriba
+  groups.sort((a,b) => {
+    const sa = map[a.codigo] || { avg:0, count:0 };
+    const sb = map[b.codigo] || { avg:0, count:0 };
+    return sb.avg - sa.avg || sb.count - sa.count;
   });
 
   wrap.innerHTML = groups.map(g => {
@@ -4112,7 +4124,7 @@ function renderRatingsList(items) {
     const rowsHtml = g.rows.map(r => {
       const fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
       return `
-        <div class="rating-review-row${r.oculto ? ' hidden-review' : ''}" onclick="toggleRatingRowActions(this)">
+        <div class="rating-review-row${r.oculto ? ' hidden-review' : ''}" onclick="event.stopPropagation();toggleRatingRowActions(this)">
           <div class="rating-review-top">
             ${starsHtml(r.estrellas, 13)}
             <span class="rating-review-user">${ratingReviewerHtml(r)}</span>
@@ -4129,7 +4141,8 @@ function renderRatingsList(items) {
     }).join('');
     return `
       <div class="rating-product-group">
-        <div class="rating-product-header">
+        <div class="rating-product-header" onclick="toggleRatingGroup(this)">
+          <span class="rating-group-caret">▸</span>
           <div class="rating-product-name-wrap">
             <span class="rating-product-name">${esc(nombre)}</span>
             <span class="rating-product-code">${esc(g.codigo)}</span>
@@ -4137,9 +4150,34 @@ function renderRatingsList(items) {
           ${starsHtml(stat.avg, 13)}
           <span class="rating-product-avg">${stat.avg.toFixed(1)} · ${stat.count} reseña${stat.count===1?'':'s'}</span>
         </div>
-        ${rowsHtml}
+        <div class="rating-product-reviews">${rowsHtml}</div>
       </div>`;
   }).join('');
+
+  _fitRatingsListWrap();
+}
+
+// Limita la altura visible de la lista a 8 filas (productos) y deja el
+// resto escroleable dentro del mismo panel, sin achicar la página.
+function _fitRatingsListWrap() {
+  const wrap = document.getElementById('ratings-list-wrap');
+  if (!wrap) return;
+  const groups = wrap.querySelectorAll('.rating-product-group');
+  if (groups.length <= 8) { wrap.style.maxHeight = ''; return; }
+  const wrapTop = wrap.getBoundingClientRect().top;
+  const eighthBottom = groups[7].getBoundingClientRect().bottom;
+  wrap.style.maxHeight = Math.ceil(eighthBottom - wrapTop) + 'px';
+}
+
+// Las reseñas de cada producto empiezan colapsadas; tocar el encabezado
+// del producto las muestra/oculta. Tocar otra fila cierra la anterior.
+function toggleRatingGroup(headerEl) {
+  const group = headerEl.closest('.rating-product-group');
+  const wasOpen = group.classList.contains('expanded');
+  document.querySelectorAll('#ratings-list-wrap .rating-product-group.expanded').forEach(el => {
+    if (el !== group) el.classList.remove('expanded');
+  });
+  group.classList.toggle('expanded', !wasOpen);
 }
 
 // Los botones de Editar/Ocultar/Borrar quedan escondidos hasta que se toca

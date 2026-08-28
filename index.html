@@ -2787,7 +2787,10 @@ function famRemoveItem(idx) {
 
 async function descartarFamiliaWishlist() {
   if (!_familiaDetActual) return;
-  await sb.from('family_wishlists').update({ estado: 'descartada' }).eq('id', _familiaDetActual.wishlist.id);
+  // Se borra por completo (no se marca como "descartada") para que la
+  // lista desaparezca también de admin/su/blue, no solo del panel del
+  // colaborador.
+  await sb.from('family_wishlists').delete().eq('id', _familiaDetActual.wishlist.id);
   closeFamiliaDet();
   await loadFamiliaWishlists();
   refreshFamiliaBadge();

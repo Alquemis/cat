@@ -352,6 +352,16 @@
   .ud-order-hd.open .ud-order-arrow { transform:rotate(90deg); }
   .ud-order-body { display:none;padding:10px 14px;border-top:1px solid #f3f4f6; }
   .ud-order-body.open { display:block; }
+  .wl-collab-group { border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;overflow:hidden; }
+  .wl-collab-hd { display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;background:#f3f4f6;user-select:none; }
+  .wl-collab-hd:hover { background:#ececee; }
+  .wl-collab-name { font-size:13.5px;font-weight:700;color:#143c5a; }
+  .wl-collab-count { font-size:11.5px;color:#6b7280;font-weight:600;white-space:nowrap; }
+  .wl-collab-hd.open .ud-order-arrow { transform:rotate(90deg); }
+  .wl-collab-body { display:none;padding:10px; }
+  .wl-collab-body.open { display:block; }
+  .wl-delete-btn { background:none;border:none;font-size:14px;cursor:pointer;padding:2px 6px;border-radius:6px;flex-shrink:0;line-height:1; }
+  .wl-delete-btn:hover { background:#fee2e2; }
   .ud-line { display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:#374151;border-bottom:1px solid #f9fafb; }
   .ud-line:last-child { border-bottom:none; }
   .ud-line-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px; }
@@ -4899,6 +4909,36 @@ function filterWishlistsModal() {
 
 function _wlGoPage(p) { _wlPage = p; _renderWishlistsPage(); }
 
+// Renderiza una lista individual (tarjeta .ud-order) con su botón de
+// papelera. Se usa tanto agrupada por colaborador como en la vista de
+// un solo colaborador (perfil).
+function _wlEntryHtml(w) {
+  const fecha = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  const estadoBadge = w.estado === 'procesada'
+    ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PROCESADA</span>'
+    : w.estado === 'descartada'
+    ? '<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DESCARTADA</span>'
+    : '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PENDIENTE</span>';
+  const items = w.items || [];
+  const unidades = items.reduce((s,i) => s + (i.cantidad||0), 0);
+  const total = items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0);
+  const lines = items.map(i => {
+    const pct = _wlDiscMap[i.codigo];
+    const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
+    return `<div class="ud-line"><span class="ud-line-name">${esc(i.nombre || i.codigo || '')}${discBadge}</span><span class="ud-line-qty">${i.cantidad||0} u. · ₡${Math.round((i.cantidad||0)*(i.precio_unitario||0)).toLocaleString('es-CR')}</span></div>`;
+  }).join('');
+  const familiarEsc = esc(w.familiar_nombre || '—').replace(/'/g,"\\'");
+  return `<div class="ud-order">
+    <div class="ud-order-hd" onclick="toggleUdOrder(this)">
+      <div><div class="ud-order-num">💌 ${esc(w.familiar_nombre || '—')}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div></div>
+      <span class="ud-order-units">${unidades} u. · <span class="col-sign">₡</span>${Math.round(total).toLocaleString('es-CR')}</span>
+      <button class="wl-delete-btn" title="Borrar lista" onclick="event.stopPropagation();deleteWishlistEntry('${w.id}','${familiarEsc}')">🗑</button>
+      <span class="ud-order-arrow">›</span>
+    </div>
+    <div class="ud-order-body">${lines || '<div style="font-size:12px;color:#9ca3af;">Sin productos.</div>'}</div>
+  </div>`;
+}
+
 function _renderWishlistsPage() {
   const body = document.getElementById('wishlists-modal-body');
   const pg   = document.getElementById('wishlists-pagination');
@@ -4907,40 +4947,55 @@ function _renderWishlistsPage() {
     pg.innerHTML = '';
     return;
   }
-  const pages = Math.ceil(_wlFiltered.length / _wlPageSize);
-  _wlPage = Math.min(_wlPage, pages);
-  const slice = _wlFiltered.slice((_wlPage-1)*_wlPageSize, _wlPage*_wlPageSize);
 
-  body.innerHTML = slice.map(w => {
-    const fecha = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit' });
-    const estadoBadge = w.estado === 'procesada'
-      ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PROCESADA</span>'
-      : w.estado === 'descartada'
-      ? '<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DESCARTADA</span>'
-      : '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PENDIENTE</span>';
-    const items = w.items || [];
-    const unidades = items.reduce((s,i) => s + (i.cantidad||0), 0);
-    const total = items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0);
-    const recipientLine = _wlFilterCedula ? '' : `<div class="ud-order-meta">Para: ${esc(_wlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '—')}</div>`;
-    const lines = items.map(i => {
-      const pct = _wlDiscMap[i.codigo];
-      const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
-      return `<div class="ud-line"><span class="ud-line-name">${esc(i.nombre || i.codigo || '')}${discBadge}</span><span class="ud-line-qty">${i.cantidad||0} u. · ₡${Math.round((i.cantidad||0)*(i.precio_unitario||0)).toLocaleString('es-CR')}</span></div>`;
-    }).join('');
-    return `<div class="ud-order">
-      <div class="ud-order-hd" onclick="toggleUdOrder(this)">
-        <div><div class="ud-order-num">💌 ${esc(w.familiar_nombre || '—')}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div>${recipientLine}</div>
-        <span class="ud-order-units">${unidades} u. · <span class="col-sign">₡</span>${Math.round(total).toLocaleString('es-CR')}</span>
+  // Vista de un solo colaborador (desde su ficha): lista plana, sin agrupar.
+  if (_wlFilterCedula) {
+    const pages = Math.ceil(_wlFiltered.length / _wlPageSize);
+    _wlPage = Math.min(_wlPage, pages);
+    const slice = _wlFiltered.slice((_wlPage-1)*_wlPageSize, _wlPage*_wlPageSize);
+    body.innerHTML = slice.map(_wlEntryHtml).join('');
+    _wlRenderPagination(pg, _wlFiltered.length, pages, 'resultado');
+    return;
+  }
+
+  // Vista general: agrupadas por colaborador, colapsadas por defecto.
+  const groupsByCedula = {};
+  const groupOrder = [];
+  _wlFiltered.forEach(w => {
+    if (!groupsByCedula[w.colaborador_cedula]) {
+      groupsByCedula[w.colaborador_cedula] = { cedula: w.colaborador_cedula, items: [] };
+      groupOrder.push(w.colaborador_cedula);
+    }
+    groupsByCedula[w.colaborador_cedula].items.push(w);
+  });
+  const allGroups = groupOrder.map(c => groupsByCedula[c]);
+
+  const pages = Math.ceil(allGroups.length / _wlPageSize);
+  _wlPage = Math.min(_wlPage, pages);
+  const slice = allGroups.slice((_wlPage-1)*_wlPageSize, _wlPage*_wlPageSize);
+
+  body.innerHTML = slice.map(g => {
+    const nombre = _wlNombreMap[g.cedula] || g.cedula || '—';
+    const totalUnidades = g.items.reduce((s,w) => s + (w.items||[]).reduce((s2,i)=>s2+(i.cantidad||0),0), 0);
+    const itemsHtml = g.items.map(_wlEntryHtml).join('');
+    return `<div class="wl-collab-group">
+      <div class="wl-collab-hd" onclick="toggleWlCollab(this)">
+        <div class="wl-collab-name">👤 ${esc(nombre)}</div>
+        <span class="wl-collab-count">${g.items.length} lista${g.items.length===1?'':'s'} · ${totalUnidades} u.</span>
         <span class="ud-order-arrow">›</span>
       </div>
-      <div class="ud-order-body">${lines || '<div style="font-size:12px;color:#9ca3af;">Sin productos.</div>'}</div>
+      <div class="wl-collab-body">${itemsHtml}</div>
     </div>`;
   }).join('');
 
-  if (pages <= 1) { pg.innerHTML = `<span class="pagination-info">${_wlFiltered.length} resultado${_wlFiltered.length!==1?'s':''}</span>`; return; }
+  _wlRenderPagination(pg, allGroups.length, pages, 'colaborador');
+}
+
+function _wlRenderPagination(pg, total, pages, unitLabel) {
+  if (pages <= 1) { pg.innerHTML = `<span class="pagination-info">${total} ${unitLabel}${total!==1?(unitLabel==='colaborador'?'es':'s'):''}</span>`; return; }
   const inicio = (_wlPage-1)*_wlPageSize + 1;
-  const fin    = Math.min(_wlPage*_wlPageSize, _wlFiltered.length);
-  let html = `<span class="pagination-info">${inicio}–${fin} de ${_wlFiltered.length}</span>`;
+  const fin    = Math.min(_wlPage*_wlPageSize, total);
+  let html = `<span class="pagination-info">${inicio}–${fin} de ${total}</span>`;
   html += `<button class="pg-btn" onclick="_wlGoPage(1)" ${_wlPage===1?'disabled':''}>«</button>`;
   html += `<button class="pg-btn" onclick="_wlGoPage(${_wlPage-1})" ${_wlPage===1?'disabled':''}>‹</button>`;
   const range = [];
@@ -4949,6 +5004,30 @@ function _renderWishlistsPage() {
   html += `<button class="pg-btn" onclick="_wlGoPage(${_wlPage+1})" ${_wlPage===pages?'disabled':''}>›</button>`;
   html += `<button class="pg-btn" onclick="_wlGoPage(${pages})" ${_wlPage===pages?'disabled':''}>»</button>`;
   pg.innerHTML = html;
+}
+
+// Tocar el encabezado de un colaborador despliega/oculta sus listas.
+function toggleWlCollab(hd) {
+  hd.classList.toggle('open');
+  hd.nextElementSibling.classList.toggle('open');
+}
+
+function deleteWishlistEntry(id, familiarNombre) {
+  showConfirm(
+    `¿Borrar la lista de ${familiarNombre}?`,
+    'Esta acción no se puede deshacer.',
+    async () => {
+      const { error } = await sb.from('family_wishlists').delete().eq('id', id);
+      if (error) { showToast('No se pudo borrar: ' + error.message, 'error'); return; }
+      _wlAllData  = _wlAllData.filter(w => w.id !== id);
+      _wlFiltered = _wlFiltered.filter(w => w.id !== id);
+      const kpiEl = document.getElementById('dk-wishlists');
+      if (kpiEl) { const n = parseInt(kpiEl.textContent,10); if (!isNaN(n)) kpiEl.textContent = Math.max(0, n-1); }
+      showToast('Lista borrada.', 'ok');
+      _renderWishlistsPage();
+    },
+    { icon:'🗑', okLabel:'Borrar', okColor:'#dc2626' }
+  );
 }
 
 function closeWishlistsModal() {

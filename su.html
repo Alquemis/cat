@@ -64,6 +64,16 @@
   /* ── TOOLBAR ── */
   .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap; }
   .search-field { flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .cedula-autocomplete-wrap { position:relative;flex:1;max-width:280px; }
+  .cedula-autocomplete-wrap .search-field { max-width:none; }
+  .cedula-autocomplete-list { position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.12);z-index:40;max-height:220px;overflow-y:auto;display:none; }
+  .cedula-autocomplete-list.show { display:block; }
+  .cedula-autocomplete-item { padding:9px 14px;cursor:pointer;border-bottom:1px solid #f3f4f6; }
+  .cedula-autocomplete-item:last-child { border-bottom:none; }
+  .cedula-autocomplete-item:hover { background:#f9fafb; }
+  .cedula-autocomplete-item .ca-nombre { font-size:13px;font-weight:600;color:#143c5a; }
+  .cedula-autocomplete-item .ca-cedula { font-size:11px;color:#9ca3af; }
+  .cedula-autocomplete-empty { padding:10px 14px;font-size:12.5px;color:#9ca3af; }
   .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#143c5a; }
   .btn { padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s; }
   .btn-primary { background:#143c5a;color:#fff; }
@@ -1276,11 +1286,16 @@
         <div id="suupage-banear" style="display:none">
           <div class="su-section-sub">Los colaboradores eliminados aparecen aquí automáticamente. Un usuario <strong>baneado</strong> no puede iniciar sesión ni registrarse de nuevo con la misma cédula; el baneo se puede activar o deshacer en cualquier momento.</div>
 
-          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear por cédula</div>
+          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear por cédula o nombre</div>
           <div class="toolbar" style="margin-bottom:24px;">
-            <div class="search-field" style="flex:1;max-width:280px;">
-              <span>🪪</span>
-              <input type="text" id="su-ban-cedula-input" placeholder="Número de cédula…">
+            <div class="cedula-autocomplete-wrap">
+              <div class="search-field">
+                <span>🪪</span>
+                <input type="text" id="su-ban-cedula-input" placeholder="Cédula o nombre…" autocomplete="off"
+                  oninput="filterSuBanSuggestions()" onfocus="filterSuBanSuggestions()"
+                  onblur="setTimeout(()=>hideSuBanSuggestions(),150)">
+              </div>
+              <div class="cedula-autocomplete-list" id="su-ban-suggestions"></div>
             </div>
             <button class="btn btn-danger" onclick="banSuUserManual()">🚫 Banear</button>
           </div>
@@ -1305,11 +1320,16 @@
         <div id="suupage-suspender" style="display:none">
           <div class="su-section-sub">Un usuario <strong>suspendido</strong> no puede iniciar sesión mientras dure la suspensión, pero a diferencia de eliminar/banear, conserva su cuenta, su historial de pedidos y todos sus datos intactos. Actívalo en cualquier momento para que recupere el acceso.</div>
 
-          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suspender por cédula</div>
+          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suspender por cédula o nombre</div>
           <div class="toolbar" style="margin-bottom:24px;">
-            <div class="search-field" style="flex:1;max-width:280px;">
-              <span>🪪</span>
-              <input type="text" id="su-suspend-cedula-input" placeholder="Número de cédula…">
+            <div class="cedula-autocomplete-wrap">
+              <div class="search-field">
+                <span>🪪</span>
+                <input type="text" id="su-suspend-cedula-input" placeholder="Cédula o nombre…" autocomplete="off"
+                  oninput="filterSuSuspendSuggestions()" onfocus="filterSuSuspendSuggestions()"
+                  onblur="setTimeout(()=>hideSuSuspendSuggestions(),150)">
+              </div>
+              <div class="cedula-autocomplete-list" id="su-suspend-suggestions"></div>
             </div>
             <button class="btn btn-danger" onclick="suspendSuUserManual()">⏸ Suspender</button>
           </div>
@@ -4608,17 +4628,53 @@ async function _suSetSuspendido(cedula, nombre, suspendido) {
   return true;
 }
 
+// Sugerencias en vivo (cédula o nombre) mientras se escribe en el buscador
+// de "Suspender por cédula o nombre".
+function filterSuSuspendSuggestions() {
+  const inp = document.getElementById('su-suspend-cedula-input');
+  const box = document.getElementById('su-suspend-suggestions');
+  if (!inp || !box) return;
+  const q = (inp.value || '').trim().toLowerCase();
+  if (!q) { hideSuSuspendSuggestions(); return; }
+  const matches = allSuUsers
+    .filter(u => !u.suspendido && ((u.cedula || '').toLowerCase().includes(q) || (u.nombre || '').toLowerCase().includes(q)))
+    .slice(0, 8);
+  box.innerHTML = matches.length
+    ? matches.map(u => `
+        <div class="cedula-autocomplete-item" onclick="selectSuSuspendCandidate('${esc(u.cedula || '').replace(/'/g,"\\'")}','${esc(u.nombre || '').replace(/'/g,"\\'")}')">
+          <div class="ca-nombre">${esc(u.nombre || '—')}</div>
+          <div class="ca-cedula">${esc(u.cedula || '')}${u.departamento ? ' · ' + esc(u.departamento) : ''}</div>
+        </div>`).join('')
+    : '<div class="cedula-autocomplete-empty">Sin coincidencias.</div>';
+  box.classList.add('show');
+}
+function hideSuSuspendSuggestions() {
+  const box = document.getElementById('su-suspend-suggestions');
+  if (box) box.classList.remove('show');
+}
+function selectSuSuspendCandidate(cedula, nombre) {
+  document.getElementById('su-suspend-cedula-input').value = cedula;
+  hideSuSuspendSuggestions();
+}
+
 function suspendSuUserManual() {
   const inp = document.getElementById('su-suspend-cedula-input');
-  const cedula = (inp.value || '').trim();
-  if (!cedula) { showToast('Ingresa un número de cédula.', 'warn'); return; }
-  const found = allSuUsers.find(u => u.cedula === cedula);
-  if (!found) { showToast('Esa cédula no corresponde a un colaborador activo.', 'warn'); return; }
+  const raw = (inp.value || '').trim();
+  if (!raw) { showToast('Ingresa una cédula o nombre.', 'warn'); return; }
+  let found = allSuUsers.find(u => u.cedula === raw);
+  if (!found) {
+    const q = raw.toLowerCase();
+    const matches = allSuUsers.filter(u => (u.nombre || '').toLowerCase() === q || (u.nombre || '').toLowerCase().includes(q));
+    if (matches.length === 1) found = matches[0];
+    else if (matches.length > 1) { showToast('Hay varias coincidencias — selecciónalo de la lista.', 'warn'); return; }
+  }
+  if (!found) { showToast('No se encontró ningún colaborador activo con ese dato.', 'warn'); return; }
+  const cedula = found.cedula;
   if (found.suspendido) { showToast('Ese colaborador ya está suspendido.', 'warn'); return; }
   showConfirm(
     `¿Suspender a ${found.nombre || cedula}?`,
     'No podrá iniciar sesión mientras esté suspendido, pero su cuenta e historial de pedidos se mantienen intactos.',
-    async () => { const ok = await _suSetSuspendido(cedula, found.nombre, true); if (ok) inp.value = ''; },
+    async () => { const ok = await _suSetSuspendido(cedula, found.nombre, true); if (ok) { inp.value = ''; hideSuSuspendSuggestions(); } },
     { icon: '⏸', okLabel: 'Suspender', okColor: '#dc2626' }
   );
 }
@@ -4752,10 +4808,47 @@ function banSuUser(cedula, nombre) {
   );
 }
 
+// Sugerencias en vivo (cédula o nombre) mientras se escribe en el buscador
+// de "Banear por cédula o nombre".
+function filterSuBanSuggestions() {
+  const inp = document.getElementById('su-ban-cedula-input');
+  const box = document.getElementById('su-ban-suggestions');
+  if (!inp || !box) return;
+  const q = (inp.value || '').trim().toLowerCase();
+  if (!q) { hideSuBanSuggestions(); return; }
+  const matches = allSuUsers
+    .filter(u => !_suBannedSet.has(u.cedula) && ((u.cedula || '').toLowerCase().includes(q) || (u.nombre || '').toLowerCase().includes(q)))
+    .slice(0, 8);
+  box.innerHTML = matches.length
+    ? matches.map(u => `
+        <div class="cedula-autocomplete-item" onclick="selectSuBanCandidate('${esc(u.cedula || '').replace(/'/g,"\\'")}','${esc(u.nombre || '').replace(/'/g,"\\'")}')">
+          <div class="ca-nombre">${esc(u.nombre || '—')}</div>
+          <div class="ca-cedula">${esc(u.cedula || '')}${u.departamento ? ' · ' + esc(u.departamento) : ''}</div>
+        </div>`).join('')
+    : '<div class="cedula-autocomplete-empty">Sin coincidencias.</div>';
+  box.classList.add('show');
+}
+function hideSuBanSuggestions() {
+  const box = document.getElementById('su-ban-suggestions');
+  if (box) box.classList.remove('show');
+}
+function selectSuBanCandidate(cedula, nombre) {
+  document.getElementById('su-ban-cedula-input').value = cedula;
+  hideSuBanSuggestions();
+}
+
 function banSuUserManual() {
   const inp = document.getElementById('su-ban-cedula-input');
-  const cedula = (inp.value || '').trim();
-  if (!cedula) { showToast('Ingresa un número de cédula.', 'warn'); return; }
+  const raw = (inp.value || '').trim();
+  if (!raw) { showToast('Ingresa una cédula o nombre.', 'warn'); return; }
+  let cedula = raw;
+  const directHit = allSuUsers.find(u => u.cedula === raw) || allSuBanned.find(b => b.cedula === raw);
+  if (!directHit) {
+    const q = raw.toLowerCase();
+    const matches = allSuUsers.filter(u => (u.nombre || '').toLowerCase() === q || (u.nombre || '').toLowerCase().includes(q));
+    if (matches.length === 1) cedula = matches[0].cedula;
+    else if (matches.length > 1) { showToast('Hay varias coincidencias — selecciónalo de la lista.', 'warn'); return; }
+  }
   if (_suBannedSet.has(cedula)) { showToast('Esa cédula ya está baneada.', 'warn'); return; }
   const foundActive = allSuUsers.find(u => u.cedula === cedula);
   const foundHist   = allSuBanned.find(b => b.cedula === cedula);

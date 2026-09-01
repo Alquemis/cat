@@ -310,6 +310,18 @@
   .ud-line:last-child { border-bottom:none; }
   .ud-line-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px; }
   .ud-line-qty { flex-shrink:0;font-weight:700;color:#143c5a; }
+  .fraud-case-card { border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#fff; }
+  .fraud-case-card:last-child { margin-bottom:0; }
+  .fraud-case-hd { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px; }
+  .fraud-risk-badge { font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap; }
+  .fraud-case-summary { font-size:13px;color:#374151;line-height:1.5;margin-bottom:12px; }
+  .fraud-timeline { display:flex;flex-direction:column; }
+  .fraud-event { display:flex;align-items:center;gap:10px;padding:6px 0; }
+  .fraud-event-info { display:flex;flex-direction:column;gap:1px; }
+  .fraud-event-name { font-size:13px;font-weight:600;color:#111827; }
+  .fraud-event-cedula { font-weight:400;color:#6b7280;font-size:12px; }
+  .fraud-event-meta { font-size:11.5px;color:#6b7280; }
+  .fraud-gap { font-size:11px;color:#9ca3af;padding-left:32px;margin:1px 0; }
 
   /* ── MODAL DETALLES PRODUCTO ── */
   #su-prod-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;padding:16px; }
@@ -1356,11 +1368,8 @@
       <div class="su-section" style="margin-top:24px;">
         <div class="su-section-title">🚨 Posibles registros falsos</div>
         <div class="su-section-sub">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
-        <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
-          <table>
-            <thead><tr><th>Cédulas asociadas</th><th>Nombres</th><th>Eventos</th><th>Última actividad</th><th style="width:60px;text-align:center;">Acción</th></tr></thead>
-            <tbody id="cfg-fraude-tbody"><tr><td colspan="4" class="empty-table">Cargando…</td></tr></tbody>
-          </table>
+        <div id="cfg-fraude-list" class="fraud-cases-wrap" style="max-height:480px;overflow-y:auto;">
+          <div class="empty-table">Cargando…</div>
         </div>
       </div>
 
@@ -4228,14 +4237,14 @@ function _suUsersSetSize(v) { _suUsersPageSize = parseInt(v); _suUsersPage = 1; 
 // registrarse de nuevo con otro número. Solo se agrupa y se muestra — no
 // se toma ninguna acción automática, queda a criterio del administrador.
 async function loadFraudDevices() {
-  const tbody = document.getElementById('cfg-fraude-tbody');
-  if (!tbody) return;
+  const wrap = document.getElementById('cfg-fraude-list');
+  if (!wrap) return;
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await sb.from('intentos_acceso')
     .select('device_id, cedula, nombre, resultado, created_at')
     .gte('created_at', since)
-    .order('created_at', { ascending: false });
-  if (error) { console.error(error); tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Error al cargar.</td></tr>'; return; }
+    .order('created_at', { ascending: true });
+  if (error) { console.error(error); wrap.innerHTML = '<div class="empty-table">Error al cargar.</div>'; return; }
 
   const porDispositivo = {};
   (data || []).forEach(r => {
@@ -4244,33 +4253,115 @@ async function loadFraudDevices() {
     porDispositivo[r.device_id].push(r);
   });
 
-  const sospechosos = Object.values(porDispositivo)
-    .filter(eventos => new Set(eventos.map(e => e.cedula)).size > 1)
-    .sort((a, b) => new Date(b[0].created_at) - new Date(a[0].created_at));
+  const sospechosos = Object.entries(porDispositivo)
+    .map(([deviceId, eventos]) => ({ deviceId, eventos }))
+    .filter(c => new Set(c.eventos.map(e => e.cedula)).size > 1)
+    .sort((a, b) => new Date(b.eventos[b.eventos.length - 1].created_at) - new Date(a.eventos[a.eventos.length - 1].created_at));
 
-  if (!sospechosos.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin casos detectados en los últimos 30 días.</td></tr>'; return; }
+  if (!sospechosos.length) { wrap.innerHTML = '<div class="empty-table">Sin casos detectados en los últimos 30 días.</div>'; return; }
 
-  tbody.innerHTML = sospechosos.map(eventos => {
-    const deviceId = eventos[0].device_id;
-    const porCedula = {};
-    eventos.forEach(e => { if (!porCedula[e.cedula]) porCedula[e.cedula] = { nombre: e.nombre, resultados: [] }; porCedula[e.cedula].resultados.push(e.resultado); });
-    const cedulas = Object.keys(porCedula).map(c => esc(c)).join('<br>');
-    const nombres = Object.entries(porCedula).map(([c, v]) => `<span style="display:inline-flex;align-items:center;gap:5px;">${userAvatar(v.nombre, c)}${esc(v.nombre || '—')}</span>`).join('<br>');
-    const badge = r => r === 'bloqueado'
-      ? '<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:2px 6px;border-radius:6px;white-space:nowrap;">🚫 bloqueado</span>'
-      : r === 'registro'
-      ? '<span style="font-size:10px;font-weight:700;color:#b45309;background:#fef3c7;padding:2px 6px;border-radius:6px;white-space:nowrap;">🆕 registro</span>'
-      : '<span style="font-size:10px;font-weight:700;color:#374151;background:#f3f4f6;padding:2px 6px;border-radius:6px;white-space:nowrap;">🔑 login</span>';
-    const eventosHtml = Object.entries(porCedula).map(([c, v]) => `${esc(c)}: ${[...new Set(v.resultados)].map(badge).join(' ')}`).join('<br>');
-    const ultima = new Date(eventos[0].created_at).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    return `<tr>
-      <td style="font-weight:600">${cedulas}</td>
-      <td>${nombres}</td>
-      <td style="font-size:12px;line-height:1.8">${eventosHtml}</td>
-      <td style="font-size:12px;color:#6b7280;white-space:nowrap">${ultima}</td>
-      <td style="text-align:center"><button class="btn btn-danger btn-sm" onclick="deleteFraudCase('${esc(deviceId)}')" title="Eliminar este caso">🗑</button></td>
-    </tr>`;
-  }).join('');
+  // Se consulta puntualmente cuáles cédulas están baneadas (en vez de depender
+  // de _suBannedSet, que puede no estar listo todavía por cargarse en paralelo).
+  const todasCedulas = [...new Set(sospechosos.flatMap(c => c.eventos.map(e => e.cedula)))];
+  let bannedSet = new Set();
+  if (todasCedulas.length) {
+    const { data: bdata } = await sb.from('usuarios_baneados').select('cedula').eq('baneado', true).in('cedula', todasCedulas);
+    bannedSet = new Set((bdata || []).map(b => b.cedula));
+  }
+
+  wrap.innerHTML = sospechosos.map(({ deviceId, eventos }) => renderFraudCase(deviceId, eventos, bannedSet)).join('');
+}
+
+// Formatea una diferencia de tiempo en ms como "5 min", "2 h" o "3 d",
+// usado tanto en el resumen como entre renglones de la línea de tiempo.
+function formatGap(ms) {
+  const min = Math.round(ms / 60000);
+  if (min < 1) return 'menos de 1 min';
+  if (min < 60) return `${min} min`;
+  const hrs = Math.round(min / 60);
+  if (hrs < 24) return `${hrs} h`;
+  const days = Math.round(hrs / 24);
+  return `${days} d`;
+}
+
+const _fraudVerbo = r => r === 'bloqueado' ? 'quedó bloqueado al usar la cuenta de' : r === 'registro' ? 'registró la cuenta de' : 'inició sesión con la cuenta de';
+const _fraudBadgeTxt = r => r === 'bloqueado' ? '🚫 bloqueado' : r === 'registro' ? '🆕 registro' : '🔑 login';
+
+// Determina qué cédula es "la dueña" del dispositivo para narrar el caso en
+// torno a ella. Si una de las dos cuentas se creó justo en este dispositivo
+// (evento 'registro') y la otra ya existía de antes, se ancla en la cuenta
+// preexistente — es la que normalmente usa ese dispositivo, y lo sospechoso
+// es que desde ahí se creó/usó una cuenta distinta. Si no hay esa señal
+// (ambas ya existían, o ambas se crearon ahí), se usa el primer evento
+// cronológico como referencia.
+function pickAnchorCedula(eventos, cedulas) {
+  if (cedulas.length === 2) {
+    const [c1, c2] = cedulas;
+    const c1Registro = eventos.some(e => e.cedula === c1 && e.resultado === 'registro');
+    const c2Registro = eventos.some(e => e.cedula === c2 && e.resultado === 'registro');
+    if (c1Registro && !c2Registro) return c2;
+    if (c2Registro && !c1Registro) return c1;
+  }
+  return eventos[0].cedula;
+}
+
+// Renderiza un caso sospechoso como una tarjeta con: 1) resumen en una línea
+// narrado desde la cuenta "dueña" del dispositivo, 2) severidad (rojo si
+// alguna cédula involucrada está baneada, amarillo si no), y 3) la secuencia
+// real de eventos en orden cronológico con la brecha de tiempo entre cada
+// uno — para que se entienda la historia del dispositivo de un vistazo, en
+// vez de columnas sueltas sin relación visible entre sí.
+function renderFraudCase(deviceId, eventos, bannedSet) {
+  const cedulasInvolucradas = [...new Set(eventos.map(e => e.cedula))];
+  const hayBaneado = cedulasInvolucradas.some(c => bannedSet.has(c));
+  const riesgo = hayBaneado
+    ? { icon: '🔴', label: 'Posible reincidencia de baneo', bg: '#fee2e2', color: '#dc2626' }
+    : { icon: '🟡', label: 'Posible dispositivo compartido', bg: '#fef3c7', color: '#b45309' };
+
+  const anchorCedula = pickAnchorCedula(eventos, cedulasInvolucradas);
+  const anchorNombre = (eventos.find(e => e.cedula === anchorCedula) || {}).nombre;
+  const anchorEventos = eventos.filter(e => e.cedula === anchorCedula);
+  const otrosEventos = eventos.filter(e => e.cedula !== anchorCedula);
+
+  let resumen;
+  if (cedulasInvolucradas.length === 2 && otrosEventos.length === 1) {
+    const otro = otrosEventos[0];
+    const anchorMasCercano = anchorEventos.reduce((best, a) =>
+      Math.abs(new Date(otro.created_at) - new Date(a.created_at)) < Math.abs(new Date(otro.created_at) - new Date(best.created_at)) ? a : best
+    );
+    const gapMs = Math.abs(new Date(otro.created_at) - new Date(anchorMasCercano.created_at));
+    const direccion = new Date(otro.created_at) < new Date(anchorMasCercano.created_at) ? 'antes' : 'después';
+    resumen = `El dispositivo asociado a la cuenta de <strong>${esc(anchorNombre || anchorCedula)}</strong> también ${_fraudVerbo(otro.resultado)} <strong>${esc(otro.nombre || otro.cedula)}</strong>, ${formatGap(gapMs)} ${direccion}.`;
+  } else {
+    resumen = `El dispositivo asociado a la cuenta de <strong>${esc(anchorNombre || anchorCedula)}</strong> tuvo actividad de ${cedulasInvolucradas.length - 1} cuenta(s) adicional(es) en los últimos 30 días.`;
+  }
+
+  let timelineHtml = '';
+  eventos.forEach((e, i) => {
+    if (i > 0) {
+      const gapMs = new Date(e.created_at) - new Date(eventos[i - 1].created_at);
+      timelineHtml += `<div class="fraud-gap">↓ ${formatGap(gapMs)} después</div>`;
+    }
+    const hora = new Date(e.created_at).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    timelineHtml += `
+      <div class="fraud-event">
+        ${userAvatar(e.nombre, e.cedula)}
+        <div class="fraud-event-info">
+          <div class="fraud-event-name">${esc(e.nombre || '—')} <span class="fraud-event-cedula">(${esc(e.cedula)})</span></div>
+          <div class="fraud-event-meta">${_fraudBadgeTxt(e.resultado)} · ${hora}</div>
+        </div>
+      </div>`;
+  });
+
+  return `
+    <div class="fraud-case-card">
+      <div class="fraud-case-hd">
+        <div class="fraud-risk-badge" style="background:${riesgo.bg};color:${riesgo.color};">${riesgo.icon} ${riesgo.label}</div>
+        <button class="btn btn-danger btn-sm" onclick="deleteFraudCase('${esc(deviceId)}')" title="Eliminar este caso">🗑</button>
+      </div>
+      <div class="fraud-case-summary">${resumen}</div>
+      <div class="fraud-timeline">${timelineHtml}</div>
+    </div>`;
 }
 
 // Elimina del historial (tabla intentos_acceso) todos los registros de ese

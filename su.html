@@ -326,7 +326,8 @@
   /* ── MODAL DETALLES PRODUCTO ── */
   #su-prod-detail-modal { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;padding:16px; }
   #su-prod-detail-modal.open { display:flex; }
-  #su-prod-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(680px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;box-shadow:0 25px 60px rgba(0,0,0,.2);overflow:hidden; }
+  #su-prod-detail-card { background:#fff;border-radius:20px;padding:20px;width:100%;max-width:min(680px,100%);max-height:88vh;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;box-shadow:0 25px 60px rgba(0,0,0,.2);overflow:hidden; }
+  #su-prod-detail-body { flex:1;min-height:0;overflow-y:auto; }
   .prod-detail-filters { display:flex;gap:6px;align-items:center;flex-wrap:wrap; }
   .prod-detail-table { width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed; }
   .prod-detail-table th { background:#f9fafb;padding:6px 10px;font-size:10px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;overflow:hidden; }
@@ -615,7 +616,7 @@
   <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
   <button class="page-tab" onclick="showPage('users')">👤 Colaboradores</button>
   <button class="page-tab" onclick="showPage('dashboard')">📊 Dashboard</button>
-  <button class="page-tab" onclick="showPage('su')">🔐 Superusuario</button>
+  <button class="page-tab" onclick="showPage('su')">🔐 Configuración</button>
   <button class="page-tab" onclick="showPage('promotions')">🏷 Promociones</button>
   <button class="page-tab" onclick="showPage('notifications')">🔔 Notificaciones</button>
   <button class="page-tab" onclick="showPage('ratings')">⭐ Valoraciones</button>

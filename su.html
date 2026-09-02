@@ -3521,6 +3521,10 @@ function _dupConfirmReject() {
 }
 
 async function loadOrders() {
+  // Se refresca aquí también (no solo al visitar la pestaña "Superusuario")
+  // para que el Gran Total y el tab "Exentos" siempre usen la lista real de
+  // app_config.exempt_cedulas, aunque el admin entre directo a Pedidos.
+  await loadExemptCedulas();
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
     sb.from('pedidos').select('*, lineas_pedido(*), facturado_at, pagado_at').in('estado',['facturado','cancelado','pagado','devuelto','sin_inventario','eliminado']).order('fecha', {ascending:true})
@@ -3591,8 +3595,8 @@ function showOrdersTab(tab) {
   requestAnimationFrame(_fitOrdersTable);
 }
 
-let _suPendSort = { col: 'fecha', dir: 'asc' };
-let _suHistSort = { col: 'fecha', dir: 'asc' };
+let _suPendSort = { col: 'fecha', dir: 'desc' };
+let _suHistSort = { col: 'fecha', dir: 'desc' };
 
 function _sortOrderList(list, col, dir) {
   return [...list].sort((a,b) => {

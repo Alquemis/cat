@@ -2141,8 +2141,21 @@ let allAdminHist   = [];
 let _moraUsersMap  = {};  // key (email||nombre) → mora orders[]
 let _moraNombreMap = {};  // nombre → key in _moraUsersMap
 const OWNER_CEDULA = '116000127'; // Dueño — exento de pago, no suma a ventas
+// Lista base de respaldo (por si aún no cargó desde la BD). La lista real y
+// actualizada vive en app_config.exempt_cedulas, gestionada desde su.html/
+// blue.html en "Usuarios Exentos de Pago" — loadExemptCedulas() la sincroniza
+// aquí para que el Gran Total y el tab "Exentos" coincidan con esos paneles.
 const EXEMPT_CEDULAS = new Set(['116000127', '185800008631']); // Usuarios exentos de pago
 const isExemptOrder = o => o.exento_pago || EXEMPT_CEDULAS.has(o.usuario_email);
+
+async function loadExemptCedulas() {
+  const { data } = await sb.from('app_config').select('value').eq('key', 'exempt_cedulas').maybeSingle();
+  let list = [];
+  if (data?.value) { try { list = JSON.parse(data.value); } catch(e) {} }
+  if (!list.includes(OWNER_CEDULA)) list = [OWNER_CEDULA, ...list];
+  EXEMPT_CEDULAS.clear();
+  list.forEach(c => EXEMPT_CEDULAS.add(c));
+}
 
 function _rebuildMoraMap() {
   const now = Date.now();
@@ -2237,6 +2250,7 @@ async function onLogin() {
   currentUser = 'admin';
   document.getElementById('login-overlay').classList.add('hidden');
   document.getElementById('topbar-user').textContent = 'Administrador';
+  await loadExemptCedulas();
   await loadStats();
   await loadProducts();
   _startRealtime();
@@ -2817,6 +2831,7 @@ async function _autoDeleteExactDups() {
 }
 
 async function loadOrders() {
+  await loadExemptCedulas();
   const [resPend, resHist] = await Promise.all([
     sb.from('pedidos').select('*, lineas_pedido(*)').eq('estado','pendiente').order('fecha', {ascending:true}),
     sb.from('pedidos').select('*, lineas_pedido(*), facturado_at').in('estado',['facturado','cancelado','pagado','devuelto','sin_inventario','eliminado']).order('fecha', {ascending:true})
@@ -2893,7 +2908,7 @@ function showOrdersTab(tab) {
   requestAnimationFrame(_fitOrdersTable);
 }
 
-let _pendSort = { col: 'fecha', dir: 'asc' };
+let _pendSort = { col: 'fecha', dir: 'desc' };
 
 function sortPend(col) {
   if (_pendSort.col === col) { _pendSort.dir = _pendSort.dir === 'asc' ? 'desc' : 'asc'; }
@@ -2926,7 +2941,7 @@ function filterAdminPend() {
   renderAdminOrders('pend-tbody', list, 'pend');
 }
 
-let _histSort = { col: 'fecha', dir: 'asc' };
+let _histSort = { col: 'fecha', dir: 'desc' };
 
 function sortHist(col) {
   if (_histSort.col === col) { _histSort.dir = _histSort.dir === 'asc' ? 'desc' : 'asc'; }

@@ -687,10 +687,10 @@
     <div class="stat-grid" style="margin-bottom:20px">
       <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Nuevos pedidos</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
-      <div class="stat-card" style="border-color:#fca5a5"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
-      <div class="stat-card" style="border-color:#fca5a5;background:#fff5f5;"><div class="stat-value" style="color:#dc2626" id="stat-orders-devueltos">—</div><div class="stat-label">Devueltos</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#dc2626" id="stat-orders-devueltos">—</div><div class="stat-label">Devueltos</div></div>
       <!-- Gran total -->
-      <div class="stat-card stat-card-gran" style="border-color:#bfdbfe;background:#eff6ff;">
+      <div class="stat-card stat-card-gran">
         <div class="stat-gran-main">
           <div class="stat-gran-label">Gran total</div>
           <div class="stat-gran-total"><span class="col-sign">₡</span><span id="stat-gran-total">0</span></div>
@@ -1111,24 +1111,24 @@
   <!-- ── PAGE: DASHBOARD ── -->
   <div id="page-dashboard" style="display:none">
     <div class="dash-grid">
-      <div class="dash-kpi stat-card-gran" style="grid-column:1/-1;border-color:#ddd6fe;background:#f5f3ff;">
+      <div class="dash-kpi stat-card-gran" style="grid-column:1/-1;">
         <div class="stat-gran-main">
           <div class="stat-gran-label">Gran total</div>
-          <div class="stat-gran-total" style="color:#7c3aed;"><span class="col-sign">₡</span><span id="sdk-total-fact">—</span></div>
+          <div class="stat-gran-total" style="color:#143c5a;"><span class="col-sign">₡</span><span id="sdk-total-fact">—</span></div>
         </div>
         <div class="stat-gran-divider"></div>
         <div class="stat-gran-breakdown">
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Pagados</div>
-            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-pagados">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="sdk-gt-pagados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Por pagar</div>
-            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-facturados">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="sdk-gt-facturados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Nuevos pedidos</div>
-            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-nuevos">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="sdk-gt-nuevos">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">En mora</div>
@@ -1141,7 +1141,7 @@
         </div>
       </div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
-      <div class="dash-kpi" style="border-color:#fde68a;background:#fffbeb;"><div class="dash-kpi-val" style="color:#b45309;" id="sdk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#b45309;">Pedidos pendientes</div></div>
+      <div class="dash-kpi"><div class="dash-kpi-val" style="color:#143c5a;" id="sdk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#143c5a;">Pedidos pendientes</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-promedio"><span class="col-sign">₡</span>—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-unidades">—</div><div class="dash-kpi-lbl">Unidades vendidas</div></div>
       <div class="dash-kpi" onclick="showPage('users');showCollabTab('activos')" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
@@ -1155,7 +1155,7 @@
     </div>
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
-        <span>Ventas en el tiempo</span>
+        <span>Ventas</span>
         <div class="dash-filters">
           <select class="dash-filter" id="sf-tiempo-year" onchange="renderSuChartTiempo()"><option value="">Todos los años</option></select>
           <div class="dash-period-btns">
@@ -1233,7 +1233,7 @@
     <!-- Unidades vendidas en el tiempo -->
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
-        <span>Unidades vendidas en el tiempo</span>
+        <span>unidades vendidas</span>
         <div class="dash-filters">
           <select class="dash-filter" id="sf-unid-tiempo-year" onchange="renderSuChartUnidTiempo()"><option value="">Todos los años</option></select>
           <div class="dash-period-btns">
@@ -1795,9 +1795,9 @@
     </div>
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
       <div class="dash-period-btns" id="su-pd-period-btns">
-        <button class="dash-period-btn active" id="su-pd-pbtn-day"   onclick="setSuProdDetailPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-pd-pbtn-day"   onclick="setSuProdDetailPeriod('day')">Día</button>
         <button class="dash-period-btn"        id="su-pd-pbtn-week"  onclick="setSuProdDetailPeriod('week')">Semana</button>
-        <button class="dash-period-btn"        id="su-pd-pbtn-month" onclick="setSuProdDetailPeriod('month')">Mes</button>
+        <button class="dash-period-btn active" id="su-pd-pbtn-month" onclick="setSuProdDetailPeriod('month')">Mes</button>
       </div>
     </div>
     <div style="position:relative;width:100%;height:140px;"><canvas id="su-prod-detail-chart"></canvas></div>
@@ -1861,9 +1861,9 @@
       <select class="dash-filter" id="su-md-year" onchange="renderSuMontoDetail()"><option value="">Todos los años</option></select>
       <select class="dash-filter" id="su-md-month" onchange="renderSuMontoDetail()"><option value="">Todos los meses</option></select>
       <div class="dash-period-btns" style="margin-left:auto;">
-        <button class="dash-period-btn active" id="su-md-pbtn-day"   onclick="setSuMontoPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-md-pbtn-day"   onclick="setSuMontoPeriod('day')">Día</button>
         <button class="dash-period-btn"        id="su-md-pbtn-week"  onclick="setSuMontoPeriod('week')">Semana</button>
-        <button class="dash-period-btn"        id="su-md-pbtn-month" onclick="setSuMontoPeriod('month')">Mes</button>
+        <button class="dash-period-btn active" id="su-md-pbtn-month" onclick="setSuMontoPeriod('month')">Mes</button>
       </div>
     </div>
     <div style="position:relative;width:100%;height:140px;margin-bottom:8px;"><canvas id="su-monto-detail-chart"></canvas></div>
@@ -1936,9 +1936,9 @@
       <select class="dash-filter" id="su-ud-year" onchange="renderSuUserDetail()"><option value="">Todos los años</option></select>
       <select class="dash-filter" id="su-ud-month" onchange="renderSuUserDetail()"><option value="">Todos los meses</option></select>
       <div class="dash-period-btns" style="margin-left:auto;">
-        <button class="dash-period-btn active" id="su-ud-pbtn-day"   onclick="setSuUdPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-ud-pbtn-day"   onclick="setSuUdPeriod('day')">Día</button>
         <button class="dash-period-btn"        id="su-ud-pbtn-week"  onclick="setSuUdPeriod('week')">Semana</button>
-        <button class="dash-period-btn"        id="su-ud-pbtn-month" onclick="setSuUdPeriod('month')">Mes</button>
+        <button class="dash-period-btn active" id="su-ud-pbtn-month" onclick="setSuUdPeriod('month')">Mes</button>
         <button class="dash-period-btn"        id="su-ud-pbtn-year"  onclick="setSuUdPeriod('year')">Año</button>
       </div>
       <div class="dash-period-btns" style="margin-left:4px;">
@@ -6526,7 +6526,7 @@ function renderSuChartUnidTiempo() {
   if (_suChartUnidTiempo) _suChartUnidTiempo.destroy();
   _suChartUnidTiempo = new Chart(ctx, {
     type: _suUnidChartType,
-    data: { labels, datasets:[{ data:vals, borderColor:'#0ea5e9', backgroundColor:_suUnidChartType==='bar'?'#0ea5e9':'rgba(14,165,233,0.1)', borderWidth:2, fill:_suUnidChartType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#0ea5e9', borderRadius:_suUnidChartType==='bar'?6:0 }] },
+    data: { labels, datasets:[{ data:vals, borderColor:'#7c3aed', backgroundColor:_suUnidChartType==='bar'?'#7c3aed':'rgba(124,58,237,0.08)', borderWidth:2, fill:_suUnidChartType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#7c3aed', borderRadius:_suUnidChartType==='bar'?6:0 }] },
     options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11},maxRotation:45},grid:{display:false}}} }
   });
 }

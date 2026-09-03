@@ -397,6 +397,15 @@
     font-size:26px; color:#fff;
   }
 
+  /* ── SALUDO DE BIENVENIDA (mano que saluda, igual que en FL.html) ── */
+  @keyframes welcome-wave-hand {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(18deg); }
+    50% { transform: rotate(0deg); }
+    75% { transform: rotate(-12deg); }
+  }
+  #welcome-wave-icon { display:inline-block; transform-origin:70% 70%; animation: welcome-wave-hand .5s ease-in-out 3; }
+
   /* ── NOTIFICACIONES ── */
   @keyframes bell-shake {
     0%,100%{ transform:rotate(0); }
@@ -1123,7 +1132,7 @@
 <!-- POPUP DE BIENVENIDA -->
 <div id="welcome-popup" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:24px;padding:44px 40px;text-align:center;max-width:340px;width:90%;box-shadow:0 32px 80px rgba(0,0,0,0.3);">
-    <div style="font-size:52px;margin-bottom:16px;">👋</div>
+    <div id="welcome-wave-icon" style="font-size:52px;margin-bottom:16px;">👋</div>
     <div style="font-size:26px;font-weight:800;color:#143c5a;margin-bottom:16px;">¡Hola!</div>
     <div id="welcome-name" style="font-size:26px;font-weight:800;color:#1d4ed8;margin-bottom:8px;"></div>
   </div>
@@ -1445,6 +1454,7 @@
           <div class="modal-title">¡Valora este producto!</div>
           <div id="rating-again-note" style="display:none;font-size:12px;color:#6b7280;margin-top:6px;">Ya valoraste este producto — si quieres, deja otro comentario y dale otra valoración.</div>
           <div id="rating-first-note" style="display:none;font-size:15px;font-weight:700;color:#143c5a;margin-top:6px;">Se el primero en valorar este producto</div>
+          <div style="font-size:14px;color:#6b7280;margin-top:6px;">Toca las estrellas y escribe tu comentario</div>
         </div>
         <div style="padding:16px 28px 18px;">
           <div id="rating-picker" class="rating-picker" style="justify-content:center;">

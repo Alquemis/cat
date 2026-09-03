@@ -5493,7 +5493,7 @@ function renderSuChartDias() {
 }
 
 function renderSuRankProductos() {
-  const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado');
+  const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado'&&o.estado!=='eliminado'&&o.estado!=='sin_inventario');
   const data=_suFilterByYearMonth(base,'sf-prod-year','sf-prod-month');
   const map={};
   const names={};
@@ -5784,7 +5784,7 @@ function closeSuProdDetail() {
 }
 
 function renderSuRankUnidades() {
-  const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado');
+  const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado'&&o.estado!=='eliminado'&&o.estado!=='sin_inventario');
   const data=_suFilterByYearMonth(base,'sf-unid-year','sf-unid-month');
   const map={};
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
@@ -6383,7 +6383,7 @@ function closeSuUserDetail() {
 }
 
 function renderSuRankMonto() {
-  const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado');
+  const base=(_suDashData||[]).filter(o=>o.estado!=='cancelado'&&o.estado!=='eliminado'&&o.estado!=='sin_inventario');
   const data=_suFilterByYearMonth(base,'sf-monto-year','sf-monto-month');
   const map={};
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.total||0);});

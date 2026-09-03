@@ -39,9 +39,10 @@
   .topbar-logout:hover { background:#6d28d9; }
 
   .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;gap:0; }
-  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s; }
+  .page-tab { display:inline-flex;align-items:center;gap:7px;padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s; }
+  .page-tab svg { flex-shrink:0; }
   .page-tab:hover { color:#143c5a; }
-  .page-tab.active { color:#7c3aed;border-bottom:3px solid #7c3aed; }
+  .page-tab.active { background:#7c3aed;color:#fff;border-bottom-color:#7c3aed;border-radius:8px 8px 0 0; }
 
   .container { max-width:1200px;margin:0 auto;padding:32px; }
 
@@ -200,8 +201,26 @@
   .su-field input:focus { border-color:#7c3aed; }
   .su-msg { border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none; }
 
+  /* ── SUBTABS COLABORADORES / PEDIDOS ── */
+  .collab-tabs, .order-tabs { display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff; }
+  .collab-tab, .order-tab {
+    flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;
+    background:none;cursor:pointer;color:#6b7280;white-space:nowrap;
+    transition:background .15s,color .15s;
+  }
+  .collab-tab.active, .order-tab.active { background:#7c3aed;color:#fff;border-radius:8px 8px 0 0; }
+  .order-tab-badge {
+    background:#7c3aed;color:#fff;border-radius:999px;font-size:11px;font-weight:700;
+    min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+    padding:0 5px;margin-left:6px;
+  }
+  .order-tab.active .order-tab-badge { background:#fff;color:#7c3aed; }
+
   /* ── RESPONSIVE ── */
   @media(max-width:768px) {
+    .collab-tabs, .order-tabs, .promo-subtabs { overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap; }
+    .collab-tabs::-webkit-scrollbar, .order-tabs::-webkit-scrollbar, .promo-subtabs::-webkit-scrollbar { display:none; }
+    .collab-tab, .order-tab, .promo-subtab { flex:0 0 auto;padding:12px 16px;font-size:13px; }
     .topbar { padding:12px 16px; }
     .topbar-brand span { display:none; }
     .page-tabs { padding:0 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap; }
@@ -472,13 +491,13 @@
   .notif-hist-meta { font-size:12px;color:#9ca3af;margin:3px 0 8px; }
 
   /* ── PROMOCIONES ── */
-  .promo-subtabs { display:flex;gap:8px;flex-wrap:wrap; }
+  .promo-subtabs { display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff; }
   .promo-subtab {
-    padding:9px 16px;border-radius:999px;border:1.5px solid #e5e7eb;background:#fff;
-    color:#6b7280;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;
+    flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;
+    background:none;cursor:pointer;color:#6b7280;white-space:nowrap;
+    transition:background .15s,color .15s;
   }
-  .promo-subtab:hover { background:#f9fafb; }
-  .promo-subtab.active { background:#143c5a;color:#fff;border-color:#143c5a; }
+  .promo-subtab.active { background:#7c3aed;color:#fff;border-radius:8px 8px 0 0; }
   .promo-rule-card { border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;transition:box-shadow .15s; }
   .promo-rule-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
   .promo-rule-card.inactive { opacity:.6;background:#f9fafb; }
@@ -588,7 +607,7 @@
 <div id="login-overlay" class="login-overlay">
   <div class="login-card">
     <img src="../Imagenes/Martimac_Logo.png" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
-    <div class="login-title">🔐 Panel Superusuario</div>
+    <div class="login-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Panel Superusuario</div>
     <div class="login-sub">Acceso restringido — solo superusuarios</div>
     <div class="login-field">
       <label>Usuario</label>
@@ -605,7 +624,7 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-brand">🔐 Superusuario – Catálogo Colaboradores <span>Martimac Distribuidora</span></div>
+  <div class="topbar-brand"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Superusuario – Catálogo Colaboradores <span>Martimac Distribuidora</span></div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbar-user"></span>
     <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
@@ -614,15 +633,15 @@
 
 <!-- TABS -->
 <div class="page-tabs">
-  <button class="page-tab active" onclick="showPage('products')">📦 Productos</button>
-  <button class="page-tab" onclick="showPage('orders')">📋 Pedidos</button>
-  <button class="page-tab" onclick="showPage('users')">👤 Colaboradores</button>
-  <button class="page-tab" onclick="showPage('promotions')">🏷 Promociones</button>
-  <button class="page-tab" onclick="showPage('notifications')">🔔 Notificaciones</button>
-  <button class="page-tab" onclick="showPage('ratings')">⭐ Valoraciones</button>
-  <button class="page-tab" onclick="showPage('dashboard')">📊 Dashboard</button>
-  <button class="page-tab" onclick="showPage('home')">🏠 Home Editor</button>
-  <button class="page-tab" onclick="showPage('su')">🔐 Configuración</button>
+  <button class="page-tab active" onclick="showPage('products')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>Productos</button>
+  <button class="page-tab" onclick="showPage('orders')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>Pedidos</button>
+  <button class="page-tab" onclick="showPage('users')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Colaboradores</button>
+  <button class="page-tab" onclick="showPage('promotions')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>Promociones</button>
+  <button class="page-tab" onclick="showPage('notifications')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Notificaciones</button>
+  <button class="page-tab" onclick="showPage('ratings')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>Valoraciones</button>
+  <button class="page-tab" onclick="showPage('dashboard')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>Dashboard</button>
+  <button class="page-tab" onclick="showPage('home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-5H10v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button class="page-tab" onclick="showPage('su')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Configuración</button>
 </div>
 
 <!-- CONTENT -->
@@ -635,12 +654,12 @@
     </div>
     <div class="toolbar">
       <div class="search-field">
-        <span>🔍</span>
+        <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
         <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
       </div>
       <span id="prod-count" style="font-size:13px;color:#9ca3af;white-space:nowrap;"></span>
-      <button class="btn btn-secondary" onclick="loadProducts()">↻ Recargar</button>
-      <button class="btn btn-secondary" onclick="exportProductsExcel()">⬇ Exportar a Excel</button>
+      <button class="btn btn-secondary" onclick="loadProducts()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Recargar</button>
+      <button class="btn btn-secondary" onclick="exportProductsExcel()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
     <div class="sort-filter-bar">
@@ -653,9 +672,9 @@
       </div>
       <div>
         <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Filtrar:</span>
-        <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')">🏷 Promoción</button>
+        <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>Promoción</button>
         <button id="fc-desc"   class="filter-chip fc-desc"   onclick="toggleFilterChip('desc')">% Descuento</button>
-        <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')">⚑ Límite</button>
+        <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>Límite</button>
       </div>
     </div>
     <div id="products-list-wrap">
@@ -701,43 +720,29 @@
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
-      <button id="otab-pend" onclick="showOrdersTab('pend')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #7c3aed;color:#7c3aed;">
-        Nuevos pedidos <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+    <div class="order-tabs" style="margin-bottom:20px;">
+      <button id="otab-pend" class="order-tab active" onclick="showOrdersTab('pend')">
+        Nuevos pedidos <span id="obadge-pend" class="order-tab-badge" style="display:none">0</span>
       </button>
-      <button id="otab-hist" onclick="showOrdersTab('hist')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Por pagar <span id="obadge-fact" style="background:#f59e0b;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+      <button id="otab-hist" class="order-tab" onclick="showOrdersTab('hist')">
+        Por pagar <span id="obadge-fact" class="order-tab-badge" style="display:none">0</span>
       </button>
-      <button id="otab-pagados" onclick="showOrdersTab('pagados')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Pagados
-      </button>
-      <button id="otab-devueltos" onclick="showOrdersTab('devueltos')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Devueltos
-      </button>
-      <button id="otab-exentos" onclick="showOrdersTab('exentos')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Exentos
-      </button>
-      <button id="otab-eliminados" onclick="showOrdersTab('eliminados')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Eliminados
-      </button>
+      <button id="otab-pagados" class="order-tab" onclick="showOrdersTab('pagados')">Pagados</button>
+      <button id="otab-devueltos" class="order-tab" onclick="showOrdersTab('devueltos')">Devueltos</button>
+      <button id="otab-exentos" class="order-tab" onclick="showOrdersTab('exentos')">Exentos</button>
+      <button id="otab-eliminados" class="order-tab" onclick="showOrdersTab('eliminados')">Eliminados</button>
     </div>
     <div id="opage-pend">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="pend-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminPend()">
         </div>
         <select id="pend-lugar" onchange="filterAdminPend()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
           <option value="">Todos los lugares</option>
           <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
         </select>
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('pend')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('pend')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -757,7 +762,7 @@
     <!-- Por pagar (facturados) -->
     <div id="opage-hist" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="hist-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminHist()">
         </div>
         <select id="hist-lugar" onchange="filterAdminHist()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -766,8 +771,8 @@
         </select>
         <input type="date" id="hist-desde" onchange="filterAdminHist()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('hist')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('hist')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -788,7 +793,7 @@
     <!-- Pagados -->
     <div id="opage-pagados" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="pagados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminPagados()">
         </div>
         <select id="pagados-lugar" onchange="filterAdminPagados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -797,8 +802,8 @@
         </select>
         <input type="date" id="pagados-desde" onchange="filterAdminPagados()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('pagados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('pagados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -820,7 +825,7 @@
     <!-- Devueltos -->
     <div id="opage-devueltos" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="devueltos-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminDevueltos()">
         </div>
         <select id="devueltos-lugar" onchange="filterAdminDevueltos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -829,8 +834,8 @@
         </select>
         <input type="date" id="devueltos-desde" onchange="filterAdminDevueltos()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('devueltos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('devueltos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -851,7 +856,7 @@
     <!-- Exentos -->
     <div id="opage-exentos" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="exentos-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminExentos()">
         </div>
         <select id="exentos-lugar" onchange="filterAdminExentos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -860,8 +865,8 @@
         </select>
         <input type="date" id="exentos-desde" onchange="filterAdminExentos()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('exentos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('exentos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -882,7 +887,7 @@
     <!-- Eliminados -->
     <div id="opage-eliminados" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="eliminados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminEliminados()">
         </div>
         <select id="eliminados-lugar" onchange="filterAdminEliminados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -891,8 +896,8 @@
         </select>
         <input type="date" id="eliminados-desde" onchange="filterAdminEliminados()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('eliminados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('eliminados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -917,31 +922,13 @@
     <!-- Sub-nav: todo lo relacionado a colaboradores vive aquí ahora (antes
          repartido entre Superusuario y una tarjeta de Dashboard) -->
     <div class="su-section" style="padding:0;overflow:hidden;margin-bottom:20px;">
-      <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff;">
-        <button id="cotab-activos" onclick="showCollabTab('activos')"
-          style="flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #7c3aed;color:#7c3aed;white-space:nowrap;">
-          👤 Activos
-        </button>
-        <button id="cotab-wishlists" onclick="showCollabTab('wishlists');openSuWishlistsModal()"
-          style="flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;white-space:nowrap;">
-          🎁 Wishlists
-        </button>
-        <button id="cotab-exentos" onclick="showCollabTab('exentos')"
-          style="flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;white-space:nowrap;">
-          🚫 Exentos de pago
-        </button>
-        <button id="cotab-suspendidos" onclick="showCollabTab('suspendidos')"
-          style="flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;white-space:nowrap;">
-          ⏸ Suspendidos
-        </button>
-        <button id="cotab-baneados" onclick="showCollabTab('baneados')"
-          style="flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;white-space:nowrap;">
-          🗑 Eliminados/Baneados
-        </button>
-        <button id="cotab-seguridad" onclick="showCollabTab('seguridad')"
-          style="flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;white-space:nowrap;">
-          🚨 Seguridad
-        </button>
+      <div class="collab-tabs">
+        <button id="cotab-activos" class="collab-tab active" onclick="showCollabTab('activos')">Activos</button>
+        <button id="cotab-wishlists" class="collab-tab" onclick="showCollabTab('wishlists');openSuWishlistsModal()">Wishlists</button>
+        <button id="cotab-exentos" class="collab-tab" onclick="showCollabTab('exentos')">Exentos</button>
+        <button id="cotab-suspendidos" class="collab-tab" onclick="showCollabTab('suspendidos')">Suspendidos</button>
+        <button id="cotab-baneados" class="collab-tab" onclick="showCollabTab('baneados')">Baneados</button>
+        <button id="cotab-seguridad" class="collab-tab" onclick="showCollabTab('seguridad')">Seguridad</button>
       </div>
     </div>
 
@@ -952,7 +939,7 @@
       </div>
       <div class="toolbar">
         <div class="search-field" style="flex:1;min-width:180px;">
-          <span>🔍</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="user-search" placeholder="Buscar nombre o cédula…" oninput="filterUsers()">
         </div>
         <select id="user-depto" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -962,7 +949,7 @@
           <option value="">Todos los lugares</option>
           <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
         </select>
-        <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
+        <button class="btn btn-secondary" onclick="loadUsers()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -1009,7 +996,7 @@
 
     <!-- Exentos de pago -->
     <div id="copage-exentos" class="su-section" style="display:none">
-      <div class="su-section-title">🚫 Usuarios Exentos de Pago</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>Usuarios Exentos de Pago</div>
       <div class="su-section-sub">Estos usuarios no suman a los totales de ventas. Sus pedidos aparecen en el tab "Exentos" de Pedidos. El dueño siempre está exento y no se puede eliminar.</div>
 
       <div style="margin-bottom:18px;">
@@ -1060,7 +1047,7 @@
 
       <div class="toolbar" style="margin-bottom:16px;">
         <div class="search-field">
-          <span>🔍</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="su-suspended-search" placeholder="Buscar entre suspendidos…" oninput="filterSuSuspendedUsers()">
         </div>
       </div>
@@ -1090,12 +1077,12 @@
           </div>
           <div class="cedula-autocomplete-list" id="su-ban-suggestions"></div>
         </div>
-        <button class="btn btn-danger" onclick="banSuUserManual()">🚫 Banear</button>
+        <button class="btn btn-danger" onclick="banSuUserManual()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>Banear</button>
       </div>
 
       <div class="toolbar" style="margin-bottom:16px;">
         <div class="search-field">
-          <span>🔍</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="su-banned-search" placeholder="Buscar entre eliminados/baneados…" oninput="filterSuBannedUsers()">
         </div>
       </div>
@@ -1112,7 +1099,7 @@
 
     <!-- Seguridad (posibles registros falsos) -->
     <div id="copage-seguridad" class="su-section" style="display:none">
-      <div class="su-section-title">🚨 Posibles registros falsos</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>Posibles registros falsos</div>
       <div class="su-section-sub">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
       <div id="cfg-fraude-list" class="fraud-cases-wrap" style="max-height:480px;overflow-y:auto;">
         <div class="empty-table">Cargando…</div>
@@ -1288,14 +1275,14 @@
 
       <!-- Contraseñas — 2 columnas en desktop -->
       <div class="su-section">
-        <div class="su-section-title">🔑 Gestión de contraseñas</div>
+        <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4a1 1 0 0 0-1.4 0l-2.1 2.1a1 1 0 0 0 0 1.4Z"/><path d="m14 8-6.5 6.5"/><path d="m19 15-2 2"/></svg>Gestión de contraseñas</div>
         <div class="su-section-sub">Visualiza y cambia las credenciales de todos los paneles.</div>
 
         <div class="su-panels-grid">
 
           <!-- Admin -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">🛠 Panel Admin</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>Panel Admin</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1312,7 +1299,7 @@
 
           <!-- Facturación -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">🧾 Panel Facturación</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>Panel Facturación</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1329,7 +1316,7 @@
 
           <!-- Superusuario -->
           <div style="border:1.5px solid #ddd6fe;border-radius:12px;padding:18px;background:#faf5ff;">
-            <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;">🔐 Panel Superusuario</div>
+            <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Panel Superusuario</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1346,7 +1333,7 @@
 
           <!-- Grecia -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Grecia</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Panel Grecia</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1363,7 +1350,7 @@
 
           <!-- Tres Ríos -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Tres Ríos</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Panel Tres Ríos</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1380,7 +1367,7 @@
 
           <!-- Heredia -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Heredia</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Panel Heredia</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1404,11 +1391,11 @@
   <!-- ── PAGE: PROMOCIONES ── -->
   <div id="page-promotions" style="display:none">
 
-    <div class="su-section" style="margin-bottom:16px;">
+    <div class="su-section" style="padding:0;overflow:hidden;margin-bottom:16px;">
       <div class="promo-subtabs">
         <button class="promo-subtab active" id="promo-subtab-descuento" onclick="selectPromoTab('descuento')">% Descuentos</button>
-        <button class="promo-subtab" id="promo-subtab-limite" onclick="selectPromoTab('limite')">⊘ Límites de unidades</button>
-        <button class="promo-subtab" id="promo-subtab-promocion" onclick="selectPromoTab('promocion')">🏷 Promociones</button>
+        <button class="promo-subtab" id="promo-subtab-limite" onclick="selectPromoTab('limite')">Límites de unidades</button>
+        <button class="promo-subtab" id="promo-subtab-promocion" onclick="selectPromoTab('promocion')">Promociones</button>
       </div>
     </div>
 
@@ -1431,7 +1418,7 @@
     <div class="su-section" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div>
-          <div class="su-section-title">🔔 Notificaciones</div>
+          <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Notificaciones</div>
           <div class="su-section-sub">Redacta y envía notificaciones a todos los colaboradores.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openNotifModal()">+ Nueva notificación</button>
@@ -1441,8 +1428,8 @@
     <!-- History -->
     <div class="su-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
-        <div class="su-section-title">📋 Historial de notificaciones</div>
-        <button class="btn btn-secondary btn-sm" onclick="loadNotifications()">↻ Actualizar</button>
+        <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>Historial de notificaciones</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadNotifications()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
       </div>
       <div class="su-section-sub">Notificaciones enviadas. Cancela, reenvía o consulta lectores.</div>
       <div id="notif-history-wrap">
@@ -1484,7 +1471,7 @@
               style="opacity:0;position:absolute;width:100%;height:100%;top:0;left:0;cursor:pointer;"
               oninput="notifExecCmd('foreColor', this.value)">
           </label>
-          <button class="notif-tb-btn" onmousedown="event.preventDefault();notifInsertLink()" title="Enlace">🔗</button>
+          <button class="notif-tb-btn" onmousedown="event.preventDefault();notifInsertLink()" title="Enlace"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></button>
           <span class="notif-tb-sep"></span>
           <select title="Tamaño de fuente"
             style="height:28px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;color:#374151;background:#fff;padding:0 6px;cursor:pointer;outline:none;"
@@ -1508,7 +1495,7 @@
       <div style="margin-bottom:16px;">
         <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Imagen (opcional)</label>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('notif-img-input').click()">📎 Adjuntar imagen</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('notif-img-input').click()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Adjuntar imagen</button>
           <input type="file" id="notif-img-input" accept="image/*" style="display:none" onchange="handleNotifImage(this)">
           <span id="notif-img-status" style="font-size:12px;color:#9ca3af;"></span>
           <button id="notif-img-remove" style="display:none;" class="btn btn-danger btn-sm" onclick="removeNotifImage()">✕ Quitar</button>
@@ -1555,8 +1542,8 @@
 
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
         <button class="btn btn-secondary" onclick="previewNotifCard()">🃏 Vista previa tarjeta</button>
-        <button class="btn btn-secondary" onclick="previewNotifCompose()">👁 Vista previa completa</button>
-        <button class="btn btn-secondary" onclick="clearNotifCompose()">✕ Limpiar</button>
+        <button class="btn btn-secondary" onclick="previewNotifCompose()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>Vista previa completa</button>
+        <button class="btn btn-secondary" onclick="clearNotifCompose()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Limpiar</button>
       </div>
 
       <div class="modal-btns">
@@ -1673,7 +1660,7 @@
 
     <!-- Hero Photo Library -->
     <div class="su-section" style="margin-bottom:20px;">
-      <div class="su-section-title">🖼 Fotos del Hero</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Fotos del Hero</div>
       <div class="su-section-sub">
         Las imágenes se escalan al lado más largo a máx. <strong>800 px</strong> y se convierten a <strong>WebP</strong> automáticamente.
         Arrastra archivos o carpetas, o usa el botón para seleccionar varios a la vez.
@@ -1685,7 +1672,7 @@
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="heroHandleDrop(event)">
-        <div style="font-size:28px;margin-bottom:6px;">📁</div>
+        <div style="margin-bottom:6px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></div>
         <div><strong>Arrastra imágenes aquí</strong> o haz clic para seleccionar</div>
         <div style="font-size:12px;margin-top:4px;">Puedes seleccionar múltiples archivos a la vez</div>
         <input type="file" id="hero-file-input" accept="image/*" multiple
@@ -1705,7 +1692,7 @@
         <button class="btn btn-secondary btn-sm" onclick="heroSelectAll()">Sel. todo</button>
         <button class="btn btn-secondary btn-sm" onclick="heroDeselectAll()">Deseleccionar</button>
         <button class="btn btn-danger btn-sm"    id="hero-delete-btn" onclick="heroDeleteSelected()" style="display:none;">
-          🗑 Eliminar (<span id="hero-sel-count">0</span>)
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>Eliminar (<span id="hero-sel-count">0</span>)
         </button>
         <span class="hero-lib-status" id="hero-lib-status"></span>
       </div>
@@ -1716,7 +1703,7 @@
 
     <!-- Welcome Message -->
     <div class="su-section" style="margin-bottom:20px;">
-      <div class="su-section-title">📝 Mensaje de bienvenida</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Mensaje de bienvenida</div>
       <div class="su-section-sub">Texto centrado bajo el hero. Soporta texto enriquecido e imágenes (<strong>900×500 px</strong>).</div>
       <div style="margin-top:14px;">
         <div class="notif-toolbar">
@@ -1737,23 +1724,23 @@
             <option value="6">Muy grande</option>
           </select>
           <div class="notif-tb-sep"></div>
-          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-welcome')">🔗</button>
+          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-welcome')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></button>
           <label class="notif-tb-btn" title="Insertar imagen — 900×500 px" style="cursor:pointer;" onmousedown="event.preventDefault()">
-            🖼<input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-welcome',900,500)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-welcome',900,500)">
           </label>
         </div>
         <div id="home-welcome" contenteditable="true" class="home-rich-editor" placeholder="Escribe el mensaje de bienvenida…"></div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:11px;color:#9ca3af;">📐 Imágenes: 900×500 px · WebP · cover crop</span>
-          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-welcome','Mensaje de bienvenida')">👁 Vista previa</button>
-          <button class="btn btn-purple" onclick="saveHomeSection('welcome_html','home-welcome')">💾 Guardar</button>
+          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-welcome','Mensaje de bienvenida')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button>
+          <button class="btn btn-purple" onclick="saveHomeSection('welcome_html','home-welcome')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V3.4"/></svg>Guardar</button>
         </div>
       </div>
     </div>
 
     <!-- Footer Section -->
     <div class="su-section">
-      <div class="su-section-title">🖼 Sección inferior</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Sección inferior</div>
       <div class="su-section-sub">Contenido al final del home (métodos de pago, imágenes informativas…). Imágenes: <strong>1200×600 px</strong>.</div>
       <div style="margin-top:14px;">
         <div class="notif-toolbar">
@@ -1774,16 +1761,16 @@
             <option value="6">Muy grande</option>
           </select>
           <div class="notif-tb-sep"></div>
-          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-footer')">🔗</button>
+          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-footer')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></button>
           <label class="notif-tb-btn" title="Insertar imagen — 1200×600 px" style="cursor:pointer;" onmousedown="event.preventDefault()">
-            🖼<input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-footer',1200,600)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-footer',1200,600)">
           </label>
         </div>
         <div id="home-footer" contenteditable="true" class="home-rich-editor" placeholder="Sección inferior (métodos de pago, info adicional…)"></div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:11px;color:#9ca3af;">📐 Imágenes: 1200×600 px · WebP · cover crop</span>
-          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-footer','Sección inferior')">👁 Vista previa</button>
-          <button class="btn btn-purple" onclick="saveHomeSection('footer_html','home-footer')">💾 Guardar</button>
+          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-footer','Sección inferior')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button>
+          <button class="btn btn-purple" onclick="saveHomeSection('footer_html','home-footer')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V3.4"/></svg>Guardar</button>
         </div>
       </div>
     </div>
@@ -2065,7 +2052,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <input type="text" id="f-imagen" placeholder="URL se rellena al subir imagen…" style="flex:1">
           <label id="img-upload-btn" style="white-space:nowrap;padding:10px 14px;background:#143c5a;color:#fff;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">
-            📷 Subir imagen
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Subir imagen
           </label>
           <input type="file" id="img-file-input" accept="image/*" style="display:none">
         </div>
@@ -2824,7 +2811,7 @@ let editingRuleId = null;
 let _ruleProdSelected = new Set();
 let _ruleProdStock = new Map(); // codigo -> stock disponible (string del input, '' = ilimitado)
 
-const PROMO_TIPO_LABEL = { descuento: '% Descuentos', limite: '⊘ Límites de unidades', promocion: '🏷 Promociones' };
+const PROMO_TIPO_LABEL = { descuento: '% Descuentos', limite: 'Límites de unidades', promocion: 'Promociones' };
 const PROMO_TIPO_SUB = {
   descuento: 'Cada regla agrupa los productos que comparten ese descuento, con su propia fecha o activación manual.',
   limite:    'Cada regla agrupa los productos con el mismo límite de unidades por usuario.',
@@ -3615,9 +3602,7 @@ window.addEventListener('resize', _fitOrdersTable);
 function showOrdersTab(tab) {
   ['pend','hist','pagados','devueltos','exentos','eliminados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
-    const btn = document.getElementById('otab-' + t);
-    btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
-    btn.style.color = t === tab ? '#7c3aed' : '#6b7280';
+    document.getElementById('otab-' + t).classList.toggle('active', t === tab);
   });
   requestAnimationFrame(_fitOrdersTable);
 }
@@ -4646,9 +4631,7 @@ async function _saveExemptCedulas(list) {
 function showCollabTab(tab) {
   ['activos','wishlists','exentos','suspendidos','baneados','seguridad'].forEach(t => {
     document.getElementById('copage-' + t).style.display = t === tab ? 'block' : 'none';
-    const btn = document.getElementById('cotab-' + t);
-    btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
-    btn.style.color = t === tab ? '#7c3aed' : '#6b7280';
+    document.getElementById('cotab-' + t).classList.toggle('active', t === tab);
   });
 }
 

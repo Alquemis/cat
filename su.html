@@ -1578,7 +1578,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
         <div class="su-section-title">Reseñas</div>
       </div>
-      <div class="su-section-sub">Ordenadas por mejor valorados. Toca un producto para ver sus reseñas. Busca por producto, código, usuario o palabras dentro de la reseña, o filtra por estrellas.</div>
+      <div class="su-section-sub">Ordenadas por fecha (más recientes primero). Toca un producto para ver sus reseñas. Busca por producto, código, usuario o palabras dentro de la reseña, o filtra por estrellas.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px;">
         <input id="ratings-search" type="text" placeholder="Buscar por producto, código, usuario o texto de la reseña…" oninput="filterRatings()"
           style="flex:1;min-width:220px;padding:9px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;box-sizing:border-box;outline:none;">
@@ -1590,6 +1590,11 @@
           <option value="3">★★★ (3)</option>
           <option value="2">★★ (2)</option>
           <option value="1">★ (1)</option>
+        </select>
+        <select id="ratings-date-sort" onchange="filterRatings()"
+          style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;box-sizing:border-box;outline:none;background:#fff;cursor:pointer;">
+          <option value="recent">Más recientes</option>
+          <option value="oldest">Más antiguas</option>
         </select>
       </div>
       <div id="ratings-list-wrap">
@@ -5155,13 +5160,14 @@ function renderRatingsList(items) {
     groupsByCode[r.producto_codigo].rows.push(r);
   });
   const groups = Object.values(groupsByCode);
-  // Reseñas de cada producto: más recientes primero
-  groups.forEach(g => g.rows.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)));
-  // Productos: siempre los mejor valorados arriba
+  // Reseñas de cada producto: por fecha, según filtro (más recientes por defecto)
+  const dateSort = document.getElementById('ratings-date-sort')?.value || 'recent';
+  groups.forEach(g => g.rows.sort((a,b)=> dateSort === 'oldest' ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at)));
+  // Productos: ordenados por la fecha de su reseña más reciente/antigua (según filtro)
   groups.sort((a,b) => {
-    const sa = map[a.codigo] || { avg:0, count:0 };
-    const sb = map[b.codigo] || { avg:0, count:0 };
-    return sb.avg - sa.avg || sb.count - sa.count;
+    const da = new Date(a.rows[0]?.created_at || 0);
+    const db = new Date(b.rows[0]?.created_at || 0);
+    return dateSort === 'oldest' ? da - db : db - da;
   });
 
   wrap.innerHTML = groups.map(g => {

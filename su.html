@@ -1543,6 +1543,17 @@
   <!-- ── PAGE: VALORACIONES ── -->
   <div id="page-ratings" style="display:none">
 
+    <!-- ── MODO MANTENIMIENTO ── -->
+    <div class="su-section" style="margin-bottom:20px;border:1.5px solid #fecaca;background:#fff7f7;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="su-section-title" style="color:#b91c1c;">🔧 Modo mantenimiento</div>
+          <div class="su-section-sub">Al activarlo, index.html y FL.html muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. Los demás paneles (admin, su, su2, pagos por sucursal) siguen funcionando con normalidad.</div>
+        </div>
+        <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
+      </div>
+    </div>
+
     <div class="su-section" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div>
@@ -2451,7 +2462,7 @@ function showPage(page) {
   if (page==='su')    loadSuPage();
   if (page==='promotions') loadPromoRules();
   if (page==='notifications') loadNotifications();
-  if (page==='ratings') loadRatings();
+  if (page==='ratings') { loadRatings(); loadMaintenanceToggle(); }
   if (page==='home') loadHomeEditor();
 }
 
@@ -4063,6 +4074,8 @@ function openOrderDetail(id) {
   const totalDescuento = lineas.reduce((s, l) => s + ((l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0)), 0);
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
+  const precioSinIvaOriginal = Math.round((total + totalDescuento) / 1.13);
+  const descuentoSinIva = precioSinIvaOriginal - subtotalSinIva;
   document.getElementById('order-detail-card').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px">
       <div class="modal-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Pedido ${o.id.slice(0,8).toUpperCase()}${moraOrderBadge(o)}</div>
@@ -4076,27 +4089,31 @@ function openOrderDetail(id) {
     </div>
     <div class="table-wrap" style="margin-bottom:16px">
       <table>
-        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th style="white-space:nowrap">Precio u.</th><th>Precio</th></tr></thead>
+        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th style="white-space:nowrap">Precio U<br><span style="font-size:9px;font-weight:400;color:#9ca3af;">sin IVA</span></th><th>Precio<br><span style="font-size:9px;font-weight:400;color:#9ca3af;">sin IVA</span></th></tr></thead>
         <tbody>
           ${lineas.map(l => {
             const descAmt = (l.precio_unitario || 0) * (l.cantidad || 0) - (l.subtotal || 0);
+            const effPrice = l.cantidad > 0 ? Math.round((l.subtotal||0) / l.cantidad) : 0;
+            const precioUSinIva = Math.round((l.precio_unitario||0) / 1.13);
+            const precioUDescSinIva = Math.round(effPrice / 1.13);
+            const precioSinIva = Math.round((l.subtotal||0) / 1.13);
+            const precioOrigSinIva = Math.round(((l.precio_unitario||0) * (l.cantidad||0)) / 1.13);
             return `<tr>
             <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
             <td style="text-align:center;font-weight:600">${l.cantidad}</td>
             <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</td>
-            <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
-            <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
+            <td><span class="col-sign">₡</span>${precioUDescSinIva.toLocaleString('es-CR')}${descAmt > 0 ? `<br><span style="font-weight:400;color:#9ca3af;text-decoration:line-through;font-size:12.5px;"><span class="col-sign">₡</span>${precioUSinIva.toLocaleString('es-CR')}</span>` : ''}</td>
+            <td style="font-weight:700"><span class="col-sign">₡</span>${precioSinIva.toLocaleString('es-CR')}${descAmt > 0 ? `<br><span style="font-weight:400;color:#9ca3af;text-decoration:line-through;font-size:12.5px;"><span class="col-sign">₡</span>${precioOrigSinIva.toLocaleString('es-CR')}</span>` : ''}</td>
           </tr>`;
           }).join('')}
         </tbody>
       </table>
     </div>
     <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio sin IVA</span><span><span class="col-sign">₡</span>${precioSinIvaOriginal.toLocaleString('es-CR')}</span></div>
       ${totalDescuento > 0 ? `
-      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio</span><span><span class="col-sign">₡</span>${(total + totalDescuento).toLocaleString('es-CR')}</span></div>
-      <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
+      <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${descuentoSinIva.toLocaleString('es-CR')}</span></div>
       <div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>` : ''}
-      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span></div>
     </div>
@@ -5027,6 +5044,40 @@ document.addEventListener('DOMContentLoaded', () => {
 function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function _pNombre(codigo, fallback) { return (codigo && _prodMap[codigo]) || fallback || codigo || ''; }
 function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
+
+// ── MODO MANTENIMIENTO ────────────────────────────────────
+let _maintenanceActivo = false;
+
+async function loadMaintenanceToggle() {
+  const { data: cfg } = await sb.from('app_config').select('value').eq('key','mantenimiento_activo').maybeSingle();
+  _maintenanceActivo = !!cfg && cfg.value === 'true';
+  _setMaintenanceToggleUI();
+}
+
+function _setMaintenanceToggleUI() {
+  const btn = document.getElementById('maintenance-activo-btn');
+  if (!btn) return;
+  btn.textContent = _maintenanceActivo ? 'Activo' : 'Inactivo';
+  btn.classList.toggle('on', _maintenanceActivo);
+  btn.classList.toggle('off', !_maintenanceActivo);
+}
+
+async function toggleMaintenanceActivo() {
+  const btn = document.getElementById('maintenance-activo-btn');
+  const prev = _maintenanceActivo;
+  const next = !_maintenanceActivo;
+  if (next && !confirm('¿Activar modo mantenimiento? index.html y FL.html dejarán de aceptar pedidos hasta que lo desactives.')) return;
+  _maintenanceActivo = next;
+  _setMaintenanceToggleUI();
+  if (btn) btn.disabled = true;
+  const { error } = await sb.from('app_config').upsert({ key:'mantenimiento_activo', value: next ? 'true' : 'false' });
+  if (btn) btn.disabled = false;
+  if (error) {
+    _maintenanceActivo = prev;
+    _setMaintenanceToggleUI();
+    alert('No se pudo actualizar: ' + error.message);
+  }
+}
 
 // ── VALORACIONES ─────────────────────────────────────────
 let _ratingsAll    = [];

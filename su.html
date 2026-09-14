@@ -1106,6 +1106,17 @@
   <div id="page-su" style="display:none">
     <div style="max-width:1100px;margin:0 auto;padding-top:8px;">
 
+      <!-- ── MODO MANTENIMIENTO ── -->
+      <div class="su-section" style="margin-bottom:20px;border:1.5px solid #fecaca;background:#fff7f7;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div class="su-section-title" style="color:#b91c1c;">🔧 Modo mantenimiento</div>
+            <div class="su-section-sub">Al activarlo, index.html y FL.html muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. Los demás paneles (admin, su, su2, pagos por sucursal) siguen funcionando con normalidad.</div>
+          </div>
+          <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
+        </div>
+      </div>
+
       <!-- Contraseñas — 2 columnas en desktop -->
       <div class="su-section">
         <div class="su-section-title">🔑 Gestión de contraseñas</div>
@@ -1542,17 +1553,6 @@
 
   <!-- ── PAGE: VALORACIONES ── -->
   <div id="page-ratings" style="display:none">
-
-    <!-- ── MODO MANTENIMIENTO ── -->
-    <div class="su-section" style="margin-bottom:20px;border:1.5px solid #fecaca;background:#fff7f7;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div class="su-section-title" style="color:#b91c1c;">🔧 Modo mantenimiento</div>
-          <div class="su-section-sub">Al activarlo, index.html y FL.html muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. Los demás paneles (admin, su, su2, pagos por sucursal) siguen funcionando con normalidad.</div>
-        </div>
-        <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
-      </div>
-    </div>
 
     <div class="su-section" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -2459,10 +2459,10 @@ function showPage(page) {
     if (allAdminHist.length===0) loadOrders();
   }
   if (page==='dashboard') loadSuDashboard();
-  if (page==='su')    loadSuPage();
+  if (page==='su')    { loadSuPage(); loadMaintenanceToggle(); }
   if (page==='promotions') loadPromoRules();
   if (page==='notifications') loadNotifications();
-  if (page==='ratings') { loadRatings(); loadMaintenanceToggle(); }
+  if (page==='ratings') loadRatings();
   if (page==='home') loadHomeEditor();
 }
 

@@ -1157,6 +1157,17 @@
   <div id="page-settings" style="display:none">
     <div style="max-width:860px;margin:0 auto;padding-top:8px;">
 
+      <!-- ── MODO MANTENIMIENTO ── -->
+      <div class="stat-card" style="margin-bottom:24px;border:1.5px solid #fecaca;background:#fff7f7;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#b91c1c;margin-bottom:4px;">🔧 Modo mantenimiento</div>
+            <div style="font-size:13px;color:#6b7280;">Al activarlo, index.html y FL.html muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. Los demás paneles (admin, su, su2, pagos por sucursal) siguen funcionando con normalidad.</div>
+          </div>
+          <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
+        </div>
+      </div>
+
       <!-- Credenciales — 2 columnas en desktop -->
       <div class="stat-card" style="margin-bottom:24px;">
         <div style="font-size:16px;font-weight:700;color:#143c5a;margin-bottom:4px;">Credenciales de acceso</div>
@@ -1464,17 +1475,6 @@
 
   <!-- ── PAGE: VALORACIONES ── -->
   <div id="page-ratings" style="display:none">
-
-    <!-- ── MODO MANTENIMIENTO ── -->
-    <div class="su-section" style="margin-bottom:20px;border:1.5px solid #fecaca;background:#fff7f7;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div class="su-section-title" style="color:#b91c1c;">🔧 Modo mantenimiento</div>
-          <div class="su-section-sub">Al activarlo, index.html y FL.html muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. Los demás paneles (admin, su, su2, pagos por sucursal) siguen funcionando con normalidad.</div>
-        </div>
-        <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
-      </div>
-    </div>
 
     <div class="su-section" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -2389,10 +2389,10 @@ function showPage(page) {
     if (allAdminHist.length===0) loadOrders();
   }
   if (page==='dashboard') loadDashboard();
-  if (page==='settings') { loadConfig(); loadCfgUsers(); loadCfgBannedUsers(); }
+  if (page==='settings') { loadConfig(); loadCfgUsers(); loadCfgBannedUsers(); loadMaintenanceToggle(); }
   if (page==='promotions') loadPromoRules();
   if (page==='notifications') loadNotifications();
-  if (page==='ratings') { loadRatings(); loadMaintenanceToggle(); }
+  if (page==='ratings') loadRatings();
   if (page==='home') loadHomeEditor();
 }
 

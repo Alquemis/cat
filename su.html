@@ -40,10 +40,10 @@
 
   .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 1px;display:flex;flex-wrap:nowrap;gap:0; }
   .page-tab { flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 0;font-size:clamp(7px,1.3vw,13px);font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s;text-align:center; }
-  .page-tab-icon { font-size:clamp(14px,2.2vw,19px);line-height:1; }
+  .page-tab svg { flex-shrink:0;width:clamp(14px,2.2vw,19px);height:clamp(14px,2.2vw,19px); }
   .page-tab-label { white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%; }
   .page-tab:hover { color:#143c5a; }
-  .page-tab.active { color:#7c3aed;border-bottom:3px solid #7c3aed; }
+  .page-tab.active { background:#7c3aed;color:#fff;border-bottom-color:#7c3aed;border-radius:8px 8px 0 0; }
 
   .container { max-width:1200px;margin:0 auto;padding:32px; }
 
@@ -202,8 +202,27 @@
   .su-field input:focus { border-color:#7c3aed; }
   .su-msg { border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none; }
 
+  /* ── SUBTABS COLABORADORES / PEDIDOS ── */
+  .collab-tabs, .order-tabs { display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff; }
+  .collab-tab, .order-tab {
+    flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:4px;
+    padding:13px 10px;font-size:13.5px;font-weight:600;border:none;
+    background:none;cursor:pointer;color:#6b7280;white-space:nowrap;
+    transition:background .15s,color .15s;
+  }
+  .collab-tab.active, .order-tab.active { background:#7c3aed;color:#fff;border-radius:8px 8px 0 0; }
+  .order-tab-label { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0; }
+  .order-tab-badge {
+    background:#7c3aed;color:#fff;border-radius:999px;font-size:11px;font-weight:700;
+    min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+    padding:0 5px;flex-shrink:0;
+  }
+  .order-tab.active .order-tab-badge { background:#fff;color:#7c3aed; }
+
   /* ── RESPONSIVE ── */
   @media(max-width:768px) {
+    .collab-tabs, .order-tabs, .promo-subtabs { flex-wrap:nowrap; }
+    .collab-tab, .order-tab, .promo-subtab { flex:1;min-width:0;padding:10px 4px;font-size:11.5px;overflow:hidden;text-overflow:ellipsis; }
     .topbar { padding:12px 16px; }
     .topbar-brand span { display:none; }
     .container { padding:20px 16px; overflow-x:hidden; }
@@ -269,6 +288,7 @@
   .collab-avatar { width:34px;height:34px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0; }
   .user-avatar { display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#7c3aed;color:#fff;font-size:8px;font-weight:700;flex-shrink:0;cursor:pointer;user-select:none;vertical-align:middle;transition:opacity .15s; }
   .user-avatar:hover { opacity:.75; }
+  .user-avatar-mora { background:#dc2626; }
   .profile-kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px; }
   .profile-kpi { background:#f9fafb;border-radius:10px;padding:10px 12px; }
   .profile-kpi-val { font-size:18px;font-weight:800;color:#143c5a; }
@@ -304,6 +324,8 @@
   .wl-collab-body.open { display:block; }
   .wl-delete-btn { background:none;border:none;font-size:14px;cursor:pointer;padding:2px 6px;border-radius:6px;flex-shrink:0;line-height:1; }
   .wl-delete-btn:hover { background:#fee2e2; }
+  .btn-icon-danger { background:#fee2e2;border:none;border-radius:8px;width:32px;height:32px;font-size:14px;cursor:pointer;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s; }
+  .btn-icon-danger:hover { background:#fecaca; }
   .ud-line { display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:#374151;border-bottom:1px solid #f9fafb; }
   .ud-line:last-child { border-bottom:none; }
   .ud-line-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px; }
@@ -468,13 +490,13 @@
   .notif-hist-meta { font-size:12px;color:#9ca3af;margin:3px 0 8px; }
 
   /* ── PROMOCIONES ── */
-  .promo-subtabs { display:flex;gap:8px;flex-wrap:wrap; }
+  .promo-subtabs { display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff; }
   .promo-subtab {
-    padding:9px 16px;border-radius:999px;border:1.5px solid #e5e7eb;background:#fff;
-    color:#6b7280;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;
+    flex:1;padding:13px 10px;font-size:13.5px;font-weight:600;border:none;
+    background:none;cursor:pointer;color:#6b7280;white-space:nowrap;
+    transition:background .15s,color .15s;
   }
-  .promo-subtab:hover { background:#f9fafb; }
-  .promo-subtab.active { background:#143c5a;color:#fff;border-color:#143c5a; }
+  .promo-subtab.active { background:#7c3aed;color:#fff;border-radius:8px 8px 0 0; }
   .promo-rule-card { border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;transition:box-shadow .15s; }
   .promo-rule-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
   .promo-rule-card.inactive { opacity:.6;background:#f9fafb; }
@@ -584,7 +606,7 @@
 <div id="login-overlay" class="login-overlay">
   <div class="login-card">
     <img src="../Imagenes/Martimac_Logo.png" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
-    <div class="login-title">🔐 Panel Superusuario</div>
+    <div class="login-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Panel Superusuario</div>
     <div class="login-sub">Acceso restringido — solo superusuarios</div>
     <div class="login-field">
       <label>Usuario</label>
@@ -601,7 +623,7 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-brand">🔐 Superusuario – Catálogo Colaboradores <span>Martimac Distribuidora</span></div>
+  <div class="topbar-brand"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Superusuario – Catálogo Colaboradores <span>Martimac Distribuidora</span></div>
   <div class="topbar-right">
     <span class="topbar-user" id="topbar-user"></span>
     <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
@@ -610,15 +632,15 @@
 
 <!-- TABS -->
 <div class="page-tabs">
-  <button class="page-tab active" onclick="showPage('products')"><span class="page-tab-icon">📦</span><span class="page-tab-label">Productos</span></button>
-  <button class="page-tab" onclick="showPage('orders')"><span class="page-tab-icon">📋</span><span class="page-tab-label">Pedidos</span></button>
-  <button class="page-tab" onclick="showPage('users')"><span class="page-tab-icon">👤</span><span class="page-tab-label">Colaboradores</span></button>
-  <button class="page-tab" onclick="showPage('dashboard')"><span class="page-tab-icon">📊</span><span class="page-tab-label">Dashboard</span></button>
-  <button class="page-tab" onclick="showPage('su')"><span class="page-tab-icon">🔐</span><span class="page-tab-label">Configuración</span></button>
-  <button class="page-tab" onclick="showPage('promotions')"><span class="page-tab-icon">🏷</span><span class="page-tab-label">Promociones</span></button>
-  <button class="page-tab" onclick="showPage('notifications')"><span class="page-tab-icon">🔔</span><span class="page-tab-label">Notificaciones</span></button>
-  <button class="page-tab" onclick="showPage('ratings')"><span class="page-tab-icon">⭐</span><span class="page-tab-label">Valoraciones</span></button>
-  <button class="page-tab" onclick="showPage('home')"><span class="page-tab-icon">🏠</span><span class="page-tab-label">Home</span></button>
+  <button class="page-tab active" onclick="showPage('products')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg><span class="page-tab-label">Productos</span></button>
+  <button class="page-tab" onclick="showPage('orders')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg><span class="page-tab-label">Pedidos</span></button>
+  <button class="page-tab" onclick="showPage('users')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="page-tab-label">Colaboradores</span></button>
+  <button class="page-tab" onclick="showPage('promotions')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg><span class="page-tab-label">Promociones</span></button>
+  <button class="page-tab" onclick="showPage('notifications')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="page-tab-label">Notificaciones</span></button>
+  <button class="page-tab" onclick="showPage('ratings')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg><span class="page-tab-label">Valoraciones</span></button>
+  <button class="page-tab" onclick="showPage('dashboard')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg><span class="page-tab-label">Dashboard</span></button>
+  <button class="page-tab" onclick="showPage('home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-5H10v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg><span class="page-tab-label">Home</span></button>
+  <button class="page-tab" onclick="showPage('su')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg><span class="page-tab-label">Configuración</span></button>
 </div>
 
 <!-- CONTENT -->
@@ -631,12 +653,12 @@
     </div>
     <div class="toolbar">
       <div class="search-field">
-        <span>🔍</span>
+        <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
         <input type="text" id="prod-search" placeholder="Buscar producto…" oninput="filterProducts()">
       </div>
       <span id="prod-count" style="font-size:13px;color:#9ca3af;white-space:nowrap;"></span>
-      <button class="btn btn-secondary" onclick="loadProducts()">↻ Recargar</button>
-      <button class="btn btn-secondary" onclick="exportProductsExcel()">⬇ Exportar a Excel</button>
+      <button class="btn btn-secondary" onclick="loadProducts()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Recargar</button>
+      <button class="btn btn-secondary" onclick="exportProductsExcel()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button>
     </div>
     <div class="sort-filter-bar">
@@ -649,9 +671,9 @@
       </div>
       <div>
         <span style="font-size:12px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:2px;">Filtrar:</span>
-        <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')">🏷 Promoción</button>
+        <button id="fc-promo"  class="filter-chip fc-promo"  onclick="toggleFilterChip('promo')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>Promoción</button>
         <button id="fc-desc"   class="filter-chip fc-desc"   onclick="toggleFilterChip('desc')">% Descuento</button>
-        <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')">⚑ Límite</button>
+        <button id="fc-limite" class="filter-chip fc-limite" onclick="toggleFilterChip('limite')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>Límite</button>
       </div>
     </div>
     <div id="products-list-wrap">
@@ -664,10 +686,10 @@
     <div class="stat-grid" style="margin-bottom:20px">
       <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Nuevos pedidos</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-orders-total">—</div><div class="stat-label">Total pedidos</div></div>
-      <div class="stat-card" style="border-color:#fca5a5"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
-      <div class="stat-card" style="border-color:#fca5a5;background:#fff5f5;"><div class="stat-value" style="color:#dc2626" id="stat-orders-devueltos">—</div><div class="stat-label">Devueltos</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#dc2626" id="stat-orders-cancelados">—</div><div class="stat-label">Cancelados</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#dc2626" id="stat-orders-devueltos">—</div><div class="stat-label">Devueltos</div></div>
       <!-- Gran total -->
-      <div class="stat-card stat-card-gran" style="border-color:#bfdbfe;background:#eff6ff;">
+      <div class="stat-card stat-card-gran">
         <div class="stat-gran-main">
           <div class="stat-gran-label">Gran total</div>
           <div class="stat-gran-total"><span class="col-sign">₡</span><span id="stat-gran-total">0</span></div>
@@ -697,43 +719,29 @@
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:20px;background:#fff;border-radius:12px 12px 0 0;overflow:hidden">
-      <button id="otab-pend" onclick="showOrdersTab('pend')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #7c3aed;color:#7c3aed;">
-        Nuevos pedidos <span id="obadge-pend" style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+    <div class="order-tabs" style="margin-bottom:20px;">
+      <button id="otab-pend" class="order-tab active" onclick="showOrdersTab('pend')">
+        <span class="order-tab-label">Nuevos pedidos</span><span id="obadge-pend" class="order-tab-badge" style="display:none">0</span>
       </button>
-      <button id="otab-hist" onclick="showOrdersTab('hist')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Por pagar <span id="obadge-fact" style="background:#f59e0b;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;display:none">0</span>
+      <button id="otab-hist" class="order-tab" onclick="showOrdersTab('hist')">
+        <span class="order-tab-label">Por pagar</span><span id="obadge-fact" class="order-tab-badge" style="display:none">0</span>
       </button>
-      <button id="otab-pagados" onclick="showOrdersTab('pagados')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Pagados
-      </button>
-      <button id="otab-devueltos" onclick="showOrdersTab('devueltos')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Devueltos
-      </button>
-      <button id="otab-exentos" onclick="showOrdersTab('exentos')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Exentos
-      </button>
-      <button id="otab-eliminados" onclick="showOrdersTab('eliminados')"
-        style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-        Eliminados
-      </button>
+      <button id="otab-pagados" class="order-tab" onclick="showOrdersTab('pagados')">Pagados</button>
+      <button id="otab-devueltos" class="order-tab" onclick="showOrdersTab('devueltos')">Devueltos</button>
+      <button id="otab-exentos" class="order-tab" onclick="showOrdersTab('exentos')">Exentos</button>
+      <button id="otab-eliminados" class="order-tab" onclick="showOrdersTab('eliminados')">Eliminados</button>
     </div>
     <div id="opage-pend">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="pend-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminPend()">
         </div>
         <select id="pend-lugar" onchange="filterAdminPend()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
           <option value="">Todos los lugares</option>
           <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
         </select>
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('pend')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('pend')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -753,7 +761,7 @@
     <!-- Por pagar (facturados) -->
     <div id="opage-hist" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="hist-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminHist()">
         </div>
         <select id="hist-lugar" onchange="filterAdminHist()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -762,8 +770,8 @@
         </select>
         <input type="date" id="hist-desde" onchange="filterAdminHist()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('hist')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('hist')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -784,7 +792,7 @@
     <!-- Pagados -->
     <div id="opage-pagados" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="pagados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminPagados()">
         </div>
         <select id="pagados-lugar" onchange="filterAdminPagados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -793,8 +801,8 @@
         </select>
         <input type="date" id="pagados-desde" onchange="filterAdminPagados()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('pagados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('pagados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -816,7 +824,7 @@
     <!-- Devueltos -->
     <div id="opage-devueltos" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="devueltos-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminDevueltos()">
         </div>
         <select id="devueltos-lugar" onchange="filterAdminDevueltos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -825,8 +833,8 @@
         </select>
         <input type="date" id="devueltos-desde" onchange="filterAdminDevueltos()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('devueltos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('devueltos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -847,7 +855,7 @@
     <!-- Exentos -->
     <div id="opage-exentos" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="exentos-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminExentos()">
         </div>
         <select id="exentos-lugar" onchange="filterAdminExentos()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -856,8 +864,8 @@
         </select>
         <input type="date" id="exentos-desde" onchange="filterAdminExentos()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('exentos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('exentos')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -878,7 +886,7 @@
     <!-- Eliminados -->
     <div id="opage-eliminados" style="display:none">
       <div class="toolbar">
-        <div class="search-field"><span>🔍</span>
+        <div class="search-field"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="eliminados-search" placeholder="Buscar por nombre o # pedido…" oninput="filterAdminEliminados()">
         </div>
         <select id="eliminados-lugar" onchange="filterAdminEliminados()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
@@ -887,8 +895,8 @@
         </select>
         <input type="date" id="eliminados-desde" onchange="filterAdminEliminados()" title="Desde fecha"
           style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <button class="btn btn-secondary" onclick="loadOrders()">↻ Actualizar</button>
-        <button class="btn btn-secondary" onclick="exportTabToExcel('eliminados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;">⬇ Exportar a Excel</button>
+        <button class="btn btn-secondary" onclick="loadOrders()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+        <button class="btn btn-secondary" onclick="exportTabToExcel('eliminados')" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Exportar a Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -909,59 +917,217 @@
 
   <!-- ── PAGE: USERS ── -->
   <div id="page-users" style="display:none">
-    <div class="stat-grid" style="margin-bottom:20px">
-      <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
-    </div>
-    <div class="toolbar">
-      <div class="search-field" style="flex:1;min-width:180px;">
-        <span>🔍</span>
-        <input type="text" id="user-search" placeholder="Buscar nombre o cédula…" oninput="filterUsers()">
+
+    <!-- Sub-nav: todo lo relacionado a colaboradores vive aquí ahora (antes
+         repartido entre Superusuario y una tarjeta de Dashboard) -->
+    <div class="su-section" style="padding:0;overflow:hidden;margin-bottom:20px;">
+      <div class="collab-tabs">
+        <button id="cotab-activos" class="collab-tab active" onclick="showCollabTab('activos')">Activos</button>
+        <button id="cotab-wishlists" class="collab-tab" onclick="showCollabTab('wishlists');openSuWishlistsModal()">Wishlists</button>
+        <button id="cotab-exentos" class="collab-tab" onclick="showCollabTab('exentos')">Exentos</button>
+        <button id="cotab-suspendidos" class="collab-tab" onclick="showCollabTab('suspendidos')">Suspendidos</button>
+        <button id="cotab-baneados" class="collab-tab" onclick="showCollabTab('baneados')">Baneados</button>
+        <button id="cotab-seguridad" class="collab-tab" onclick="showCollabTab('seguridad')">Seguridad</button>
       </div>
-      <select id="user-depto" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <option value="">Todos los departamentos</option>
-      </select>
-      <select id="user-lugar" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
-        <option value="">Todos los lugares</option>
-        <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
-      </select>
-      <button class="btn btn-secondary" onclick="loadUsers()">↻ Actualizar</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th class="th-sort" onclick="sortUsers('nombre')"       id="uth-nombre">Nombre <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortUsers('cedula')"       id="uth-cedula">Cédula <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortUsers('departamento')" id="uth-departamento">Departamento <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortUsers('lugar')"        id="uth-lugar">Lugar <span class="sort-icon">↕</span></th>
-          <th class="th-sort" onclick="sortUsers('created_at')"   id="uth-created_at">Registro <span class="sort-icon">↕</span></th>
-        </tr></thead>
-        <tbody id="users-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
-      </table>
+
+    <!-- Activos -->
+    <div id="copage-activos">
+      <div class="stat-grid" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Colaboradores registrados</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="search-field" style="flex:1;min-width:180px;">
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input type="text" id="user-search" placeholder="Buscar nombre o cédula…" oninput="filterUsers()">
+        </div>
+        <select id="user-depto" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los departamentos</option>
+        </select>
+        <select id="user-lugar" onchange="filterUsers()" style="padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;">
+          <option value="">Todos los lugares</option>
+          <option>Tres Ríos</option><option>Heredia</option><option>Grecia</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadUsers()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortUsers('nombre')"       id="uth-nombre">Nombre <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortUsers('cedula')"       id="uth-cedula">Cédula <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortUsers('departamento')" id="uth-departamento">Departamento <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortUsers('lugar')"        id="uth-lugar">Lugar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortUsers('created_at')"   id="uth-created_at">Registro <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortUsers('ultimo_acceso')" id="uth-ultimo_acceso">Reciente <span class="sort-icon">↕</span></th>
+            <th style="width:110px;text-align:center;">Acción</th>
+          </tr></thead>
+          <tbody id="users-tbody"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="su-users-pagination"></div>
     </div>
-    <div class="pagination" id="su-users-pagination"></div>
+
+    <!-- Wishlists (antes un modal aparte, abierto desde una tarjeta de Dashboard) -->
+    <div id="copage-wishlists" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-size:15px;font-weight:700;color:#143c5a;" id="su-wishlists-modal-title">🎁 Wishlists recibidas</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="su-wishlists-clear-filter" onclick="openSuWishlistsModal()" style="display:none;background:#f3f4f6;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;">✕ Quitar filtro</button>
+          <input type="text" id="su-wishlists-search" placeholder="Buscar colaborador…" oninput="filterSuWishlistsModal()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th class="th-sort" onclick="sortSuWl('colaborador')" id="wlth-colaborador">Colaborador <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortSuWl('familiar_nombre')" id="wlth-familiar_nombre">Familiar <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortSuWl('created_at')" id="wlth-created_at">Fecha <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortSuWl('estado')" id="wlth-estado">Estado <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortSuWl('unidades')" id="wlth-unidades">Unidades <span class="sort-icon">↕</span></th>
+            <th class="th-sort" onclick="sortSuWl('total')" id="wlth-total">Total <span class="sort-icon">↕</span></th>
+            <th style="width:150px;text-align:center;">Acción</th>
+          </tr></thead>
+          <tbody id="su-wishlists-modal-body"><tr><td colspan="7" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="su-wishlists-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Exentos de pago -->
+    <div id="copage-exentos" class="su-section" style="display:none">
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>Usuarios Exentos de Pago</div>
+      <div class="su-section-sub">Estos usuarios no suman a los totales de ventas. Sus pedidos aparecen en el tab "Exentos" de Pedidos. El dueño siempre está exento y no se puede eliminar.</div>
+
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;">Número de cédula</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" id="exempt-cedula-input" placeholder="Ej. 185800008631"
+            style="flex:1;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;"
+            oninput="lookupExemptUser()" onkeydown="if(event.key==='Enter') addExemptCedula()">
+          <button class="btn btn-primary" onclick="addExemptCedula()" id="exempt-add-btn" disabled
+            style="padding:10px 20px;white-space:nowrap;opacity:.45;">+ Agregar</button>
+        </div>
+        <!-- Preview del usuario encontrado -->
+        <div id="exempt-preview" style="display:none;margin-top:8px;padding:10px 14px;border:1.5px solid #d1fae5;border-radius:9px;background:#f0fdf4;display:none;align-items:center;gap:10px;">
+          <div id="exempt-preview-avatar" class="collab-avatar" style="width:34px;height:34px;font-size:13px;flex-shrink:0;"></div>
+          <div>
+            <div id="exempt-preview-name" style="font-size:14px;font-weight:700;color:#111827;"></div>
+            <div id="exempt-preview-sub"  style="font-size:12px;color:#6b7280;"></div>
+          </div>
+        </div>
+        <div id="exempt-notfound" style="display:none;margin-top:8px;padding:9px 13px;border:1.5px solid #fca5a5;border-radius:9px;background:#fef2f2;font-size:13px;color:#dc2626;"></div>
+      </div>
+
+      <div id="exempt-msg" style="display:none;padding:9px 13px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
+
+      <div id="exempt-list" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:#9ca3af;font-size:13px;padding:12px 0;">Cargando…</div>
+      </div>
+      <div id="exempt-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Suspendidos -->
+    <div id="copage-suspendidos" style="display:none">
+      <div class="su-section-sub">Un usuario <strong>suspendido</strong> no puede iniciar sesión mientras dure la suspensión, pero a diferencia de eliminar/banear, conserva su cuenta, su historial de pedidos y todos sus datos intactos. Actívalo en cualquier momento para que recupere el acceso.</div>
+
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suspender por cédula o nombre</div>
+      <div class="toolbar" style="margin-bottom:24px;">
+        <div class="cedula-autocomplete-wrap">
+          <div class="search-field">
+            <span>🪪</span>
+            <input type="text" id="su-suspend-cedula-input" placeholder="Cédula o nombre…" autocomplete="off"
+              oninput="filterSuSuspendSuggestions()" onfocus="filterSuSuspendSuggestions()"
+              onblur="setTimeout(()=>hideSuSuspendSuggestions(),150)">
+          </div>
+          <div class="cedula-autocomplete-list" id="su-suspend-suggestions"></div>
+        </div>
+        <button class="btn btn-danger" onclick="suspendSuUserManual()">⏸ Suspender</button>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:16px;">
+        <div class="search-field">
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input type="text" id="su-suspended-search" placeholder="Buscar entre suspendidos…" oninput="filterSuSuspendedUsers()">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Fecha</th><th style="width:100px;text-align:center;">Acción</th>
+          </tr></thead>
+          <tbody id="su-suspended-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="su-suspended-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Eliminados/Baneados -->
+    <div id="copage-baneados" style="display:none">
+      <div class="su-section-sub">Los colaboradores eliminados aparecen aquí automáticamente. Un usuario <strong>baneado</strong> no puede iniciar sesión ni registrarse de nuevo con la misma cédula; el baneo se puede activar o deshacer en cualquier momento.</div>
+
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear por cédula o nombre</div>
+      <div class="toolbar" style="margin-bottom:24px;">
+        <div class="cedula-autocomplete-wrap">
+          <div class="search-field">
+            <span>🪪</span>
+            <input type="text" id="su-ban-cedula-input" placeholder="Cédula o nombre…" autocomplete="off"
+              oninput="filterSuBanSuggestions()" onfocus="filterSuBanSuggestions()"
+              onblur="setTimeout(()=>hideSuBanSuggestions(),150)">
+          </div>
+          <div class="cedula-autocomplete-list" id="su-ban-suggestions"></div>
+        </div>
+        <button class="btn btn-danger" onclick="banSuUserManual()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>Banear</button>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:16px;">
+        <div class="search-field">
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input type="text" id="su-banned-search" placeholder="Buscar entre eliminados/baneados…" oninput="filterSuBannedUsers()">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Estado</th><th>Fecha</th><th style="width:120px;text-align:center;">Acción</th>
+          </tr></thead>
+          <tbody id="su-banned-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="su-banned-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Seguridad (posibles registros falsos) -->
+    <div id="copage-seguridad" class="su-section" style="display:none">
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>Posibles registros falsos</div>
+      <div class="su-section-sub">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
+      <div id="cfg-fraude-list" class="fraud-cases-wrap" style="max-height:480px;overflow-y:auto;">
+        <div class="empty-table">Cargando…</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── PAGE: DASHBOARD ── -->
   <div id="page-dashboard" style="display:none">
     <div class="dash-grid">
-      <div class="dash-kpi stat-card-gran" style="grid-column:1/-1;border-color:#ddd6fe;background:#f5f3ff;">
+      <div class="dash-kpi stat-card-gran" style="grid-column:1/-1;">
         <div class="stat-gran-main">
           <div class="stat-gran-label">Gran total</div>
-          <div class="stat-gran-total" style="color:#7c3aed;"><span class="col-sign">₡</span><span id="sdk-total-fact">—</span></div>
+          <div class="stat-gran-total" style="color:#143c5a;"><span class="col-sign">₡</span><span id="sdk-total-fact">—</span></div>
         </div>
         <div class="stat-gran-divider"></div>
         <div class="stat-gran-breakdown">
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Pagados</div>
-            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-pagados">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="sdk-gt-pagados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Por pagar</div>
-            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-facturados">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="sdk-gt-facturados">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">Nuevos pedidos</div>
-            <div class="stat-gran-item-val" style="color:#7c3aed" id="sdk-gt-nuevos">—</div>
+            <div class="stat-gran-item-val" style="color:#143c5a" id="sdk-gt-nuevos">—</div>
           </div>
           <div class="stat-gran-item">
             <div class="stat-gran-item-lbl">En mora</div>
@@ -974,21 +1140,21 @@
         </div>
       </div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-pedidos">—</div><div class="dash-kpi-lbl">Pedidos procesados</div></div>
-      <div class="dash-kpi" style="border-color:#fde68a;background:#fffbeb;"><div class="dash-kpi-val" style="color:#b45309;" id="sdk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#b45309;">Pedidos pendientes</div></div>
+      <div class="dash-kpi"><div class="dash-kpi-val" style="color:#143c5a;" id="sdk-pendientes">—</div><div class="dash-kpi-lbl" style="color:#143c5a;">Pedidos pendientes</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-promedio"><span class="col-sign">₡</span>—</div><div class="dash-kpi-lbl">Promedio por pedido</div></div>
       <div class="dash-kpi"><div class="dash-kpi-val" id="sdk-unidades">—</div><div class="dash-kpi-lbl">Unidades vendidas</div></div>
-      <div class="dash-kpi" onclick="openSuCollabList()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
+      <div class="dash-kpi" onclick="showPage('users');showCollabTab('activos')" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
         <div class="dash-kpi-val" id="sdk-colaboradores">—</div>
         <div class="dash-kpi-lbl">Colaboradores activos <span style="font-size:10px;color:#9ca3af;">↗</span></div>
       </div>
-      <div class="dash-kpi" onclick="openSuWishlistsModal()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
+      <div class="dash-kpi" onclick="showPage('users');showCollabTab('wishlists');openSuWishlistsModal()" style="cursor:pointer;border:1.5px solid #e5e7eb;transition:border-color .2s;" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='#e5e7eb'">
         <div class="dash-kpi-val" id="sdk-wishlists">—</div>
         <div class="dash-kpi-lbl">Wishlists recibidas <span style="font-size:10px;color:#9ca3af;">↗</span></div>
       </div>
     </div>
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
-        <span>Ventas en el tiempo</span>
+        <span>Ventas</span>
         <div class="dash-filters">
           <select class="dash-filter" id="sf-tiempo-year" onchange="renderSuChartTiempo()"><option value="">Todos los años</option></select>
           <div class="dash-period-btns">
@@ -1066,7 +1232,7 @@
     <!-- Unidades vendidas en el tiempo -->
     <div class="dash-card" style="margin-bottom:20px;">
       <div class="dash-card-title">
-        <span>Unidades vendidas en el tiempo</span>
+        <span>unidades vendidas</span>
         <div class="dash-filters">
           <select class="dash-filter" id="sf-unid-tiempo-year" onchange="renderSuChartUnidTiempo()"><option value="">Todos los años</option></select>
           <div class="dash-period-btns">
@@ -1111,7 +1277,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
           <div>
             <div class="su-section-title" style="color:#b91c1c;">🔧 Modo mantenimiento</div>
-            <div class="su-section-sub">Al activarlo, index.html y FL.html muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. Los demás paneles (admin, su, su2, pagos por sucursal) siguen funcionando con normalidad.</div>
+            <div class="su-section-sub">Al activarlo, el catálogo y catálogo de familia (index y FL) muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. El sistema de pagos sí queda activo.</div>
           </div>
           <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
         </div>
@@ -1119,14 +1285,14 @@
 
       <!-- Contraseñas — 2 columnas en desktop -->
       <div class="su-section">
-        <div class="su-section-title">🔑 Gestión de contraseñas</div>
+        <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4a1 1 0 0 0-1.4 0l-2.1 2.1a1 1 0 0 0 0 1.4Z"/><path d="m14 8-6.5 6.5"/><path d="m19 15-2 2"/></svg>Gestión de contraseñas</div>
         <div class="su-section-sub">Visualiza y cambia las credenciales de todos los paneles.</div>
 
         <div class="su-panels-grid">
 
           <!-- Admin -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">🛠 Panel Admin</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>Panel Admin</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1143,7 +1309,7 @@
 
           <!-- Facturación -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">🧾 Panel Facturación</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>Panel Facturación</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1160,7 +1326,7 @@
 
           <!-- Superusuario -->
           <div style="border:1.5px solid #ddd6fe;border-radius:12px;padding:18px;background:#faf5ff;">
-            <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;">🔐 Panel Superusuario</div>
+            <div style="font-size:13px;font-weight:700;color:#5b21b6;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Panel Superusuario</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1177,7 +1343,7 @@
 
           <!-- Grecia -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Grecia</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Panel Grecia</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1194,7 +1360,7 @@
 
           <!-- Tres Ríos -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Tres Ríos</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Panel Tres Ríos</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1211,7 +1377,7 @@
 
           <!-- Heredia -->
           <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">📍 Panel Heredia</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Panel Heredia</div>
             <div class="su-cred-grid">
               <div class="su-field">
                 <label>Usuario</label>
@@ -1229,171 +1395,17 @@
         </div><!-- /su-panels-grid -->
       </div>
 
-      <!-- Usuarios Exentos de Pago -->
-      <div class="su-section">
-        <div class="su-section-title">🚫 Usuarios Exentos de Pago</div>
-        <div class="su-section-sub">Estos usuarios no suman a los totales de ventas. Sus pedidos aparecen en el tab "Exentos". El dueño siempre está exento y no se puede eliminar.</div>
-
-        <div style="margin-bottom:18px;">
-          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;">Número de cédula</label>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <input type="text" id="exempt-cedula-input" placeholder="Ej. 185800008631"
-              style="flex:1;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;"
-              oninput="lookupExemptUser()" onkeydown="if(event.key==='Enter') addExemptCedula()">
-            <button class="btn btn-primary" onclick="addExemptCedula()" id="exempt-add-btn" disabled
-              style="padding:10px 20px;white-space:nowrap;opacity:.45;">+ Agregar</button>
-          </div>
-          <!-- Preview del usuario encontrado -->
-          <div id="exempt-preview" style="display:none;margin-top:8px;padding:10px 14px;border:1.5px solid #d1fae5;border-radius:9px;background:#f0fdf4;display:none;align-items:center;gap:10px;">
-            <div id="exempt-preview-avatar" class="collab-avatar" style="width:34px;height:34px;font-size:13px;flex-shrink:0;"></div>
-            <div>
-              <div id="exempt-preview-name" style="font-size:14px;font-weight:700;color:#111827;"></div>
-              <div id="exempt-preview-sub"  style="font-size:12px;color:#6b7280;"></div>
-            </div>
-          </div>
-          <div id="exempt-notfound" style="display:none;margin-top:8px;padding:9px 13px;border:1.5px solid #fca5a5;border-radius:9px;background:#fef2f2;font-size:13px;color:#dc2626;"></div>
-        </div>
-
-        <div id="exempt-msg" style="display:none;padding:9px 13px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-
-        <div id="exempt-list" style="display:flex;flex-direction:column;gap:8px;">
-          <div style="color:#9ca3af;font-size:13px;padding:12px 0;">Cargando…</div>
-        </div>
-      </div>
-
-      <!-- Eliminar / Banear colaboradores — nav con sub-pestañas, igual que Pedidos -->
-      <div class="su-section" style="padding:0;overflow:hidden;">
-        <div style="display:flex;gap:0;border-bottom:1px solid #e5e7eb;background:#fff;">
-          <button id="suutab-eliminar" onclick="showSuUserTab('eliminar')"
-            style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid #143c5a;color:#143c5a;">
-            🗑 Eliminar usuario
-          </button>
-          <button id="suutab-banear" onclick="showSuUserTab('banear')"
-            style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-            🗑 Usuarios eliminados/baneados
-          </button>
-          <button id="suutab-suspender" onclick="showSuUserTab('suspender')"
-            style="flex:1;padding:13px 12px;font-size:14px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">
-            ⏸ Usuarios suspendidos
-          </button>
-        </div>
-
-        <div style="padding:24px;">
-        <!-- Eliminar usuario -->
-        <div id="suupage-eliminar">
-          <div class="su-section-sub">Eliminar un colaborador borra su registro de la base de datos y lo mueve a la sección de eliminados/baneados. Sus pedidos históricos no se eliminan.</div>
-          <div class="toolbar" style="margin-bottom:16px;">
-            <div class="search-field">
-              <span>🔍</span>
-              <input type="text" id="su-user-search" placeholder="Buscar colaborador…" oninput="filterSuUsers()">
-            </div>
-            <button class="btn btn-secondary" onclick="loadSuUsers()">↻ Actualizar</button>
-          </div>
-          <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
-            <table>
-              <thead><tr>
-                <th class="th-sort" onclick="sortSuDeleteUsers('nombre')"       id="sudth-nombre">Nombre <span class="sort-icon">↕</span></th>
-                <th class="th-sort" onclick="sortSuDeleteUsers('cedula')"       id="sudth-cedula">Cédula <span class="sort-icon">↕</span></th>
-                <th class="th-sort" onclick="sortSuDeleteUsers('departamento')" id="sudth-departamento">Departamento <span class="sort-icon">↕</span></th>
-                <th class="th-sort" onclick="sortSuDeleteUsers('lugar')"        id="sudth-lugar">Lugar <span class="sort-icon">↕</span></th>
-                <th class="th-sort" onclick="sortSuDeleteUsers('created_at')"   id="sudth-created_at">Registro <span class="sort-icon">↕</span></th>
-                <th></th>
-              </tr></thead>
-              <tbody id="su-users-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Usuarios eliminados/baneados -->
-        <div id="suupage-banear" style="display:none">
-          <div class="su-section-sub">Los colaboradores eliminados aparecen aquí automáticamente. Un usuario <strong>baneado</strong> no puede iniciar sesión ni registrarse de nuevo con la misma cédula; el baneo se puede activar o deshacer en cualquier momento.</div>
-
-          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Banear por cédula o nombre</div>
-          <div class="toolbar" style="margin-bottom:24px;">
-            <div class="cedula-autocomplete-wrap">
-              <div class="search-field">
-                <span>🪪</span>
-                <input type="text" id="su-ban-cedula-input" placeholder="Cédula o nombre…" autocomplete="off"
-                  oninput="filterSuBanSuggestions()" onfocus="filterSuBanSuggestions()"
-                  onblur="setTimeout(()=>hideSuBanSuggestions(),150)">
-              </div>
-              <div class="cedula-autocomplete-list" id="su-ban-suggestions"></div>
-            </div>
-            <button class="btn btn-danger" onclick="banSuUserManual()">🚫 Banear</button>
-          </div>
-
-          <div class="toolbar" style="margin-bottom:16px;">
-            <div class="search-field">
-              <span>🔍</span>
-              <input type="text" id="su-banned-search" placeholder="Buscar entre eliminados/baneados…" oninput="filterSuBannedUsers()">
-            </div>
-          </div>
-          <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
-            <table>
-              <thead><tr>
-                <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Estado</th><th>Fecha</th><th style="width:120px;text-align:center;">Acción</th>
-              </tr></thead>
-              <tbody id="su-banned-tbody"><tr><td colspan="6" class="empty-table">Cargando…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Usuarios suspendidos -->
-        <div id="suupage-suspender" style="display:none">
-          <div class="su-section-sub">Un usuario <strong>suspendido</strong> no puede iniciar sesión mientras dure la suspensión, pero a diferencia de eliminar/banear, conserva su cuenta, su historial de pedidos y todos sus datos intactos. Actívalo en cualquier momento para que recupere el acceso.</div>
-
-          <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suspender por cédula o nombre</div>
-          <div class="toolbar" style="margin-bottom:24px;">
-            <div class="cedula-autocomplete-wrap">
-              <div class="search-field">
-                <span>🪪</span>
-                <input type="text" id="su-suspend-cedula-input" placeholder="Cédula o nombre…" autocomplete="off"
-                  oninput="filterSuSuspendSuggestions()" onfocus="filterSuSuspendSuggestions()"
-                  onblur="setTimeout(()=>hideSuSuspendSuggestions(),150)">
-              </div>
-              <div class="cedula-autocomplete-list" id="su-suspend-suggestions"></div>
-            </div>
-            <button class="btn btn-danger" onclick="suspendSuUserManual()">⏸ Suspender</button>
-          </div>
-
-          <div class="toolbar" style="margin-bottom:16px;">
-            <div class="search-field">
-              <span>🔍</span>
-              <input type="text" id="su-suspended-search" placeholder="Buscar entre suspendidos…" oninput="filterSuSuspendedUsers()">
-            </div>
-          </div>
-          <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
-            <table>
-              <thead><tr>
-                <th>Nombre</th><th>Cédula</th><th>Lugar</th><th>Fecha</th><th style="width:100px;text-align:center;">Acción</th>
-              </tr></thead>
-              <tbody id="su-suspended-tbody"><tr><td colspan="5" class="empty-table">Cargando…</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-        </div>
-      </div>
-
-      <!-- Posibles registros falsos -->
-      <div class="su-section" style="margin-top:24px;">
-        <div class="su-section-title">🚨 Posibles registros falsos</div>
-        <div class="su-section-sub">Dispositivos que en los últimos 30 días quedaron asociados a más de una cédula distinta (bloqueos por baneo, logins o registros nuevos). Puede indicar que alguien baneado intenta volver a registrarse con otro número.</div>
-        <div id="cfg-fraude-list" class="fraud-cases-wrap" style="max-height:480px;overflow-y:auto;">
-          <div class="empty-table">Cargando…</div>
-        </div>
-      </div>
-
     </div>
   </div>
 
   <!-- ── PAGE: PROMOCIONES ── -->
   <div id="page-promotions" style="display:none">
 
-    <div class="su-section" style="margin-bottom:16px;">
+    <div class="su-section" style="padding:0;overflow:hidden;margin-bottom:16px;">
       <div class="promo-subtabs">
         <button class="promo-subtab active" id="promo-subtab-descuento" onclick="selectPromoTab('descuento')">% Descuentos</button>
-        <button class="promo-subtab" id="promo-subtab-limite" onclick="selectPromoTab('limite')">⊘ Límites de unidades</button>
-        <button class="promo-subtab" id="promo-subtab-promocion" onclick="selectPromoTab('promocion')">🏷 Promociones</button>
+        <button class="promo-subtab" id="promo-subtab-limite" onclick="selectPromoTab('limite')">Límites de unidades</button>
+        <button class="promo-subtab" id="promo-subtab-promocion" onclick="selectPromoTab('promocion')">Promociones</button>
       </div>
     </div>
 
@@ -1416,7 +1428,7 @@
     <div class="su-section" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div>
-          <div class="su-section-title">🔔 Notificaciones</div>
+          <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Notificaciones</div>
           <div class="su-section-sub">Redacta y envía notificaciones a todos los colaboradores.</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openNotifModal()">+ Nueva notificación</button>
@@ -1426,8 +1438,8 @@
     <!-- History -->
     <div class="su-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
-        <div class="su-section-title">📋 Historial de notificaciones</div>
-        <button class="btn btn-secondary btn-sm" onclick="loadNotifications()">↻ Actualizar</button>
+        <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>Historial de notificaciones</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadNotifications()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>Actualizar</button>
       </div>
       <div class="su-section-sub">Notificaciones enviadas. Cancela, reenvía o consulta lectores.</div>
       <div id="notif-history-wrap">
@@ -1469,7 +1481,7 @@
               style="opacity:0;position:absolute;width:100%;height:100%;top:0;left:0;cursor:pointer;"
               oninput="notifExecCmd('foreColor', this.value)">
           </label>
-          <button class="notif-tb-btn" onmousedown="event.preventDefault();notifInsertLink()" title="Enlace">🔗</button>
+          <button class="notif-tb-btn" onmousedown="event.preventDefault();notifInsertLink()" title="Enlace"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></button>
           <span class="notif-tb-sep"></span>
           <select title="Tamaño de fuente"
             style="height:28px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;color:#374151;background:#fff;padding:0 6px;cursor:pointer;outline:none;"
@@ -1493,7 +1505,7 @@
       <div style="margin-bottom:16px;">
         <label style="display:block;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Imagen (opcional)</label>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('notif-img-input').click()">📎 Adjuntar imagen</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('notif-img-input').click()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Adjuntar imagen</button>
           <input type="file" id="notif-img-input" accept="image/*" style="display:none" onchange="handleNotifImage(this)">
           <span id="notif-img-status" style="font-size:12px;color:#9ca3af;"></span>
           <button id="notif-img-remove" style="display:none;" class="btn btn-danger btn-sm" onclick="removeNotifImage()">✕ Quitar</button>
@@ -1540,8 +1552,8 @@
 
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
         <button class="btn btn-secondary" onclick="previewNotifCard()">🃏 Vista previa tarjeta</button>
-        <button class="btn btn-secondary" onclick="previewNotifCompose()">👁 Vista previa completa</button>
-        <button class="btn btn-secondary" onclick="clearNotifCompose()">✕ Limpiar</button>
+        <button class="btn btn-secondary" onclick="previewNotifCompose()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>Vista previa completa</button>
+        <button class="btn btn-secondary" onclick="clearNotifCompose()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Limpiar</button>
       </div>
 
       <div class="modal-btns">
@@ -1663,7 +1675,7 @@
 
     <!-- Hero Photo Library -->
     <div class="su-section" style="margin-bottom:20px;">
-      <div class="su-section-title">🖼 Fotos del Hero</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Fotos del Hero</div>
       <div class="su-section-sub">
         Las imágenes se escalan al lado más largo a máx. <strong>800 px</strong> y se convierten a <strong>WebP</strong> automáticamente.
         Arrastra archivos o carpetas, o usa el botón para seleccionar varios a la vez.
@@ -1675,7 +1687,7 @@
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="heroHandleDrop(event)">
-        <div style="font-size:28px;margin-bottom:6px;">📁</div>
+        <div style="margin-bottom:6px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></div>
         <div><strong>Arrastra imágenes aquí</strong> o haz clic para seleccionar</div>
         <div style="font-size:12px;margin-top:4px;">Puedes seleccionar múltiples archivos a la vez</div>
         <input type="file" id="hero-file-input" accept="image/*" multiple
@@ -1695,7 +1707,7 @@
         <button class="btn btn-secondary btn-sm" onclick="heroSelectAll()">Sel. todo</button>
         <button class="btn btn-secondary btn-sm" onclick="heroDeselectAll()">Deseleccionar</button>
         <button class="btn btn-danger btn-sm"    id="hero-delete-btn" onclick="heroDeleteSelected()" style="display:none;">
-          🗑 Eliminar (<span id="hero-sel-count">0</span>)
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>Eliminar (<span id="hero-sel-count">0</span>)
         </button>
         <span class="hero-lib-status" id="hero-lib-status"></span>
       </div>
@@ -1706,7 +1718,7 @@
 
     <!-- Welcome Message -->
     <div class="su-section" style="margin-bottom:20px;">
-      <div class="su-section-title">📝 Mensaje de bienvenida</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Mensaje de bienvenida</div>
       <div class="su-section-sub">Texto centrado bajo el hero. Soporta texto enriquecido e imágenes (<strong>900×500 px</strong>).</div>
       <div style="margin-top:14px;">
         <div class="notif-toolbar">
@@ -1727,23 +1739,23 @@
             <option value="6">Muy grande</option>
           </select>
           <div class="notif-tb-sep"></div>
-          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-welcome')">🔗</button>
+          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-welcome')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></button>
           <label class="notif-tb-btn" title="Insertar imagen — 900×500 px" style="cursor:pointer;" onmousedown="event.preventDefault()">
-            🖼<input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-welcome',900,500)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-welcome',900,500)">
           </label>
         </div>
         <div id="home-welcome" contenteditable="true" class="home-rich-editor" placeholder="Escribe el mensaje de bienvenida…"></div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:11px;color:#9ca3af;">📐 Imágenes: 900×500 px · WebP · cover crop</span>
-          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-welcome','Mensaje de bienvenida')">👁 Vista previa</button>
-          <button class="btn btn-purple" onclick="saveHomeSection('welcome_html','home-welcome')">💾 Guardar</button>
+          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-welcome','Mensaje de bienvenida')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button>
+          <button class="btn btn-purple" onclick="saveHomeSection('welcome_html','home-welcome')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V3.4"/></svg>Guardar</button>
         </div>
       </div>
     </div>
 
     <!-- Footer Section -->
     <div class="su-section">
-      <div class="su-section-title">🖼 Sección inferior</div>
+      <div class="su-section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Sección inferior</div>
       <div class="su-section-sub">Contenido al final del home (métodos de pago, imágenes informativas…). Imágenes: <strong>1200×600 px</strong>.</div>
       <div style="margin-top:14px;">
         <div class="notif-toolbar">
@@ -1764,16 +1776,16 @@
             <option value="6">Muy grande</option>
           </select>
           <div class="notif-tb-sep"></div>
-          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-footer')">🔗</button>
+          <button class="notif-tb-btn" title="Enlace" onmousedown="event.preventDefault();homeInsertLink('home-footer')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg></button>
           <label class="notif-tb-btn" title="Insertar imagen — 1200×600 px" style="cursor:pointer;" onmousedown="event.preventDefault()">
-            🖼<input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-footer',1200,600)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><input type="file" accept="image/*" style="display:none" onchange="homeInsertImg(this,'home-footer',1200,600)">
           </label>
         </div>
         <div id="home-footer" contenteditable="true" class="home-rich-editor" placeholder="Sección inferior (métodos de pago, info adicional…)"></div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:11px;color:#9ca3af;">📐 Imágenes: 1200×600 px · WebP · cover crop</span>
-          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-footer','Sección inferior')">👁 Vista previa</button>
-          <button class="btn btn-purple" onclick="saveHomeSection('footer_html','home-footer')">💾 Guardar</button>
+          <button class="btn btn-secondary" style="margin-left:auto" onclick="previewHomeSection('home-footer','Sección inferior')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button>
+          <button class="btn btn-purple" onclick="saveHomeSection('footer_html','home-footer')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V3.4"/></svg>Guardar</button>
         </div>
       </div>
     </div>
@@ -1798,9 +1810,9 @@
     </div>
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
       <div class="dash-period-btns" id="su-pd-period-btns">
-        <button class="dash-period-btn active" id="su-pd-pbtn-day"   onclick="setSuProdDetailPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-pd-pbtn-day"   onclick="setSuProdDetailPeriod('day')">Día</button>
         <button class="dash-period-btn"        id="su-pd-pbtn-week"  onclick="setSuProdDetailPeriod('week')">Semana</button>
-        <button class="dash-period-btn"        id="su-pd-pbtn-month" onclick="setSuProdDetailPeriod('month')">Mes</button>
+        <button class="dash-period-btn active" id="su-pd-pbtn-month" onclick="setSuProdDetailPeriod('month')">Mes</button>
       </div>
     </div>
     <div style="position:relative;width:100%;height:140px;"><canvas id="su-prod-detail-chart"></canvas></div>
@@ -1850,21 +1862,6 @@
   <div class="collab-modal-card" id="su-collab-profile-card"></div>
 </div>
 
-<!-- MODAL WISHLISTS RECIBIDAS SU -->
-<div id="su-wishlists-modal" class="collab-modal" style="z-index:785;" onclick="if(event.target===this)closeSuWishlistsModal()">
-  <div class="collab-modal-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-      <div style="font-size:17px;font-weight:700;color:#143c5a;" id="su-wishlists-modal-title">🎁 Wishlists recibidas</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="text" id="su-wishlists-search" placeholder="Buscar colaborador…" oninput="filterSuWishlistsModal()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;width:180px;">
-        <button onclick="closeSuWishlistsModal()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">×</button>
-      </div>
-    </div>
-    <div id="su-wishlists-modal-body"></div>
-    <div id="su-wishlists-pagination" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;"></div>
-  </div>
-</div>
-
 <!-- MODAL DETALLES MONTO SU -->
 <div id="su-monto-detail-modal" onclick="if(event.target===this)closeSuMontoDetail()">
   <div id="su-monto-detail-card">
@@ -1879,9 +1876,9 @@
       <select class="dash-filter" id="su-md-year" onchange="renderSuMontoDetail()"><option value="">Todos los años</option></select>
       <select class="dash-filter" id="su-md-month" onchange="renderSuMontoDetail()"><option value="">Todos los meses</option></select>
       <div class="dash-period-btns" style="margin-left:auto;">
-        <button class="dash-period-btn active" id="su-md-pbtn-day"   onclick="setSuMontoPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-md-pbtn-day"   onclick="setSuMontoPeriod('day')">Día</button>
         <button class="dash-period-btn"        id="su-md-pbtn-week"  onclick="setSuMontoPeriod('week')">Semana</button>
-        <button class="dash-period-btn"        id="su-md-pbtn-month" onclick="setSuMontoPeriod('month')">Mes</button>
+        <button class="dash-period-btn active" id="su-md-pbtn-month" onclick="setSuMontoPeriod('month')">Mes</button>
       </div>
     </div>
     <div style="position:relative;width:100%;height:140px;margin-bottom:8px;"><canvas id="su-monto-detail-chart"></canvas></div>
@@ -1954,9 +1951,9 @@
       <select class="dash-filter" id="su-ud-year" onchange="renderSuUserDetail()"><option value="">Todos los años</option></select>
       <select class="dash-filter" id="su-ud-month" onchange="renderSuUserDetail()"><option value="">Todos los meses</option></select>
       <div class="dash-period-btns" style="margin-left:auto;">
-        <button class="dash-period-btn active" id="su-ud-pbtn-day"   onclick="setSuUdPeriod('day')">Día</button>
+        <button class="dash-period-btn"        id="su-ud-pbtn-day"   onclick="setSuUdPeriod('day')">Día</button>
         <button class="dash-period-btn"        id="su-ud-pbtn-week"  onclick="setSuUdPeriod('week')">Semana</button>
-        <button class="dash-period-btn"        id="su-ud-pbtn-month" onclick="setSuUdPeriod('month')">Mes</button>
+        <button class="dash-period-btn active" id="su-ud-pbtn-month" onclick="setSuUdPeriod('month')">Mes</button>
         <button class="dash-period-btn"        id="su-ud-pbtn-year"  onclick="setSuUdPeriod('year')">Año</button>
       </div>
       <div class="dash-period-btns" style="margin-left:4px;">
@@ -2070,7 +2067,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <input type="text" id="f-imagen" placeholder="URL se rellena al subir imagen…" style="flex:1">
           <label id="img-upload-btn" style="white-space:nowrap;padding:10px 14px;background:#143c5a;color:#fff;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">
-            📷 Subir imagen
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Subir imagen
           </label>
           <input type="file" id="img-file-input" accept="image/*" style="display:none">
         </div>
@@ -2179,6 +2176,17 @@
 <!-- ORDER DETAIL MODAL -->
 <div class="modal-overlay" id="order-detail-modal" style="z-index:850">
   <div class="modal-card" id="order-detail-card"></div>
+</div>
+
+<!-- DETALLE DE UNA WISHLIST (productos) -->
+<div class="modal-overlay" id="su-wl-detail-modal" style="z-index:850">
+  <div class="modal-card" style="max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+      <div class="modal-title" id="su-wl-detail-title" style="margin:0;">🎁 Wishlist</div>
+      <button onclick="closeSuWlDetail()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
+    </div>
+    <div id="su-wl-detail-body"></div>
+  </div>
 </div>
 
 <!-- MORA MODAL -->
@@ -2435,7 +2443,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── PAGES ────────────────────────────────────────────────
-const ALL_PAGES = ['products','orders','users','dashboard','su','promotions','notifications','ratings','home'];
+const ALL_PAGES = ['products','orders','users','promotions','notifications','ratings','dashboard','home','su'];
 
 // ── RESPONSIVE ZOOM ──────────────────────────────────────
 function applyZoom() {
@@ -2457,6 +2465,12 @@ function showPage(page) {
   if (page==='users') {
     if (allUsers.length===0) loadUsers();
     if (allAdminHist.length===0) loadOrders();
+    // Colaboradores ahora agrupa también exentos/suspendidos/baneados/seguridad
+    // (antes vivían en la pestaña Superusuario), así que se cargan aquí.
+    loadSuUsers();
+    loadExemptCedulas();
+    loadSuBannedUsers();
+    loadFraudDevices();
   }
   if (page==='dashboard') loadSuDashboard();
   if (page==='su')    { loadSuPage(); loadMaintenanceToggle(); }
@@ -2812,7 +2826,7 @@ let editingRuleId = null;
 let _ruleProdSelected = new Set();
 let _ruleProdStock = new Map(); // codigo -> stock disponible (string del input, '' = ilimitado)
 
-const PROMO_TIPO_LABEL = { descuento: '% Descuentos', limite: '⊘ Límites de unidades', promocion: '🏷 Promociones' };
+const PROMO_TIPO_LABEL = { descuento: '% Descuentos', limite: 'Límites de unidades', promocion: 'Promociones' };
 const PROMO_TIPO_SUB = {
   descuento: 'Cada regla agrupa los productos que comparten ese descuento, con su propia fecha o activación manual.',
   limite:    'Cada regla agrupa los productos con el mismo límite de unidades por usuario.',
@@ -3603,9 +3617,7 @@ window.addEventListener('resize', _fitOrdersTable);
 function showOrdersTab(tab) {
   ['pend','hist','pagados','devueltos','exentos','eliminados'].forEach(t => {
     document.getElementById('opage-' + t).style.display = t === tab ? 'block' : 'none';
-    const btn = document.getElementById('otab-' + t);
-    btn.style.borderBottom = t === tab ? '3px solid #7c3aed' : '3px solid transparent';
-    btn.style.color = t === tab ? '#7c3aed' : '#6b7280';
+    document.getElementById('otab-' + t).classList.toggle('active', t === tab);
   });
   requestAnimationFrame(_fitOrdersTable);
 }
@@ -3864,8 +3876,9 @@ function renderAdminOrders(tbodyId, list, tab) {
     if (sinInventario) badgeHtml = '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">SIN INVENTARIO</span>';
     if (eliminado)    badgeHtml = '<span style="background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;">ELIMINADO</span>';
 
-    // Chip mora — aparece en cualquier fila donde el usuario tenga pedidos en mora
-    const chipMora = moraUserChip(o.usuario_nombre, o.usuario_email || o.usuario_nombre);
+    // Avatar en rojo — el usuario tiene pedidos en mora (no confundir con el badge
+    // "EN MORA" de la columna Pedido, que indica que ESTE pedido puntual está en mora)
+    const userIsMora = !!_getMoraKey(o.usuario_nombre, o.usuario_email || o.usuario_nombre);
 
     const totalStyle = cancelado ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
                        devuelto  ? 'font-weight:700;color:#d1d5db;text-decoration:line-through' :
@@ -3887,7 +3900,7 @@ function renderAdminOrders(tbodyId, list, tab) {
     return `<tr class="${rowClass}" style="${rowStyle}">
       <td style="${(pagado || facturado || showExento) ? 'line-height:1.3' : ''}">${pagado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaPago ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pagado </span><span style="color:#047857;font-weight:700">${fechaPago}</span></div>` : ''}` : facturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : showExento ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Pedido </span>${fecha}</div>${fechaFacturado ? `<div style="font-size:11px;white-space:nowrap"><span style="color:#9ca3af;font-weight:600">Facturado </span><span style="color:#1d4ed8;font-weight:700">${fechaFacturado}</span></div>` : ''}` : fecha}${dupChip}</td>
       <td><div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;"><code style="font-size:12px">${num}</code>${badgeHtml}</div></td>
-      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${chipMora}${suspendedChip(o.usuario_email||o.usuario_nombre)}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(o.usuario_nombre, o.usuario_email||o.usuario_nombre, userIsMora)}<span style="font-weight:600">${esc(o.usuario_nombre||'—')}</span>${suspendedChip(o.usuario_email||o.usuario_nombre)}</div></td>
       <td>${esc(o.usuario_departamento||'—')}</td>
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
@@ -4154,9 +4167,9 @@ function sortUsers(col) {
     _userSort.dir = _userSort.dir === 'asc' ? 'desc' : 'asc';
   } else {
     _userSort.col = col;
-    _userSort.dir = 'asc';
+    _userSort.dir = col === 'ultimo_acceso' ? 'desc' : 'asc'; // recientes primero
   }
-  ['nombre','cedula','departamento','lugar','created_at'].forEach(c => {
+  ['nombre','cedula','departamento','lugar','created_at','ultimo_acceso'].forEach(c => {
     const th = document.getElementById('uth-' + c);
     if (!th) return;
     th.classList.remove('sort-asc','sort-desc');
@@ -4168,7 +4181,7 @@ function sortUsers(col) {
 function sortUsersList(list, col, dir) {
   return [...list].sort((a, b) => {
     let va = (a[col] || ''), vb = (b[col] || '');
-    if (col === 'created_at') { va = new Date(va||0); vb = new Date(vb||0); }
+    if (col === 'created_at' || col === 'ultimo_acceso') { va = new Date(va||0); vb = new Date(vb||0); }
     else { va = va.toString().toLowerCase(); vb = vb.toString().toLowerCase(); }
     if (va < vb) return dir === 'asc' ? -1 : 1;
     if (va > vb) return dir === 'asc' ?  1 : -1;
@@ -4192,7 +4205,7 @@ function filterUsers() {
 }
 
 let _suUsersPage     = 1;
-let _suUsersPageSize = 25;
+let _suUsersPageSize = 12;
 let _suUsersFiltered = [];
 
 function renderUsers(list) {
@@ -4205,7 +4218,7 @@ function _renderSuUsersPage() {
   const tbody = document.getElementById('users-tbody');
   const list  = _suUsersFiltered;
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Sin colaboradores registrados</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-table">Sin colaboradores registrados</td></tr>';
     document.getElementById('su-users-pagination').innerHTML = '';
     return;
   }
@@ -4218,20 +4231,22 @@ function _renderSuUsersPage() {
   tbody.innerHTML = slice.map(u => {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const horaReg  = u.created_at ? new Date(u.created_at).toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}) : '';
+    const uaHtml = u.ultimo_acceso
+      ? `${new Date(u.ultimo_acceso).toLocaleDateString('es-CR',{day:'2-digit',month:'2-digit',year:'2-digit'})}<br><span style="font-size:10px;color:#d1d5db">${new Date(u.ultimo_acceso).toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'})}</span>`
+      : '<span style="color:#d1d5db">Nunca</span>';
     const pedidosMora = (allAdminHist || []).filter(o =>
       o.estado === 'facturado' && !isExemptOrder(o) &&
       now > getMoraThreshold(o.facturado_at || o.fecha) &&
       (o.usuario_email === u.cedula || o.usuario_nombre === u.nombre)
     );
-    const chipMora = pedidosMora.length
-      ? `<button class="chip-mora" onclick="openMoraModal('${esc(u.cedula||u.nombre)}','${esc(u.nombre||'—')}')">⚠ En mora (${pedidosMora.length})</button>`
-      : '';
     return `<tr>
-      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre)}<span style="font-weight:600">${esc(u.nombre||'—')}</span>${suspendedChip(u.cedula||u.nombre)}</div>${chipMora}</div></td>
+      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="display:flex;align-items:center;gap:6px;">${userAvatar(u.nombre, u.cedula||u.nombre, pedidosMora.length>0)}<span style="font-weight:600">${esc(u.nombre||'—')}</span>${suspendedChip(u.cedula||u.nombre)}</div></div></td>
       <td>${esc(u.cedula||'—')}</td>
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
       <td style="font-size:11px;color:#6b7280">${fechaReg}<br><span style="font-size:10px;color:#d1d5db">${horaReg}</span></td>
+      <td style="font-size:11px;color:#6b7280">${uaHtml}</td>
+      <td style="text-align:center"><button class="btn-icon-danger" title="Eliminar colaborador" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}','${esc(u.departamento||'').replace(/'/g,"\\'")}','${esc(u.lugar||'').replace(/'/g,"\\'")}')">🗑</button></td>
     </tr>`;
   }).join('');
 
@@ -4240,7 +4255,7 @@ function _renderSuUsersPage() {
   const fin    = Math.min(_suUsersPage*size, list.length);
   let html = `<span class="pagination-info">${inicio}–${fin} de ${list.length}</span>`;
   html += `<select class="pg-size" onchange="_suUsersSetSize(this.value)">
-    ${[25,40,60,100,0].map(n=>`<option value="${n}"${n===_suUsersPageSize?' selected':''}>${n===0?'Todos':n}</option>`).join('')}
+    ${[12,25,40,60,100,0].map(n=>`<option value="${n}"${n===_suUsersPageSize?' selected':''}>${n===0?'Todos':n}</option>`).join('')}
   </select>`;
   html += `<button class="pg-btn" onclick="_suUsersGoPage(1)" ${_suUsersPage===1?'disabled':''}>«</button>`;
   html += `<button class="pg-btn" onclick="_suUsersGoPage(${_suUsersPage-1})" ${_suUsersPage===1?'disabled':''}>‹</button>`;
@@ -4429,7 +4444,6 @@ async function loadSuPage() {
   ['admin','fact','su','gr','tr','he'].forEach(t => {
     document.getElementById('su-msg-' + t).style.display = 'none';
   });
-  await Promise.all([loadSuUsers(), loadExemptCedulas(), loadSuBannedUsers(), loadFraudDevices()]);
 }
 
 async function saveSuCred(type) {
@@ -4479,6 +4493,7 @@ async function loadExemptCedulas() {
   const { data: users } = await sb.from('usuarios').select('cedula, nombre, departamento, lugar').in('cedula', list);
   const usersMap = {};
   (users || []).forEach(u => { usersMap[u.cedula] = u; });
+  _exemptPage = 1;
   renderExemptList(list, usersMap);
   return list;
 }
@@ -4487,14 +4502,27 @@ function _exemptInitials(nombre) {
   return (nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
 }
 
+let _exemptFullList  = [];
+let _exemptUsersMap  = {};
+let _exemptPage      = 1;
+const _exemptPageSize = 12;
+
+function goPageExempt(p) { _exemptPage = p; renderExemptList(_exemptFullList, _exemptUsersMap); }
+
 function renderExemptList(list, usersMap) {
   const el = document.getElementById('exempt-list');
   if (!el) return;
+  _exemptFullList = list || [];
+  _exemptUsersMap = usersMap || {};
   if (!list || list.length === 0) {
     el.innerHTML = '<div style="color:#9ca3af;font-size:13px;padding:12px 0;">No hay usuarios exentos.</div>';
+    const pg = document.getElementById('exempt-pagination'); if (pg) pg.innerHTML = '';
     return;
   }
-  el.innerHTML = list.map(c => {
+  const pages = Math.ceil(list.length / _exemptPageSize);
+  _exemptPage = Math.min(_exemptPage, pages);
+  const slice = list.slice((_exemptPage-1)*_exemptPageSize, _exemptPage*_exemptPageSize);
+  el.innerHTML = slice.map(c => {
     const isOwner = c === OWNER_CEDULA;
     const u   = usersMap?.[c];
     const ini = _exemptInitials(u?.nombre);
@@ -4513,6 +4541,7 @@ function renderExemptList(list, usersMap) {
       }
     </div>`;
   }).join('');
+  _renderSimplePager('exempt-pagination', _exemptPage, _exemptPageSize, list.length, 'goPageExempt');
 }
 
 // Lookup en tiempo real mientras se escribe la cédula
@@ -4615,12 +4644,13 @@ async function _saveExemptCedulas(list) {
 }
 
 // ── SUPERUSUARIO — ELIMINAR/BANEAR COLABORADORES ─────────────
-function showSuUserTab(tab) {
-  ['eliminar','banear','suspender'].forEach(t => {
-    document.getElementById('suupage-' + t).style.display = t === tab ? 'block' : 'none';
-    const btn = document.getElementById('suutab-' + t);
-    btn.style.borderBottom = t === tab ? '3px solid #143c5a' : '3px solid transparent';
-    btn.style.color = t === tab ? '#143c5a' : '#6b7280';
+// Sub-pestañas de la pestaña Colaboradores (Activos/Wishlists/Exentos/
+// Suspendidos/Baneados/Seguridad) — antes repartidas entre Superusuario y
+// una tarjeta de Dashboard, ahora todas viven aquí.
+function showCollabTab(tab) {
+  ['activos','wishlists','exentos','suspendidos','baneados','seguridad'].forEach(t => {
+    document.getElementById('copage-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('cotab-' + t).classList.toggle('active', t === tab);
   });
 }
 
@@ -4668,7 +4698,11 @@ function suspendedChip(idOrName) {
 }
 
 function filterSuUsers() {
-  const q = document.getElementById('su-user-search').value.toLowerCase();
+  // El buscador dedicado "su-user-search" ya no existe (la tabla de Activos
+  // en Colaboradores absorbió esta función) — allSuUsers sigue viva porque
+  // la usan los autocompletados de Suspender/Banear.
+  const searchEl = document.getElementById('su-user-search');
+  const q = (searchEl?.value || '').toLowerCase();
   let list = allSuUsers.filter(u =>
     (u.nombre || '').toLowerCase().includes(q) ||
     (u.cedula || '').toLowerCase().includes(q)
@@ -4687,6 +4721,7 @@ function filterSuUsers() {
 
 function renderSuUsers(list) {
   const tbody = document.getElementById('su-users-tbody');
+  if (!tbody) return; // tabla retirada — la de Activos ahora incluye el botón Eliminar
   if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty-table">Sin colaboradores registrados</td></tr>'; return; }
   tbody.innerHTML = list.map(u => {
     const fechaReg = u.created_at ? new Date(u.created_at).toLocaleDateString('es-CR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
@@ -4699,26 +4734,61 @@ function renderSuUsers(list) {
       <td>${esc(u.departamento||'—')}</td>
       <td>${esc(u.lugar||'—')}</td>
       <td style="font-size:11px;color:#6b7280">${fechaReg}<br><span style="font-size:10px;color:#d1d5db">${horaReg}</span></td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}','${esc(u.departamento||'').replace(/'/g,"\\'")}','${esc(u.lugar||'').replace(/'/g,"\\'")}')">🗑 Eliminar</button></td>
+      <td><button class="btn-icon-danger" title="Eliminar colaborador" onclick="deleteUser('${esc(u.cedula)}','${esc(u.nombre)}','${esc(u.departamento||'').replace(/'/g,"\\'")}','${esc(u.lugar||'').replace(/'/g,"\\'")}')">🗑</button></td>
     </tr>`;
   }).join('');
 }
 
 // ── USUARIOS SUSPENDIDOS ──────────────────────────────────
+// Pager genérico reutilizado por Exentos/Suspendidos/Baneados — mismo look
+// que el de Wishlists (pg-btn/pagination-info), mínimo 12 filas por página.
+function _renderSimplePager(elId, page, pageSize, total, goFnName) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const pages = Math.ceil(total / pageSize);
+  if (pages <= 1) { el.innerHTML = `<span class="pagination-info">${total} resultado${total!==1?'s':''}</span>`; return; }
+  const inicio = (page-1)*pageSize + 1;
+  const fin    = Math.min(page*pageSize, total);
+  let html = `<span class="pagination-info">${inicio}–${fin} de ${total}</span>`;
+  html += `<button class="pg-btn" onclick="${goFnName}(1)" ${page===1?'disabled':''}>«</button>`;
+  html += `<button class="pg-btn" onclick="${goFnName}(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  const range = [];
+  for (let i=Math.max(1,page-2); i<=Math.min(pages,page+2); i++) range.push(i);
+  range.forEach(i => { html += `<button class="pg-btn${i===page?' active':''}" onclick="${goFnName}(${i})">${i}</button>`; });
+  html += `<button class="pg-btn" onclick="${goFnName}(${page+1})" ${page===pages?'disabled':''}>›</button>`;
+  html += `<button class="pg-btn" onclick="${goFnName}(${pages})" ${page===pages?'disabled':''}>»</button>`;
+  el.innerHTML = html;
+}
+
+let _suSuspendedFiltered = [];
+let _suSuspendedPage     = 1;
+const _suSuspendedPageSize = 12;
+
 function filterSuSuspendedUsers() {
   const q = (document.getElementById('su-suspended-search')?.value || '').toLowerCase();
-  const list = allSuSuspended.filter(u =>
+  _suSuspendedFiltered = allSuSuspended.filter(u =>
     (u.nombre || '').toLowerCase().includes(q) ||
     (u.cedula || '').toLowerCase().includes(q)
   );
-  renderSuSuspendedUsers(list);
+  _suSuspendedPage = 1;
+  renderSuSuspendedUsers();
 }
 
-function renderSuSuspendedUsers(list) {
+function goPageSuSuspended(p) { _suSuspendedPage = p; renderSuSuspendedUsers(); }
+
+function renderSuSuspendedUsers() {
   const tbody = document.getElementById('su-suspended-tbody');
   if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No hay usuarios suspendidos.</td></tr>'; return; }
-  tbody.innerHTML = list.map(u => {
+  const list = _suSuspendedFiltered;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">No hay usuarios suspendidos.</td></tr>';
+    const pg = document.getElementById('su-suspended-pagination'); if (pg) pg.innerHTML = '';
+    return;
+  }
+  const pages = Math.ceil(list.length / _suSuspendedPageSize);
+  _suSuspendedPage = Math.min(_suSuspendedPage, pages);
+  const slice = list.slice((_suSuspendedPage-1)*_suSuspendedPageSize, _suSuspendedPage*_suSuspendedPageSize);
+  tbody.innerHTML = slice.map(u => {
     const fecha = u.suspendido_at ? new Date(u.suspendido_at).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
     const ini = (u.nombre || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     return `<tr>
@@ -4732,6 +4802,7 @@ function renderSuSuspendedUsers(list) {
       <td style="text-align:center"><button class="btn btn-sm btn-secondary" onclick="unsuspendSuUser('${esc(u.cedula)}','${esc(u.nombre||'')}')">Activar</button></td>
     </tr>`;
   }).join('');
+  _renderSimplePager('su-suspended-pagination', _suSuspendedPage, _suSuspendedPageSize, list.length, 'goPageSuSuspended');
 }
 
 async function _suSetSuspendido(cedula, nombre, suspendido) {
@@ -4823,7 +4894,7 @@ async function deleteUser(cedula, nombre, departamento, lugar) {
       // Eliminar implica banear de inmediato — hay que desbanear explícitamente
       // para que la cédula pueda volver a registrarse.
       await _suSetBaneado(cedula, nombre, true, departamento, lugar, registrado_at, ultima_actividad_at);
-      showSuUserTab('banear');
+      showCollabTab('baneados');
     }
   );
 }
@@ -4857,20 +4928,35 @@ async function loadSuBannedUsers() {
   renderSuUsers(allSuUsers);
 }
 
+let _suBannedFiltered = [];
+let _suBannedPage     = 1;
+const _suBannedPageSize = 12;
+
 function filterSuBannedUsers() {
   const q = (document.getElementById('su-banned-search')?.value || '').toLowerCase();
-  const list = allSuBanned.filter(b =>
+  _suBannedFiltered = allSuBanned.filter(b =>
     (b.nombre || '').toLowerCase().includes(q) ||
     (b.cedula || '').toLowerCase().includes(q)
   );
-  renderSuBannedUsers(list);
+  _suBannedPage = 1;
+  renderSuBannedUsers();
 }
 
-function renderSuBannedUsers(list) {
+function goPageSuBanned(p) { _suBannedPage = p; renderSuBannedUsers(); }
+
+function renderSuBannedUsers() {
   const tbody = document.getElementById('su-banned-tbody');
   if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-table">No hay usuarios eliminados ni baneados.</td></tr>'; return; }
-  tbody.innerHTML = list.map(b => {
+  const list = _suBannedFiltered;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-table">No hay usuarios eliminados ni baneados.</td></tr>';
+    const pg = document.getElementById('su-banned-pagination'); if (pg) pg.innerHTML = '';
+    return;
+  }
+  const pages = Math.ceil(list.length / _suBannedPageSize);
+  _suBannedPage = Math.min(_suBannedPage, pages);
+  const slice = list.slice((_suBannedPage-1)*_suBannedPageSize, _suBannedPage*_suBannedPageSize);
+  tbody.innerHTML = slice.map(b => {
     const fecha = b.baneado_at ? new Date(b.baneado_at).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
     const ini = (b.nombre || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const estado = b.baneado
@@ -4891,6 +4977,7 @@ function renderSuBannedUsers(list) {
       <td style="text-align:center">${action}</td>
     </tr>`;
   }).join('');
+  _renderSimplePager('su-banned-pagination', _suBannedPage, _suBannedPageSize, list.length, 'goPageSuBanned');
 }
 
 
@@ -5427,6 +5514,12 @@ let _suDashTotalUsers = 0;
 let _suDashBannedSet = new Set();
 
 async function loadSuDashboard() {
+  // Asegura que _moraUsersMap esté poblado (lo arma _rebuildMoraMap() a partir de
+  // allAdminHist) para poder pintar en rojo el avatar de los colaboradores en mora
+  // en los rankings del Dashboard, aunque el admin entre directo aquí sin haber
+  // visitado antes Pedidos o Colaboradores.
+  if (allAdminHist.length === 0) await loadOrders();
+  else _rebuildMoraMap();
   if (_suDashData) { _suDashData = null; } // forzar re-fetch para incluir precio_unitario
   const [resPed, resUsers, resWishlists, resBanned] = await Promise.all([
     sb.from('pedidos')
@@ -5756,7 +5849,7 @@ function renderSuProdDetail() {
     _suProdDetailRowData[idx] = pedidos;
     return `<div style="border-bottom:1px solid #f3f4f6;">
       <div onclick="toggleProdDetailOrders(this,${idx})" style="display:flex;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background .15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-        <span style="flex:1;font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;">${userAvatar(n, n)}${esc(n)}${moraUserChip(n,null)}${suspendedChip(n)}${suspendedChip(n)}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:#143c5a;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;">${userAvatar(n, n, !!_getMoraKey(n,null))}${esc(n)}${suspendedChip(n)}${suspendedChip(n)}</span>
         <span style="width:44px;text-align:right;font-size:13px;font-weight:700;color:#143c5a;white-space:nowrap;">${v.total} u.</span>
         <span style="width:56px;text-align:right;font-size:11px;color:#9ca3af;white-space:nowrap;">${fecha}</span>
         <span style="width:14px;font-size:11px;color:#9ca3af;text-align:right;">›</span>
@@ -5841,7 +5934,7 @@ function renderSuRankUnidades() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.lineas_pedido||[]).reduce((s,l)=>s+(l.cantidad||0),0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}${suspendedChip(n)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-unidades').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n,!!_getMoraKey(n,null))}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${suspendedChip(n)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val">${v} u.</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuUserDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 // ── LISTA Y FICHA COLABORADORES SU ───────────────────────
@@ -5849,10 +5942,10 @@ let _suCollabListData = [];
 let _suCollabProfileChart1 = null;
 let _suCollabProfileChart2 = null;
 
-function userAvatar(nombre, key) {
+function userAvatar(nombre, key, isMora) {
   const ini = (nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
   const k   = (key||nombre||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  return `<span class="user-avatar" onclick="event.stopPropagation();openSuCollabProfile('${k}')" title="${esc(nombre||'—')}">${ini}</span>`;
+  return `<span class="user-avatar${isMora ? ' user-avatar-mora' : ''}" onclick="event.stopPropagation();openSuCollabProfile('${k}')" title="${esc(nombre||'—')}${isMora ? ' (en mora)' : ''}">${ini}</span>`;
 }
 
 async function openSuCollabList() {
@@ -5870,7 +5963,11 @@ let _suWlDiscMap      = {};
 let _suWlFilterCedula = null;
 let _suWlPage         = 1;
 const _suWlPageSize   = 12;
+let _suWlSort         = { col: 'created_at', dir: 'desc' };
 
+// Nota: a pesar del nombre, ya no abre un modal — renderiza inline en la
+// sub-pestaña Colaboradores → Wishlists. Se dejó el nombre para no tener que
+// tocar sus otros call-sites (tarjeta de Dashboard, ficha de colaborador).
 async function openSuWishlistsModal(filterCedula, filterNombre) {
   const title = document.getElementById('su-wishlists-modal-title');
   title.textContent = filterCedula ? ('🎁 Wishlists recibidas — ' + (filterNombre || filterCedula)) : '🎁 Wishlists recibidas';
@@ -5879,7 +5976,8 @@ async function openSuWishlistsModal(filterCedula, filterNombre) {
   document.getElementById('su-wishlists-pagination').innerHTML = '';
   const searchEl = document.getElementById('su-wishlists-search');
   if (searchEl) searchEl.value = '';
-  document.getElementById('su-wishlists-modal').classList.add('open');
+  const clearBtn = document.getElementById('su-wishlists-clear-filter');
+  if (clearBtn) clearBtn.style.display = filterCedula ? 'inline-block' : 'none';
   _suWlFilterCedula = filterCedula || null;
 
   let q = sb.from('family_wishlists').select('*').order('created_at', { ascending: false });
@@ -5915,85 +6013,86 @@ function filterSuWishlistsModal() {
 
 function _suWlGoPage(p) { _suWlPage = p; _renderSuWishlistsPage(); }
 
-function _suWlEntryHtml(w) {
-  const fecha = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit' });
-  const estadoBadge = w.estado === 'procesada'
-    ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PROCESADA</span>'
-    : w.estado === 'descartada'
-    ? '<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">DESCARTADA</span>'
-    : '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;margin-left:4px">PENDIENTE</span>';
+// Datos derivados (nombre del colaborador, unidades, total) usados tanto
+// para ordenar por columna como para pintar cada fila.
+function _suWlEnrich(w) {
   const items = w.items || [];
-  const unidades = items.reduce((s,i) => s + (i.cantidad||0), 0);
-  const total = items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0);
-  const lines = items.map(i => {
-    const pct = _suWlDiscMap[i.codigo];
-    const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
-    return `<div class="ud-line"><span class="ud-line-name">${esc(i.nombre || i.codigo || '')}${discBadge}</span><span class="ud-line-qty">${i.cantidad||0} u. · ₡${Math.round((i.cantidad||0)*(i.precio_unitario||0)).toLocaleString('es-CR')}</span></div>`;
-  }).join('');
-  const familiarEsc = esc(w.familiar_nombre || '—').replace(/'/g,"\\'");
-  return `<div class="ud-order">
-    <div class="ud-order-hd" onclick="toggleUdOrder(this)">
-      <div><div class="ud-order-num">💌 ${esc(w.familiar_nombre || '—')}${estadoBadge}</div><div class="ud-order-meta">${fecha}</div></div>
-      <span class="ud-order-units">${unidades} u. · <span class="col-sign">₡</span>${Math.round(total).toLocaleString('es-CR')}</span>
-      <button class="wl-delete-btn" title="Borrar lista" onclick="event.stopPropagation();deleteSuWishlistEntry('${w.id}','${familiarEsc}')">🗑</button>
-      <span class="ud-order-arrow">›</span>
-    </div>
-    <div class="ud-order-body">${lines || '<div style="font-size:12px;color:#9ca3af;">Sin productos.</div>'}</div>
-  </div>`;
+  return {
+    ...w,
+    _colaborador: _suWlNombreMap[w.colaborador_cedula] || w.colaborador_cedula || '—',
+    _unidades: items.reduce((s,i) => s + (i.cantidad||0), 0),
+    _total: items.reduce((s,i) => s + (i.cantidad||0) * (i.precio_unitario||0), 0),
+  };
+}
+
+function sortSuWl(col) {
+  if (_suWlSort.col === col) { _suWlSort.dir = _suWlSort.dir === 'asc' ? 'desc' : 'asc'; }
+  else { _suWlSort.col = col; _suWlSort.dir = (col === 'created_at' || col === 'unidades' || col === 'total') ? 'desc' : 'asc'; }
+  ['colaborador','familiar_nombre','created_at','estado','unidades','total'].forEach(c => {
+    const th = document.getElementById('wlth-' + c); if (!th) return;
+    th.classList.remove('sort-asc','sort-desc');
+    if (c === _suWlSort.col) th.classList.add(_suWlSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+  _suWlPage = 1;
+  _renderSuWishlistsPage();
+}
+
+function _estadoBadge(estado) {
+  return estado === 'procesada'
+    ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">PROCESADA</span>'
+    : estado === 'descartada'
+    ? '<span style="background:#f3f4f6;color:#9ca3af;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">DESCARTADA</span>'
+    : '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;">PENDIENTE</span>';
 }
 
 function _renderSuWishlistsPage() {
-  const body = document.getElementById('su-wishlists-modal-body');
-  const pg   = document.getElementById('su-wishlists-pagination');
+  const tbody = document.getElementById('su-wishlists-modal-body');
+  const pg    = document.getElementById('su-wishlists-pagination');
   if (!_suWlFiltered.length) {
-    body.innerHTML = `<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px;">${_suWlAllData.length ? 'Sin resultados para la búsqueda.' : 'Sin listas de deseos recibidas.'}</div>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-table">${_suWlAllData.length ? 'Sin resultados para la búsqueda.' : 'Sin listas de deseos recibidas.'}</td></tr>`;
     pg.innerHTML = '';
     return;
   }
 
-  if (_suWlFilterCedula) {
-    const pages = Math.ceil(_suWlFiltered.length / _suWlPageSize);
-    _suWlPage = Math.min(_suWlPage, pages);
-    const slice = _suWlFiltered.slice((_suWlPage-1)*_suWlPageSize, _suWlPage*_suWlPageSize);
-    body.innerHTML = slice.map(_suWlEntryHtml).join('');
-    _suWlRenderPagination(pg, _suWlFiltered.length, pages, 'resultado');
-    return;
-  }
-
-  const groupsByCedula = {};
-  const groupOrder = [];
-  _suWlFiltered.forEach(w => {
-    if (!groupsByCedula[w.colaborador_cedula]) {
-      groupsByCedula[w.colaborador_cedula] = { cedula: w.colaborador_cedula, items: [] };
-      groupOrder.push(w.colaborador_cedula);
-    }
-    groupsByCedula[w.colaborador_cedula].items.push(w);
+  const enriched = _suWlFiltered.map(_suWlEnrich);
+  const { col, dir } = _suWlSort;
+  const sortCol = col === 'unidades' ? '_unidades' : col === 'total' ? '_total' : col === 'colaborador' ? '_colaborador' : col;
+  enriched.sort((a, b) => {
+    let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
+    if (col === 'created_at') { va = new Date(va||0); vb = new Date(vb||0); }
+    else if (col === 'unidades' || col === 'total') { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
   });
-  const allGroups = groupOrder.map(c => groupsByCedula[c]);
 
-  const pages = Math.ceil(allGroups.length / _suWlPageSize);
+  const pages = Math.ceil(enriched.length / _suWlPageSize);
   _suWlPage = Math.min(_suWlPage, pages);
-  const slice = allGroups.slice((_suWlPage-1)*_suWlPageSize, _suWlPage*_suWlPageSize);
+  const slice = enriched.slice((_suWlPage-1)*_suWlPageSize, _suWlPage*_suWlPageSize);
 
-  body.innerHTML = slice.map(g => {
-    const nombre = _suWlNombreMap[g.cedula] || g.cedula || '—';
-    const totalUnidades = g.items.reduce((s,w) => s + (w.items||[]).reduce((s2,i)=>s2+(i.cantidad||0),0), 0);
-    const itemsHtml = g.items.map(_suWlEntryHtml).join('');
-    return `<div class="wl-collab-group">
-      <div class="wl-collab-hd" onclick="toggleWlCollab(this)">
-        <div class="wl-collab-name">${userAvatar(nombre, g.cedula)}${esc(nombre)}</div>
-        <span class="wl-collab-count">${g.items.length} lista${g.items.length===1?'':'s'} · ${totalUnidades} u.</span>
-        <span class="ud-order-arrow">›</span>
-      </div>
-      <div class="wl-collab-body">${itemsHtml}</div>
-    </div>`;
+  tbody.innerHTML = slice.map(w => {
+    const fecha = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    const familiarEsc = esc(w.familiar_nombre || '—').replace(/'/g,"\\'");
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:6px;">${userAvatar(w._colaborador, w.colaborador_cedula)}<span style="font-weight:600">${esc(w._colaborador)}</span></div></td>
+      <td>${esc(w.familiar_nombre || '—')}</td>
+      <td style="font-size:12px;color:#6b7280;white-space:nowrap">${fecha}</td>
+      <td>${_estadoBadge(w.estado)}</td>
+      <td>${w._unidades} u.</td>
+      <td><span class="col-sign">₡</span>${Math.round(w._total).toLocaleString('es-CR')}</td>
+      <td style="text-align:center;white-space:nowrap;">
+        <button class="btn btn-sm btn-secondary" onclick="openSuWlDetail('${w.id}')">Ver detalle</button>
+        <button class="wl-delete-btn" title="Borrar lista" onclick="deleteSuWishlistEntry('${w.id}','${familiarEsc}')">🗑</button>
+      </td>
+    </tr>`;
   }).join('');
 
-  _suWlRenderPagination(pg, allGroups.length, pages, 'colaborador');
+  _suWlRenderPagination(pg, enriched.length, pages);
 }
 
-function _suWlRenderPagination(pg, total, pages, unitLabel) {
-  if (pages <= 1) { pg.innerHTML = `<span class="pagination-info">${total} ${unitLabel}${total!==1?(unitLabel==='colaborador'?'es':'s'):''}</span>`; return; }
+function _suWlRenderPagination(pg, total, pages) {
+  if (pages <= 1) { pg.innerHTML = `<span class="pagination-info">${total} wishlist${total!==1?'s':''}</span>`; return; }
   const inicio = (_suWlPage-1)*_suWlPageSize + 1;
   const fin    = Math.min(_suWlPage*_suWlPageSize, total);
   let html = `<span class="pagination-info">${inicio}–${fin} de ${total}</span>`;
@@ -6007,9 +6106,23 @@ function _suWlRenderPagination(pg, total, pages, unitLabel) {
   pg.innerHTML = html;
 }
 
-function toggleWlCollab(hd) {
-  hd.classList.toggle('open');
-  hd.nextElementSibling.classList.toggle('open');
+// Detalle de productos de una wishlist puntual (antes se veía expandiendo
+// la tarjeta in-place; ahora la fila es de tabla, así que va en un modal).
+function openSuWlDetail(id) {
+  const w = _suWlAllData.find(x => x.id === id);
+  if (!w) return;
+  const items = w.items || [];
+  const lines = items.map(i => {
+    const pct = _suWlDiscMap[i.codigo];
+    const discBadge = pct ? ` <span style="font-size:10px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${pct}%</span>` : '';
+    return `<div class="ud-line"><span class="ud-line-name">${esc(i.nombre || i.codigo || '')}${discBadge}</span><span class="ud-line-qty">${i.cantidad||0} u. · ₡${Math.round((i.cantidad||0)*(i.precio_unitario||0)).toLocaleString('es-CR')}</span></div>`;
+  }).join('');
+  document.getElementById('su-wl-detail-title').textContent = `🎁 ${w.familiar_nombre || '—'}`;
+  document.getElementById('su-wl-detail-body').innerHTML = lines || '<div style="font-size:12px;color:#9ca3af;">Sin productos.</div>';
+  document.getElementById('su-wl-detail-modal').classList.add('open');
+}
+function closeSuWlDetail() {
+  document.getElementById('su-wl-detail-modal').classList.remove('open');
 }
 
 function deleteSuWishlistEntry(id, familiarNombre) {
@@ -6152,7 +6265,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
       <div class="profile-kpi"><div class="profile-kpi-val">${activos.length}</div><div class="profile-kpi-lbl">Pedidos</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val">${totalUnid}</div><div class="profile-kpi-lbl">Unidades</div></div>
       <div class="profile-kpi"><div class="profile-kpi-val"><span class="col-sign">₡</span>${Math.round(avgPedido).toLocaleString('es-CR')}</div><div class="profile-kpi-lbl">Promedio pedido</div></div>
-      <div class="profile-kpi" onclick="openSuWishlistsModal('${esc(user.cedula||'').replace(/'/g,"\\'")}','${esc(user.nombre||'').replace(/'/g,"\\'")}')" style="cursor:pointer;">
+      <div class="profile-kpi" onclick="closeSuCollabProfile();showPage('users');showCollabTab('wishlists');openSuWishlistsModal('${esc(user.cedula||'').replace(/'/g,"\\'")}','${esc(user.nombre||'').replace(/'/g,"\\'")}')" style="cursor:pointer;">
         <div class="profile-kpi-val">${wishlistCount||0}</div>
         <div class="profile-kpi-lbl">Wishlists recibidas</div>
       </div>
@@ -6440,7 +6553,7 @@ function renderSuRankMonto() {
   data.forEach(o=>{const k=o.usuario_nombre||o.usuario_email;map[k]=(map[k]||0)+(o.total||0);});
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const mx=top[0]?.[1]||1;
-  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n)}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${moraUserChip(n,null)}${suspendedChip(n)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
+  document.getElementById('su-rank-monto').innerHTML=top.length?top.map(([n,v],i)=>`<div class="rank-row"><span class="rank-num">${i+1}</span>${userAvatar(n,n,!!_getMoraKey(n,null))}<div class="rank-mid"><div class="rank-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${esc(n)}${suspendedChip(n)}</div><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v/mx*100)}%"></div></div></div><span class="rank-val"><span class="col-sign">₡</span>${Math.round(v/1000)}k</span><button class="btn btn-sm btn-secondary" style="flex-shrink:0;margin-left:6px;font-size:11px;padding:4px 8px;" onclick="openSuMontoDetail('${n.replace(/'/g,"\\'")}')">Detalles</button></div>`).join(''):'<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Sin datos</div>';
 }
 
 function setSuUnidPeriod(p) {
@@ -6473,7 +6586,7 @@ function renderSuChartUnidTiempo() {
   if (_suChartUnidTiempo) _suChartUnidTiempo.destroy();
   _suChartUnidTiempo = new Chart(ctx, {
     type: _suUnidChartType,
-    data: { labels, datasets:[{ data:vals, borderColor:'#0ea5e9', backgroundColor:_suUnidChartType==='bar'?'#0ea5e9':'rgba(14,165,233,0.1)', borderWidth:2, fill:_suUnidChartType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#0ea5e9', borderRadius:_suUnidChartType==='bar'?6:0 }] },
+    data: { labels, datasets:[{ data:vals, borderColor:'#7c3aed', backgroundColor:_suUnidChartType==='bar'?'#7c3aed':'rgba(124,58,237,0.08)', borderWidth:2, fill:_suUnidChartType==='line', tension:0.4, pointRadius:3, pointBackgroundColor:'#7c3aed', borderRadius:_suUnidChartType==='bar'?6:0 }] },
     options:{ maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} u.`}}}, scales:{y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:11},maxRotation:45},grid:{display:false}}} }
   });
 }

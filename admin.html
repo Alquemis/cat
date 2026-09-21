@@ -1375,6 +1375,23 @@
             <button class="btn btn-primary btn-sm" onclick="saveSuCred('he')" id="su-btn-he" style="width:100%;padding:10px;">Guardar</button>
           </div>
 
+          <!-- Revisión de precios -->
+          <div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Panel Revisión</div>
+            <div class="su-cred-grid">
+              <div class="su-field">
+                <label>Usuario</label>
+                <input type="text" id="su-rev-user" placeholder="admin">
+              </div>
+              <div class="su-field">
+                <label>Contraseña</label>
+                <input type="text" id="su-rev-pass" placeholder="admin">
+              </div>
+            </div>
+            <div class="su-msg" id="su-msg-rev"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveSuCred('rev')" id="su-btn-rev" style="width:100%;padding:10px;">Guardar</button>
+          </div>
+
         </div><!-- /su-panels-grid -->
       </div>
 
@@ -4408,7 +4425,7 @@ function deleteFraudCase(deviceId) {
 async function loadSuPage() {
   const { data } = await sb.from('app_config').select('key, value')
     .in('key', ['admin_user','admin_pass','fact_user','fact_pass',
-                'gr_user','gr_pass','tr_user','tr_pass','he_user','he_pass']);
+                'gr_user','gr_pass','tr_user','tr_pass','he_user','he_pass','rev_user','rev_pass']);
   const cfg = {};
   (data || []).forEach(r => { cfg[r.key] = r.value; });
   document.getElementById('su-admin-user').value = cfg.admin_user || 'admin';
@@ -4421,8 +4438,10 @@ async function loadSuPage() {
   document.getElementById('su-tr-pass').value    = cfg.tr_pass    || 'admin';
   document.getElementById('su-he-user').value    = cfg.he_user    || 'admin';
   document.getElementById('su-he-pass').value    = cfg.he_pass    || 'admin';
+  document.getElementById('su-rev-user').value   = cfg.rev_user   || 'admin';
+  document.getElementById('su-rev-pass').value   = cfg.rev_pass   || 'admin';
   // Ocultar mensajes
-  ['admin','fact','gr','tr','he'].forEach(t => {
+  ['admin','fact','gr','tr','he','rev'].forEach(t => {
     document.getElementById('su-msg-' + t).style.display = 'none';
   });
 }

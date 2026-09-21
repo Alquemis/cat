@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Revisión de precios – Martimac</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #1a1a1a; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
+
+  /* ── LOGIN ── */
+  .login-overlay { position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#143c5a,#374151);display:flex;align-items:center;justify-content:center; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:#fff;border-radius:20px;padding:40px 48px;width:100%;max-width:400px;box-shadow:0 25px 60px rgba(0,0,0,.3);text-align:center; }
+  .login-logo { height:52px;margin-bottom:10px; }
+  .login-title { font-size:20px;font-weight:700;color:#143c5a;margin-bottom:4px; }
+  .login-sub { font-size:13px;color:#6b7280;margin-bottom:28px; }
+  .login-field { margin-bottom:16px;text-align:left; }
+  .login-field label { display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px; }
+  .login-field input { width:100%;padding:11px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;transition:border-color .2s; }
+  .login-field input:focus { border-color:#143c5a; }
+  .login-btn { width:100%;padding:13px;background:#143c5a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s; }
+  .login-btn:hover { background:#111827; }
+  .login-error { background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:14px;display:none; }
+  .login-error.show { display:block; }
+
+  /* ── TOPBAR ── */
+  .topbar { background:#143c5a;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100; }
+  .topbar-brand { font-size:17px;font-weight:700; }
+  .topbar-brand span { font-size:11px;font-weight:400;color:#9ca3af;margin-left:10px; }
+  .topbar-logout { background:#374151;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s; }
+  .topbar-logout:hover { background:#4b5563; }
+
+  /* ── TABS ── */
+  .page-tabs { background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;align-items:center;gap:0; }
+  .page-tab { padding:16px 24px;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;border:none;background:none;transition:all .2s;display:flex;align-items:center;gap:8px; }
+  .page-tab:hover { color:#143c5a; }
+  .page-tab.active { color:#143c5a;border-bottom:3px solid #143c5a; }
+  .tab-badge { background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px; }
+  .tab-badge.hidden { display:none; }
+
+  /* ── LAYOUT ── */
+  .container { max-width:1280px;margin:0 auto;padding:32px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px; }
+  .search-field { flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 14px; }
+  .search-field input { border:none;outline:none;font-size:14px;flex:1;color:#143c5a; }
+
+  /* ── TABLE ── */
+  .table-wrap { background:#fff;border-radius:14px;border:1px solid #e5e7eb;overflow:hidden; }
+  table { width:100%;border-collapse:collapse; }
+  thead th { background:#f9fafb;padding:12px 16px;font-size:12px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e5e7eb;white-space:nowrap; }
+  tbody td { padding:13px 16px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  .empty-table { text-align:center;color:#9ca3af;padding:48px 20px; }
+
+  /* ── BOTONES ── */
+  .btn { padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;white-space:nowrap; }
+  .btn-dark { background:#143c5a;color:#fff; }
+  .btn-dark:hover { background:#111827; }
+  .btn-ghost { background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb; }
+  .btn-ghost:hover { background:#e5e7eb; }
+  .btn-green { background:#16a34a;color:#fff; }
+  .btn-green:hover { background:#15803d; }
+  .btn-green:disabled { background:#9ca3af;cursor:not-allowed; }
+  .btn-secondary { background:#f3f4f6;color:#374151; }
+
+  /* ── BADGES ── */
+  .badge { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap; }
+  .badge-green { background:#d1fae5;color:#065f46; }
+
+  /* ── STAT ── */
+  .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:28px; }
+  .stat-card { background:#fff;border-radius:14px;padding:14px 18px;border:1px solid #e5e7eb; }
+  .stat-value { font-size:22px;font-weight:800;color:#143c5a; }
+  .stat-label { font-size:12px;color:#6b7280;margin-top:2px; }
+
+  /* ── TOAST ── */
+  #app-toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#143c5a;color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9000;opacity:0;transition:opacity .25s,transform .25s;
+    white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center; }
+  #app-toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+  #app-toast.toast-error { background:#dc2626; }
+  #app-toast.toast-ok    { background:#16a34a; }
+  #app-toast.toast-warn  { background:#d97706; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width:900px) {
+    .topbar { padding:12px 16px; }
+    .topbar-brand span { display:none; }
+    .container { padding:20px; }
+    .table-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch; }
+    table { min-width:640px; }
+  }
+  .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <img src="https://jdifschnvycvxlcbexdl.supabase.co/storage/v1/object/public/imagenes/Martimac_Logo.webp" alt="Martimac" class="login-logo" onerror="this.style.display='none'">
+    <div class="login-title">Revisión de precios</div>
+    <div class="login-sub">Martimac Distribuidora — Revisión de precios</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">Revisión de precios <span>Martimac Distribuidora</span></div>
+  <button class="topbar-logout" onclick="doLogout()">Cerrar sesión</button>
+</div>
+
+<!-- TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" id="tab-pendientes" onclick="showTab('pendientes')">
+    Pendientes <span class="tab-badge hidden" id="badge-pendientes">0</span>
+  </button>
+  <button class="page-tab" id="tab-historial" onclick="showTab('historial')">
+    Historial
+  </button>
+  <button class="page-tab" id="tab-settings" onclick="showTab('settings')">
+    Configuración
+  </button>
+</div>
+
+<!-- ── PENDIENTES ── -->
+<div id="page-pendientes" class="container">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-count">—</div>
+      <div class="stat-label">Líneas por revisar</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-field">
+      <span>🔍</span>
+      <input type="text" id="pend-search" placeholder="Buscar por código, nombre…" oninput="filterPendientes()">
+    </div>
+    <button class="btn btn-ghost" onclick="loadPendientes()">↻ Actualizar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Precio</th>
+        <th>Descuento</th>
+        <th>Impuesto</th>
+        <th>Precio final</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="pend-tbody">
+        <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── HISTORIAL ── -->
+<div id="page-historial" class="container" style="display:none">
+  <div class="toolbar">
+    <div class="search-field">
+      <span>🔍</span>
+      <input type="text" id="hist-search" placeholder="Buscar por código, nombre…" oninput="filterHistorial()">
+    </div>
+    <button class="btn btn-ghost" onclick="loadHistorial()">↻ Actualizar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Precio</th>
+        <th>Descuento</th>
+        <th>Impuesto</th>
+        <th>Precio final</th>
+        <th>Revisado el</th>
+      </tr></thead>
+      <tbody id="hist-tbody">
+        <tr><td colspan="8" class="empty-table">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── CONFIGURACIÓN ── -->
+<div id="page-settings" class="container" style="display:none">
+  <div style="max-width:480px;background:#fff;border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.07)">
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:6px">Acceso a Revisión de precios</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:24px">Cambia el usuario y contraseña de este panel.</div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Usuario</label>
+      <input type="text" id="cfg-user" placeholder="admin" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Nueva contraseña</label>
+      <input type="password" id="cfg-pass" placeholder="Nueva contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Confirmar nueva contraseña</label>
+      <input type="password" id="cfg-pass2" placeholder="Repite la contraseña" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;outline:none;">
+    </div>
+    <div id="cfg-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
+    <button class="btn btn-dark" onclick="saveConfig()" id="cfg-btn" style="width:100%;padding:13px;">Guardar cambios</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="app-toast"></div>
+
+<script>
+// ── TOAST ────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error') {
+  const t = document.getElementById('app-toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+const SUPABASE_URL = 'https://jdifschnvycvxlcbexdl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkaWZzY2hudnljdnhsY2JleGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4Njk0ODcsImV4cCI6MjEwMzQ0NTQ4N30.sUfYan-cWLmFdSFh8mciFHlVin8Z7Pib8m3zcZIepJw';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SESSION_KEY = 'rev_session';
+
+let allPendientes = [];
+let allHistorial  = [];
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err  = document.getElementById('login-error');
+  err.classList.remove('show');
+  if (!user || !pass) { showErr('Ingresa usuario y contraseña.'); return; }
+
+  const { data, error } = await sb.from('app_config')
+    .select('key, value').in('key', ['rev_user', 'rev_pass']);
+
+  if (error) { showErr('Error de conexión. Intenta de nuevo.'); return; }
+
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  const okUser = (cfg.rev_user || 'admin') === user;
+  const okPass = (cfg.rev_pass || 'admin') === pass;
+
+  if (!okUser || !okPass) { showErr('Usuario o contraseña incorrectos.'); return; }
+
+  let token;
+  const { data: td } = await sb.from('app_config').select('value').eq('key', 'rev_session_token').maybeSingle();
+  if (td?.value) {
+    token = td.value;
+  } else {
+    token = Date.now().toString();
+    await sb.from('app_config').upsert([{ key: 'rev_session_token', value: token }], { onConflict: 'key' });
+  }
+  localStorage.setItem(SESSION_KEY, token);
+  document.getElementById('login-overlay').classList.add('hidden');
+  init();
+}
+
+function doLogout() {
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.classList.add('show');
+}
+
+async function checkSession() {
+  const saved = localStorage.getItem(SESSION_KEY);
+  if (saved) {
+    try {
+      const { data } = await sb.from('app_config').select('value').eq('key', 'rev_session_token').maybeSingle();
+      if (data?.value === saved) {
+        document.getElementById('login-overlay').classList.add('hidden');
+        init();
+        return;
+      }
+      localStorage.removeItem(SESSION_KEY);
+    } catch(e) {
+      document.getElementById('login-overlay').classList.add('hidden');
+      init();
+      return;
+    }
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadPendientes(), loadHistorial()]);
+  startRealtimeRevision();
+}
+
+// ── TIEMPO REAL ───────────────────────────────────────────────
+let _rtRevisionChannel = null;
+let _rtReloadT = null;
+function _rtScheduleReload() {
+  clearTimeout(_rtReloadT);
+  _rtReloadT = setTimeout(() => { loadPendientes(true); loadHistorial(true); }, 800);
+}
+function startRealtimeRevision() {
+  if (_rtRevisionChannel || !sb.channel) return;
+  _rtRevisionChannel = sb.channel('rt-lineas-revision')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lineas_revision' }, _rtScheduleReload)
+    .subscribe();
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && _rtRevisionChannel) _rtScheduleReload();
+});
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(tab) {
+  ['pendientes','historial','settings'].forEach(t => {
+    document.getElementById('page-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'settings') loadConfig();
+}
+
+// ── PENDIENTES ────────────────────────────────────────────────
+async function loadPendientes(silent) {
+  if (!silent) {
+    document.getElementById('pend-tbody').innerHTML =
+      '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+  }
+  const { data, error } = await sb.from('lineas_revision')
+    .select('*').eq('estado', 'pendiente').order('fecha', { ascending: true });
+  if (error) { console.error(error); return; }
+  allPendientes = data || [];
+  document.getElementById('stat-count').textContent = allPendientes.length;
+  const badge = document.getElementById('badge-pendientes');
+  badge.textContent = allPendientes.length;
+  badge.classList.toggle('hidden', allPendientes.length === 0);
+  filterPendientes();
+}
+
+function filterPendientes() {
+  const q = document.getElementById('pend-search').value.toLowerCase();
+  const list = allPendientes.filter(l =>
+    !q || (l.codigo||'').toLowerCase().includes(q) || (l.nombre||'').toLowerCase().includes(q)
+  );
+  renderPendientes(list);
+}
+
+function renderPendientes(list) {
+  const tbody = document.getElementById('pend-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin líneas pendientes de revisión</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(l => {
+    const fecha = new Date(l.fecha).toLocaleString('es-CR');
+    return '<tr>' +
+      '<td>' + fecha + '</td>' +
+      '<td><code style="font-size:12px">' + esc(l.codigo||'—') + '</code></td>' +
+      '<td>' + esc(l.nombre||'—') + '</td>' +
+      '<td><span class="col-sign">₡</span>' + (l.precio||0).toLocaleString('es-CR') + '</td>' +
+      '<td>' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') : '—') + '</td>' +
+      '<td><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + '</td>' +
+      '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.precio_final||0).toLocaleString('es-CR') + '</td>' +
+      '<td><button class="btn btn-green" onclick="resolverLinea(' + l.id + ')" title="Marcar como revisado">✓</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function resolverLinea(id) {
+  const { error } = await sb.from('lineas_revision')
+    .update({ estado: 'revisado', revisado_at: new Date().toISOString() }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  const moved = allPendientes.find(l => l.id === id);
+  allPendientes = allPendientes.filter(l => l.id !== id);
+  if (moved) { moved.estado = 'revisado'; moved.revisado_at = new Date().toISOString(); allHistorial = [moved, ...allHistorial]; }
+  document.getElementById('stat-count').textContent = allPendientes.length;
+  const badge = document.getElementById('badge-pendientes');
+  badge.textContent = allPendientes.length;
+  badge.classList.toggle('hidden', allPendientes.length === 0);
+  filterPendientes();
+  filterHistorial();
+  showToast('Línea revisada ✓', 'ok');
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────
+async function loadHistorial(silent) {
+  if (!silent) {
+    document.getElementById('hist-tbody').innerHTML =
+      '<tr><td colspan="8" class="empty-table">Cargando…</td></tr>';
+  }
+  const { data, error } = await sb.from('lineas_revision')
+    .select('*').eq('estado', 'revisado').order('revisado_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  allHistorial = data || [];
+  filterHistorial();
+}
+
+function filterHistorial() {
+  const q = document.getElementById('hist-search').value.toLowerCase();
+  const list = allHistorial.filter(l =>
+    !q || (l.codigo||'').toLowerCase().includes(q) || (l.nombre||'').toLowerCase().includes(q)
+  );
+  renderHistorial(list);
+}
+
+function renderHistorial(list) {
+  const tbody = document.getElementById('hist-tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">Sin líneas revisadas todavía</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(l => {
+    const fecha    = new Date(l.fecha).toLocaleString('es-CR');
+    const revisado = l.revisado_at ? new Date(l.revisado_at).toLocaleString('es-CR') : '—';
+    return '<tr>' +
+      '<td>' + fecha + '</td>' +
+      '<td><code style="font-size:12px">' + esc(l.codigo||'—') + '</code></td>' +
+      '<td>' + esc(l.nombre||'—') + '</td>' +
+      '<td><span class="col-sign">₡</span>' + (l.precio||0).toLocaleString('es-CR') + '</td>' +
+      '<td>' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') : '—') + '</td>' +
+      '<td><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + '</td>' +
+      '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.precio_final||0).toLocaleString('es-CR') + '</td>' +
+      '<td><span class="badge badge-green">' + revisado + '</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+async function loadConfig() {
+  const { data } = await sb.from('app_config').select('key, value').in('key',['rev_user','rev_pass']);
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  document.getElementById('cfg-user').value  = cfg.rev_user || 'admin';
+  document.getElementById('cfg-pass').value  = '';
+  document.getElementById('cfg-pass2').value = '';
+  document.getElementById('cfg-msg').style.display = 'none';
+}
+
+async function saveConfig() {
+  const user  = document.getElementById('cfg-user').value.trim();
+  const pass  = document.getElementById('cfg-pass').value.trim();
+  const pass2 = document.getElementById('cfg-pass2').value.trim();
+  const btn   = document.getElementById('cfg-btn');
+  const msg   = document.getElementById('cfg-msg');
+
+  const showMsg = (text, ok) => {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fef2f2';
+    msg.style.border = ok ? '1px solid #86efac' : '1px solid #fca5a5';
+    msg.style.color  = ok ? '#15803d' : '#dc2626';
+  };
+
+  if (!user) { showMsg('El nombre de usuario no puede estar vacío.', false); return; }
+  if (pass && pass !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  const updates = [{ key: 'rev_user', value: user }];
+  if (pass) {
+    const newToken = Date.now().toString();
+    updates.push({ key: 'rev_pass', value: pass });
+    updates.push({ key: 'rev_session_token', value: newToken });
+  }
+
+  const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (error) { showMsg('Error al guardar: ' + error.message, false); }
+  else {
+    if (pass) {
+      const { data: td } = await sb.from('app_config').select('value').eq('key', 'rev_session_token').maybeSingle();
+      if (td?.value) localStorage.setItem(SESSION_KEY, td.value);
+    }
+    showMsg('✅ Credenciales actualizadas. Otros dispositivos deberán iniciar sesión de nuevo.', true);
+    document.getElementById('cfg-pass').value  = '';
+    document.getElementById('cfg-pass2').value = '';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+
+// ── TOUCH GESTURES ────────────────────────────────────────────
+(function() {
+  var sx = 0, sy = 0, tgt = null;
+  var TABS_ORDER = ['pendientes','historial','settings'];
+
+  function currentTab() {
+    for (var i = 0; i < TABS_ORDER.length; i++) {
+      var el = document.getElementById('page-' + TABS_ORDER[i]);
+      if (el && el.style.display !== 'none') return TABS_ORDER[i];
+    }
+    return 'pendientes';
+  }
+  function isScrollableX(el) {
+    while (el && el !== document.body) {
+      var s = window.getComputedStyle(el);
+      if (s.overflowX === 'auto' || s.overflowX === 'scroll') return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; tgt = e.target;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    var adx = Math.abs(dx), ady = Math.abs(dy);
+    if (adx < 60 || ady > adx * 0.65 || isScrollableX(tgt)) return;
+    var idx = TABS_ORDER.indexOf(currentTab());
+    if (dx < 0 && idx < TABS_ORDER.length - 1) showTab(TABS_ORDER[idx + 1]);
+    else if (dx > 0 && idx > 0) showTab(TABS_ORDER[idx - 1]);
+  }, { passive: true });
+})();
+
+// ── VIEWPORT ZOOM — pantallas menores a 580px ─────────────────
+(function() {
+  var DESIGN_W = 580;
+  function applyZoom() {
+    var vw = window.innerWidth;
+    if (vw < DESIGN_W) {
+      document.documentElement.style.zoom = (vw / DESIGN_W).toFixed(4);
+    } else {
+      document.documentElement.style.zoom = '';
+    }
+  }
+  window.addEventListener('resize', applyZoom);
+  applyZoom();
+})();
+
+// ── TECLADO MÓVIL — subir login ──────────────────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    const overlay = document.getElementById('login-overlay');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    const kbHeight = window.innerHeight - window.visualViewport.height;
+    if (kbHeight > 100) {
+      overlay.style.alignItems  = 'flex-start';
+      overlay.style.paddingTop  = Math.max(12, (window.visualViewport.height - 480) / 2) + 'px';
+    } else {
+      overlay.style.alignItems  = '';
+      overlay.style.paddingTop  = '';
+    }
+  });
+}
+
+checkSession();
+</script>
+
+</body>
+</html>

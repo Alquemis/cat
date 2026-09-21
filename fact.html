@@ -127,6 +127,12 @@
     table { min-width:520px; }
   }
   .col-sign { font-size: 0.72em; font-weight: 600; vertical-align: baseline; line-height: 1; position: relative; top: -0.05em; }
+
+  /* ── PAPELERA LÍNEA (enviar a revisión) ── */
+  .btn-trash-line { background:#fee2e2;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s; }
+  .btn-trash-line svg { stroke:#dc2626;transition:stroke .15s; }
+  .btn-trash-line:hover { background:#dc2626; }
+  .btn-trash-line:hover svg { stroke:#fff; }
 </style>
 </head>
 <body>
@@ -306,6 +312,19 @@
     <div style="display:flex;gap:10px;">
       <button class="btn btn-secondary" style="flex:1;padding:12px;" onclick="closeCancelConfirm()">No, volver</button>
       <button class="btn" id="cancel-confirm-btn" style="flex:1;padding:12px;background:#dc2626;color:#fff;" onclick="confirmCancelar()">Sí, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMAR ENVÍO A REVISIÓN -->
+<div class="modal-overlay" id="revision-confirm-modal">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:380px;padding:28px 28px 24px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">🗑</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:8px;">¿Enviar a revisión?</div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:24px;">Esta línea se eliminará del pedido y quedará pendiente de revisión.</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" style="flex:1;padding:12px;" onclick="closeRevisionConfirm()">Cancelar</button>
+      <button class="btn" id="revision-confirm-btn" style="flex:1;padding:12px;background:#dc2626;color:#fff;" onclick="confirmarEnvioRevision()">Enviar a revisión</button>
     </div>
   </div>
 </div>
@@ -841,21 +860,39 @@ function renderHistorial(list) {
 // ── DETALLE ───────────────────────────────────────────────────
 let _detailOpenId     = null;
 let _detailOpenSource = null;
+let _detailModifyMode = false;
 
 function openDetail(id, source) {
   _detailOpenId     = id;
   _detailOpenSource = source;
+  _detailModifyMode = false;
+  _renderDetail();
+}
+
+function toggleModifyMode() {
+  _detailModifyMode = !_detailModifyMode;
+  _renderDetail();
+}
+
+function _renderDetail() {
+  const id = _detailOpenId, source = _detailOpenSource;
   const list = source === 'pend' ? allPendientes : allHistorial;
   const o = list.find(x => x.id === id);
   if (!o) return;
+
+  const cancelado = o.estado === 'cancelado';
+  const pagado    = o.estado === 'pagado';
+  const puedeModificar = !cancelado && !pagado;
 
   const fecha  = new Date(o.fecha).toLocaleString('es-CR');
   const lineas = o.lineas_pedido || [];
   const totalAmt = o.total || 0;
   const totalDescuento = lineas.reduce((s, l) => s + ((l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0)), 0);
   const total  = totalAmt.toLocaleString('es-CR');
-  const subtotalSinIva = Math.round(totalAmt / 1.13).toLocaleString('es-CR');
-  const iva    = (totalAmt - Math.round(totalAmt / 1.13)).toLocaleString('es-CR');
+  const subtotalSinIvaNum = Math.round(totalAmt / 1.13);
+  const iva    = (totalAmt - subtotalSinIvaNum).toLocaleString('es-CR');
+  const precioSinIvaOriginal = Math.round((totalAmt + totalDescuento) / 1.13);
+  const descuentoSinIva = precioSinIvaOriginal - subtotalSinIvaNum;
 
   document.getElementById('detail-card').innerHTML =
     '<div class="modal-header">' +
@@ -875,34 +912,40 @@ function openDetail(id, source) {
     (o.observaciones ? '<div style="background:#fffbeb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px;border:1px solid #fde68a"><strong>Observaciones:</strong> ' + esc(o.observaciones) + '</div>' : '') +
     '<div class="table-wrap" style="margin-bottom:16px">' +
       '<table>' +
-        '<thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Precio</th></tr></thead>' +
+        '<thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th style="white-space:nowrap">Precio<br><span style="font-size:9px;font-weight:400;color:#9ca3af;">sin IVA</span></th><th>IVA</th><th>Total</th>' + (_detailModifyMode ? '<th></th>' : '') + '</tr></thead>' +
         '<tbody>' +
           lineas.map(l => {
             const descAmt = (l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0);
+            const precioOrigSinIva = Math.round(((l.precio_unitario||0) * (l.cantidad||0)) / 1.13);
+            const precioDescSinIva = Math.round((l.subtotal||0) / 1.13);
+            const ivaMonto = (l.subtotal||0) - precioDescSinIva;
+            const totalLinea = l.subtotal||0;
             return '<tr>' +
               '<td><code style="font-size:12px">' + esc(l.producto_codigo||'') + '</code></td>' +
               '<td style="text-align:center;font-weight:600">' + (l.cantidad||0) + '</td>' +
               '<td>' + esc(_pNombre(l.producto_codigo, l.producto_nombre)) + (descAmt > 0 ? ' <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-' + (l.descuento_porcentaje||0) + '%</span>' : '') + '</td>' +
-              '<td><span class="col-sign">₡</span>' + (l.precio_unitario||0).toLocaleString('es-CR') + '</td>' +
-              '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.subtotal||0).toLocaleString('es-CR') + '</td>' +
+              '<td><span class="col-sign">₡</span>' + precioDescSinIva.toLocaleString('es-CR') + (descAmt > 0 ? '<br><span style="font-weight:400;color:#9ca3af;text-decoration:line-through;font-size:12.5px;"><span class="col-sign">₡</span>' + precioOrigSinIva.toLocaleString('es-CR') + '</span>' : '') + '</td>' +
+              '<td><span class="col-sign">₡</span>' + ivaMonto.toLocaleString('es-CR') + '</td>' +
+              '<td style="font-weight:700"><span class="col-sign">₡</span>' + totalLinea.toLocaleString('es-CR') + '</td>' +
+              (_detailModifyMode ? '<td><button class="btn-trash-line" onclick="confirmEnviarRevision(\'' + l.id + '\')" title="Enviar a revisión"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button></td>' : '') +
             '</tr>';
           }).join('') +
         '</tbody>' +
       '</table>' +
     '</div>' +
     '<div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px">' +
+      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio sin IVA</span><span><span class="col-sign">₡</span>' + precioSinIvaOriginal.toLocaleString('es-CR') + '</span></div>' +
       (totalDescuento > 0
-        ? '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio</span><span><span class="col-sign">₡</span>' + (totalAmt + totalDescuento).toLocaleString('es-CR') + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>' + totalDescuento.toLocaleString('es-CR') + '</span></div>' +
+        ? '<div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>' + descuentoSinIva.toLocaleString('es-CR') + '</span></div>' +
           '<div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>'
         : '') +
-      '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>' + subtotalSinIva + '</span></div>' +
       '<div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>' + iva + '</span></div>' +
       '<div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>' + total + '</span></div>' +
     '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px">' +
       '<button class="btn btn-ghost" style="flex:1;padding:13px" onclick="copiarPedido(\'' + o.id + '\')" id="copy-btn-' + o.id + '">📋 Copiar pedido</button>' +
       '<button class="btn btn-dark" style="flex:1;padding:13px" onclick="closeDetailModal()">Cerrar</button>' +
+      (puedeModificar ? '<button class="btn ' + (_detailModifyMode ? 'btn-dark' : 'btn-ghost') + '" style="padding:13px 18px;display:inline-flex;align-items:center;gap:6px;" onclick="toggleModifyMode()">' + (_detailModifyMode ? '✓ Terminar edición' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Modificar') + '</button>' : '') +
       (source === 'pend' ? '<button class="btn btn-hold" style="padding:13px 18px;" onclick="toggleHold(\'' + o.id + '\');closeDetailModal();">Hold</button>' : '') +
     '</div>';
 
@@ -920,6 +963,67 @@ function closeDetailModal() {
   }
   _detailOpenId     = null;
   _detailOpenSource = null;
+  _detailModifyMode = false;
+}
+
+// ── ENVIAR LÍNEA A REVISIÓN (errores de precio detectados al facturar) ──
+let _revisionPendingLineaId = null;
+
+function confirmEnviarRevision(lineaId) {
+  _revisionPendingLineaId = lineaId;
+  document.getElementById('revision-confirm-modal').classList.add('open');
+}
+
+function closeRevisionConfirm() {
+  document.getElementById('revision-confirm-modal').classList.remove('open');
+  _revisionPendingLineaId = null;
+}
+
+async function confirmarEnvioRevision() {
+  const lineaId = _revisionPendingLineaId;
+  if (!lineaId) return;
+  const list = _detailOpenSource === 'pend' ? allPendientes : allHistorial;
+  const o = list.find(x => x.id === _detailOpenId);
+  if (!o) { closeRevisionConfirm(); return; }
+  const l = (o.lineas_pedido || []).find(x => x.id === lineaId);
+  if (!l) { closeRevisionConfirm(); return; }
+
+  const btn = document.getElementById('revision-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  const precioOrigSinIva = Math.round(((l.precio_unitario||0) * (l.cantidad||0)) / 1.13);
+  const precioDescSinIva = Math.round((l.subtotal||0) / 1.13);
+  const descAmt   = precioOrigSinIva - precioDescSinIva;
+  const ivaMonto  = (l.subtotal||0) - precioDescSinIva;
+
+  const { error: errIns } = await sb.from('lineas_revision').insert({
+    pedido_id:          o.id,
+    numero_pedido:      o.id.slice(0,8).toUpperCase(),
+    colaborador_nombre: o.usuario_nombre || null,
+    codigo:             l.producto_codigo || null,
+    nombre:             _pNombre(l.producto_codigo, l.producto_nombre),
+    cantidad:           l.cantidad || 0,
+    precio:             precioOrigSinIva,
+    descuento:          descAmt,
+    impuesto:           ivaMonto,
+    precio_final:       l.subtotal || 0,
+    estado:             'pendiente'
+  });
+  if (errIns) { btn.disabled = false; btn.textContent = 'Enviar a revisión'; showToast('Error: ' + errIns.message); return; }
+
+  const { error: errDel } = await sb.from('lineas_pedido').delete().eq('id', lineaId);
+  if (errDel) { btn.disabled = false; btn.textContent = 'Enviar a revisión'; showToast('Error al eliminar línea: ' + errDel.message); return; }
+
+  o.lineas_pedido = (o.lineas_pedido || []).filter(x => x.id !== lineaId);
+  const nuevoTotal = o.lineas_pedido.reduce((s, x) => s + (x.subtotal||0), 0);
+  o.total = nuevoTotal;
+  await sb.from('pedidos').update({ total: nuevoTotal }).eq('id', o.id);
+
+  btn.disabled = false; btn.textContent = 'Enviar a revisión';
+  closeRevisionConfirm();
+  showToast('Línea enviada a revisión ✓', 'ok');
+  _renderDetail();
+  if (_detailOpenSource === 'pend') { updatePendienteStats(); filterPendientes(); } else { filterHistorial(); }
 }
 
 // ── COPIAR PEDIDO ─────────────────────────────────────────────

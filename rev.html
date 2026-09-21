@@ -372,14 +372,14 @@ function renderPendientes(list) {
     return;
   }
   tbody.innerHTML = list.map(l => {
-    const fecha = new Date(l.fecha).toLocaleString('es-CR');
+    const fecha = _fechaHora(l.fecha);
     return '<tr>' +
       '<td>' + fecha + '</td>' +
       '<td><code style="font-size:12px">' + esc(l.codigo||'—') + '</code></td>' +
       '<td>' + esc(l.nombre||'—') + '</td>' +
       '<td><span class="col-sign">₡</span>' + (l.precio||0).toLocaleString('es-CR') + '</td>' +
-      '<td>' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') + (l.descuento_porcentaje > 0 ? ' (' + l.descuento_porcentaje + '%)' : '') : '—') + '</td>' +
-      '<td><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + (l.iva_porcentaje != null ? ' (' + l.iva_porcentaje + '%)' : '') + '</td>' +
+      '<td style="white-space:nowrap;">' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') + (l.descuento_porcentaje > 0 ? ' <span style="color:#9ca3af;">(' + l.descuento_porcentaje + '%)</span>' : '') : '—') + '</td>' +
+      '<td style="white-space:nowrap;"><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + (l.iva_porcentaje != null ? ' <span style="color:#9ca3af;">(' + l.iva_porcentaje + '%)</span>' : '') + '</td>' +
       '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.precio_final||0).toLocaleString('es-CR') + '</td>' +
       '<td><button class="btn btn-green" onclick="resolverLinea(' + l.id + ')" title="Marcar como revisado">✓</button></td>' +
     '</tr>';
@@ -430,17 +430,17 @@ function renderHistorial(list) {
     return;
   }
   tbody.innerHTML = list.map(l => {
-    const fecha    = new Date(l.fecha).toLocaleString('es-CR');
-    const revisado = l.revisado_at ? new Date(l.revisado_at).toLocaleString('es-CR') : '—';
+    const fecha    = _fechaHora(l.fecha);
+    const revisado = l.revisado_at ? _fechaHora(l.revisado_at) : '—';
     return '<tr>' +
       '<td>' + fecha + '</td>' +
       '<td><code style="font-size:12px">' + esc(l.codigo||'—') + '</code></td>' +
       '<td>' + esc(l.nombre||'—') + '</td>' +
       '<td><span class="col-sign">₡</span>' + (l.precio||0).toLocaleString('es-CR') + '</td>' +
-      '<td>' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') + (l.descuento_porcentaje > 0 ? ' (' + l.descuento_porcentaje + '%)' : '') : '—') + '</td>' +
-      '<td><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + (l.iva_porcentaje != null ? ' (' + l.iva_porcentaje + '%)' : '') + '</td>' +
+      '<td style="white-space:nowrap;">' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') + (l.descuento_porcentaje > 0 ? ' <span style="color:#9ca3af;">(' + l.descuento_porcentaje + '%)</span>' : '') : '—') + '</td>' +
+      '<td style="white-space:nowrap;"><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + (l.iva_porcentaje != null ? ' <span style="color:#9ca3af;">(' + l.iva_porcentaje + '%)</span>' : '') + '</td>' +
       '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.precio_final||0).toLocaleString('es-CR') + '</td>' +
-      '<td><span class="badge badge-green">' + revisado + '</span></td>' +
+      '<td>' + revisado + '</td>' +
     '</tr>';
   }).join('');
 }
@@ -501,6 +501,13 @@ async function saveConfig() {
 // ── HELPERS ───────────────────────────────────────────────────
 function esc(s) {
   return String(s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+// Fecha arriba, hora abajo (más legible que el string largo de toLocaleString en una sola línea)
+function _fechaHora(iso) {
+  const d = new Date(iso);
+  const fecha = d.toLocaleDateString('es-CR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const hora  = d.toLocaleTimeString('es-CR', { hour:'2-digit', minute:'2-digit' });
+  return fecha + '<br><span style="font-size:11px;color:#9ca3af;">' + hora + '</span>';
 }
 
 // ── TOUCH GESTURES ────────────────────────────────────────────

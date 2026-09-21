@@ -468,11 +468,32 @@ async function init() {
   const [,, resProd] = await Promise.all([
     loadPendientes(),
     loadHistorial(),
-    sb.from('productos').select('codigo, nombre')
+    sb.from('productos').select('codigo, nombre'),
+    loadPendingRevisionCodes()
   ]);
   _prodMap = {};
   (resProd.data || []).forEach(p => { if (p.codigo) _prodMap[p.codigo] = p.nombre; });
   startRealtimeOrders();
+  startRealtimeRevision();
+}
+
+// ── PRODUCTOS CON ERROR DE PRECIO YA MARCADO (pendiente en rev.html) ──
+// Se usa para pintar de naranja claro, en el detalle del pedido, cualquier
+// línea cuyo código ya esté en revisión y aún no se haya corregido.
+let _pendingRevisionCodes = new Set();
+async function loadPendingRevisionCodes() {
+  const { data } = await sb.from('lineas_revision').select('codigo').eq('estado', 'pendiente');
+  _pendingRevisionCodes = new Set((data || []).map(r => r.codigo).filter(Boolean));
+}
+let _rtRevisionChannel = null;
+function startRealtimeRevision() {
+  if (_rtRevisionChannel || !sb.channel) return;
+  _rtRevisionChannel = sb.channel('rt-lineas-revision')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'lineas_revision' }, async () => {
+      await loadPendingRevisionCodes();
+      if (document.getElementById('detail-modal').classList.contains('open')) _renderDetail();
+    })
+    .subscribe();
 }
 
 // ── TIEMPO REAL — recarga automática al cambiar pedidos, en silencio ──
@@ -920,10 +941,11 @@ function _renderDetail() {
             const precioDescSinIva = Math.round((l.subtotal||0) / 1.13);
             const ivaMonto = (l.subtotal||0) - precioDescSinIva;
             const totalLinea = l.subtotal||0;
-            return '<tr>' +
+            const enRevision = _pendingRevisionCodes.has(l.producto_codigo);
+            return '<tr' + (enRevision ? ' style="background:#ffedd5;"' : '') + '>' +
               '<td><code style="font-size:12px">' + esc(l.producto_codigo||'') + '</code></td>' +
               '<td style="text-align:center;font-weight:600">' + (l.cantidad||0) + '</td>' +
-              '<td>' + esc(_pNombre(l.producto_codigo, l.producto_nombre)) + (descAmt > 0 ? ' <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-' + (l.descuento_porcentaje||0) + '%</span>' : '') + '</td>' +
+              '<td>' + esc(_pNombre(l.producto_codigo, l.producto_nombre)) + (descAmt > 0 ? ' <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-' + (l.descuento_porcentaje||0) + '%</span>' : '') + (enRevision ? ' <span style="font-size:10px;background:#fed7aa;color:#c2410c;padding:1px 6px;border-radius:4px;font-weight:700;white-space:nowrap;">⚠ En revisión</span>' : '') + '</td>' +
               '<td><span class="col-sign">₡</span>' + precioDescSinIva.toLocaleString('es-CR') + (descAmt > 0 ? '<br><span style="font-weight:400;color:#9ca3af;text-decoration:line-through;font-size:12.5px;"><span class="col-sign">₡</span>' + precioOrigSinIva.toLocaleString('es-CR') + '</span>' : '') + '</td>' +
               '<td><span class="col-sign">₡</span>' + ivaMonto.toLocaleString('es-CR') + '</td>' +
               '<td style="font-weight:700"><span class="col-sign">₡</span>' + totalLinea.toLocaleString('es-CR') + '</td>' +
@@ -1002,19 +1024,53 @@ async function confirmarEnvioRevision() {
   const descUnit = precioUnitSinIva - finalUnitSinIva;                  // descuento aplicado (sin IVA)
   const ivaUnit  = finalUnitConIva - finalUnitSinIva;                    // IVA sobre el precio ya descontado
 
-  const { error: errIns } = await sb.from('lineas_revision').insert({
-    pedido_id:          o.id,
-    numero_pedido:      o.id.slice(0,8).toUpperCase(),
-    colaborador_nombre: o.usuario_nombre || null,
-    codigo:             l.producto_codigo || null,
-    nombre:             _pNombre(l.producto_codigo, l.producto_nombre),
-    cantidad:           l.cantidad || 0,
-    precio:             precioUnitSinIva,
-    descuento:          descUnit,
-    impuesto:           ivaUnit,
-    precio_final:       finalUnitConIva,
-    estado:             'pendiente'
-  });
+  const numeroPedido = o.id.slice(0,8).toUpperCase();
+
+  // Si ya hay una línea PENDIENTE con este mismo código, no se duplica: se suma
+  // esta ocurrencia a esa misma fila (varios pedidos con el mismo error de precio
+  // aparecen como una sola línea en rev.html, con un contador de veces).
+  // .limit(1) en vez de .maybeSingle(): si por alguna razón llegara a haber más
+  // de una fila pendiente con el mismo código, no truena — simplemente fusiona
+  // contra la primera en vez de fallar silenciosamente y crear otra duplicada.
+  const { data: existenteRows } = await sb.from('lineas_revision')
+    .select('id, ocurrencias, pedidos_afectados')
+    .eq('codigo', l.producto_codigo || null)
+    .eq('estado', 'pendiente')
+    .limit(1);
+  const existente = (existenteRows && existenteRows[0]) || null;
+
+  let errIns;
+  if (existente) {
+    const yaListado = (existente.pedidos_afectados || '').split(',').map(s => s.trim()).includes(numeroPedido);
+    const nuevosPedidos = yaListado
+      ? existente.pedidos_afectados
+      : [existente.pedidos_afectados, numeroPedido].filter(Boolean).join(', ');
+    ({ error: errIns } = await sb.from('lineas_revision').update({
+      fecha:             new Date().toISOString(),
+      ocurrencias:        (existente.ocurrencias || 1) + (yaListado ? 0 : 1),
+      pedidos_afectados:  nuevosPedidos,
+      precio:             precioUnitSinIva,
+      descuento:          descUnit,
+      impuesto:           ivaUnit,
+      precio_final:       finalUnitConIva
+    }).eq('id', existente.id));
+  } else {
+    ({ error: errIns } = await sb.from('lineas_revision').insert({
+      pedido_id:          o.id,
+      numero_pedido:      numeroPedido,
+      pedidos_afectados:  numeroPedido,
+      ocurrencias:        1,
+      colaborador_nombre: o.usuario_nombre || null,
+      codigo:             l.producto_codigo || null,
+      nombre:             _pNombre(l.producto_codigo, l.producto_nombre),
+      cantidad:           l.cantidad || 0,
+      precio:             precioUnitSinIva,
+      descuento:          descUnit,
+      impuesto:           ivaUnit,
+      precio_final:       finalUnitConIva,
+      estado:             'pendiente'
+    }));
+  }
   if (errIns) { btn.disabled = false; btn.textContent = 'Enviar a revisión'; showToast('Error: ' + errIns.message); return; }
 
   const { error: errDel } = await sb.from('lineas_pedido').delete().eq('id', lineaId);

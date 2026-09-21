@@ -991,10 +991,16 @@ async function confirmarEnvioRevision() {
   const btn = document.getElementById('revision-confirm-btn');
   btn.disabled = true; btn.textContent = 'Enviando…';
 
-  const precioOrigSinIva = Math.round(((l.precio_unitario||0) * (l.cantidad||0)) / 1.13);
-  const precioDescSinIva = Math.round((l.subtotal||0) / 1.13);
-  const descAmt   = precioOrigSinIva - precioDescSinIva;
-  const ivaMonto  = (l.subtotal||0) - precioDescSinIva;
+  // A revisión llega el precio de UNA unidad, sin importar cuántas traía la línea
+  // (p.ej. si son 10 unidades, solo se envía el precio de 1).
+  // "Precio final" refleja el descuento si lo hubo (el catálogo también muestra
+  // el precio ya rebajado cuando hay una promoción activa, con el original tachado).
+  const cantidad         = l.cantidad || 1;
+  const precioUnitSinIva = Math.round((l.precio_unitario||0) / 1.13);   // precio original (sin descuento), sin IVA
+  const finalUnitConIva  = Math.round((l.subtotal||0) / cantidad);       // precio final por unidad, con descuento e IVA
+  const finalUnitSinIva  = Math.round(finalUnitConIva / 1.13);
+  const descUnit = precioUnitSinIva - finalUnitSinIva;                  // descuento aplicado (sin IVA)
+  const ivaUnit  = finalUnitConIva - finalUnitSinIva;                    // IVA sobre el precio ya descontado
 
   const { error: errIns } = await sb.from('lineas_revision').insert({
     pedido_id:          o.id,
@@ -1003,10 +1009,10 @@ async function confirmarEnvioRevision() {
     codigo:             l.producto_codigo || null,
     nombre:             _pNombre(l.producto_codigo, l.producto_nombre),
     cantidad:           l.cantidad || 0,
-    precio:             precioOrigSinIva,
-    descuento:          descAmt,
-    impuesto:           ivaMonto,
-    precio_final:       l.subtotal || 0,
+    precio:             precioUnitSinIva,
+    descuento:          descUnit,
+    impuesto:           ivaUnit,
+    precio_final:       finalUnitConIva,
     estado:             'pendiente'
   });
   if (errIns) { btn.disabled = false; btn.textContent = 'Enviar a revisión'; showToast('Error: ' + errIns.message); return; }

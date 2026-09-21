@@ -2060,14 +2060,16 @@ async function onLogin(session, isRestore = false) {
           nombre:       session.nombre,
           departamento: session.departamento,
           lugar:        session.lugar,
-          revisado:     false
+          revisado:     false,
+          device_id:    getDeviceId()
         });
         _logIntento(session.cedula, session.nombre, 'registro');
       }
     }
     localStorage.setItem('catalogo_session', JSON.stringify(session));
     // Registra la última vez que el colaborador entró a la app (login o restauración de sesión)
-    sb.from('usuarios').update({ ultimo_acceso: new Date().toISOString() }).eq('cedula', session.cedula).then(()=>{}).catch(()=>{});
+    // y guarda/actualiza el device_id, para ir recopilando el dispositivo de cuentas ya existentes.
+    sb.from('usuarios').update({ ultimo_acceso: new Date().toISOString(), device_id: getDeviceId() }).eq('cedula', session.cedula).then(()=>{}).catch(()=>{});
   } catch(e) { /* si falla se usa lo que digitó */ }
 
   currentUser = session;
@@ -2228,14 +2230,23 @@ async function doVerifyCedula() {
     const res  = await fetch('https://api.hacienda.go.cr/fe/ae?identificacion=' + encodeURIComponent(num));
     const data = await res.json();
     if (!data || !data.nombre) throw new Error('no_name');
-    // Chequear baneo antes que nada: una cédula baneada no puede registrarse de nuevo
-    const { data: baneo } = await sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', num).maybeSingle();
-    if (baneo && baneo.baneado) {
+    // Chequear baneo antes que nada: una cédula baneada, o un dispositivo baneado, no puede registrarse de nuevo
+    const deviceId = getDeviceId();
+    const [{ data: baneo }, { data: baneoDevice }] = await Promise.all([
+      sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', num).maybeSingle(),
+      sb.from('usuarios_baneados').select('cedula, baneado').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
+    ]);
+    if ((baneo && baneo.baneado) || baneoDevice) {
       statusEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
       statusEl.style.color = '#dc2626';
       btn.disabled = false;
       btn.textContent = 'Verificar';
       _logIntento(num, data.nombre, 'bloqueado');
+      // Si el bloqueo fue por cédula y este dispositivo todavía no estaba capturado en el baneo,
+      // lo registramos ahora para que quede banneado también (sin pisar un device_id ya guardado).
+      if (baneo && baneo.baneado && !baneoDevice) {
+        sb.from('usuarios_baneados').update({ device_id: deviceId }).eq('cedula', num).is('device_id', null).then(()=>{}).catch(()=>{});
+      }
       return;
     }
     // Check if cedula already registered
@@ -2298,17 +2309,24 @@ async function doQuickLogin() {
 
   btn.disabled = true; btn.textContent = 'Buscando…';
 
-  const [{ data: perfil }, { data: baneo }] = await Promise.all([
+  const deviceId = getDeviceId();
+  const [{ data: perfil }, { data: baneo }, { data: baneoDevice }] = await Promise.all([
     sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle(),
-    sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', cedula).maybeSingle()
+    sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', cedula).maybeSingle(),
+    sb.from('usuarios_baneados').select('cedula, baneado').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
   ]);
 
   btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
 
-  if (baneo && baneo.baneado) {
+  if ((baneo && baneo.baneado) || baneoDevice) {
     errEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
     errEl.classList.add('show');
     _logIntento(cedula, perfil ? perfil.nombre : null, 'bloqueado');
+    // Si el bloqueo fue por cédula y este dispositivo todavía no estaba capturado en el baneo,
+    // lo registramos ahora para que quede banneado también (sin pisar un device_id ya guardado).
+    if (baneo && baneo.baneado && !baneoDevice) {
+      sb.from('usuarios_baneados').update({ device_id: deviceId }).eq('cedula', cedula).is('device_id', null).then(()=>{}).catch(()=>{});
+    }
     return;
   }
 

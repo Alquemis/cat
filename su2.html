@@ -4900,7 +4900,14 @@ async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar, regis
   // la cédula queda realmente en blanco, como si nunca se hubiera registrado.
   let error;
   if (baneado) {
-    const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() };
+    // El banneo es por cédula Y por dispositivo: se busca el device_id más reciente
+    // asociado a esa cédula en `usuarios` para que el dispositivo quede bloqueado también.
+    let deviceId = null;
+    try {
+      const { data: u } = await sb.from('usuarios').select('device_id').eq('cedula', cedula).maybeSingle();
+      deviceId = (u && u.device_id) || null;
+    } catch (e) {}
+    const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString(), device_id: deviceId };
     if (departamento !== undefined) row.departamento = departamento || null;
     if (lugar !== undefined) row.lugar = lugar || null;
     if (registrado_at !== undefined) row.registrado_at = registrado_at || null;

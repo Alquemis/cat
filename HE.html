@@ -996,6 +996,8 @@ function openOrderDetail(id) {
   const totalDescuento = lineas.reduce((s, l) => s + ((l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0)), 0);
   const subtotalSinIva = Math.round(total / 1.13);
   const iva = total - subtotalSinIva;
+  const precioSinIvaOriginal = Math.round((total + totalDescuento) / 1.13);
+  const descuentoSinIva = precioSinIvaOriginal - subtotalSinIva;
   document.getElementById('order-detail-card').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px">
       <div class="modal-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Pedido ${o.id.slice(0,8).toUpperCase()}${moraOrderBadge(o)}</div>
@@ -1010,27 +1012,31 @@ function openOrderDetail(id) {
     ${o.observaciones ? `<div style="background:#fffbeb;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px;border:1px solid #fde68a"><strong>Observaciones:</strong> ${esc(o.observaciones)}</div>` : ''}
     <div class="table-wrap" style="margin-bottom:16px">
       <table>
-        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th>Precio u.</th><th>Precio</th></tr></thead>
+        <thead><tr><th>Código</th><th style="text-align:center">Cant.</th><th>Producto</th><th style="white-space:nowrap">Precio U<br><span style="font-size:9px;font-weight:400;color:#9ca3af;">sin IVA</span></th><th>Precio<br><span style="font-size:9px;font-weight:400;color:#9ca3af;">sin IVA</span></th></tr></thead>
         <tbody>
           ${lineas.map(l => {
             const descAmt = (l.precio_unitario||0)*(l.cantidad||0) - (l.subtotal||0);
+            const effPrice = l.cantidad > 0 ? Math.round((l.subtotal||0) / l.cantidad) : 0;
+            const precioUSinIva = Math.round((l.precio_unitario||0) / 1.13);
+            const precioUDescSinIva = Math.round(effPrice / 1.13);
+            const precioSinIva = Math.round((l.subtotal||0) / 1.13);
+            const precioOrigSinIva = Math.round(((l.precio_unitario||0) * (l.cantidad||0)) / 1.13);
             return `<tr>
               <td><code style="font-size:12px">${esc(l.producto_codigo)}</code></td>
               <td style="text-align:center;font-weight:600">${l.cantidad}</td>
               <td>${esc(_pNombre(l.producto_codigo, l.producto_nombre))}${descAmt > 0 ? ` <span style="font-size:11px;background:#16a34a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:600">-${l.descuento_porcentaje||0}%</span>` : ''}</td>
-              <td><span class="col-sign">₡</span>${(l.precio_unitario||0).toLocaleString('es-CR')}</td>
-              <td style="font-weight:700"><span class="col-sign">₡</span>${(l.subtotal||0).toLocaleString('es-CR')}</td>
+              <td><span class="col-sign">₡</span>${precioUDescSinIva.toLocaleString('es-CR')}${descAmt > 0 ? `<br><span style="font-weight:400;color:#9ca3af;text-decoration:line-through;font-size:12.5px;"><span class="col-sign">₡</span>${precioUSinIva.toLocaleString('es-CR')}</span>` : ''}</td>
+              <td style="font-weight:700"><span class="col-sign">₡</span>${precioSinIva.toLocaleString('es-CR')}${descAmt > 0 ? `<br><span style="font-weight:400;color:#9ca3af;text-decoration:line-through;font-size:12.5px;"><span class="col-sign">₡</span>${precioOrigSinIva.toLocaleString('es-CR')}</span>` : ''}</td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
     </div>
     <div style="font-size:14px;display:flex;flex-direction:column;gap:6px;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio sin IVA</span><span><span class="col-sign">₡</span>${precioSinIvaOriginal.toLocaleString('es-CR')}</span></div>
       ${totalDescuento > 0 ? `
-        <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Precio</span><span><span class="col-sign">₡</span>${(total + totalDescuento).toLocaleString('es-CR')}</span></div>
-        <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${totalDescuento.toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;color:#16a34a;font-weight:600"><span>Descuento</span><span>−<span class="col-sign">₡</span>${descuentoSinIva.toLocaleString('es-CR')}</span></div>
         <div style="border-top:1px dashed #e5e7eb;margin:2px 0;"></div>` : ''}
-      <div style="display:flex;justify-content:space-between;color:#6b7280"><span>Subtotal sin IVA</span><span><span class="col-sign">₡</span>${subtotalSinIva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;color:#6b7280"><span>IVA 13%</span><span><span class="col-sign">₡</span>${iva.toLocaleString('es-CR')}</span></div>
       <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;border-top:1px solid #e5e7eb;padding-top:8px;margin-top:2px"><span>TOTAL</span><span><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span></div>
     </div>
@@ -1137,12 +1143,18 @@ function deleteCfgUser(cedula, nombre) {
     `¿Eliminar a ${nombre}?`,
     'Perderá el acceso al catálogo de inmediato. Si desea volver a registrarse o se eliminó por error, por favor comuníquese con el Administrador de la aplicación.',
     async () => {
+      // El banneo es por cédula Y por dispositivo: se captura el device_id antes de borrar.
+      let deviceId = null;
+      try {
+        const { data: u } = await sb.from('usuarios').select('device_id').eq('cedula', cedula).maybeSingle();
+        deviceId = (u && u.device_id) || null;
+      } catch (e) {}
       const { error } = await sb.from('usuarios').delete().eq('cedula', cedula);
       if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
       await _detachUserHistory(cedula);
       // Eliminar implica banear de inmediato — hay que desbanear desde
       // admin.html/su.html/blue.html para que la cédula pueda registrarse.
-      const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString() };
+      const row = { cedula, nombre: nombre || null, baneado: true, baneado_at: new Date().toISOString(), device_id: deviceId };
       if (departamento !== undefined) row.departamento = departamento || null;
       if (lugar !== undefined) row.lugar = lugar || null;
       if (registrado_at !== undefined) row.registrado_at = registrado_at || null;

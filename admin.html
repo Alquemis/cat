@@ -4120,7 +4120,7 @@ function openOrderDetail(id) {
 // ── COLABORADORES ─────────────────────────────────────────────
 async function loadUsers() {
   const [{ data, error }, bannedRes] = await Promise.all([
-    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso, suspendido, suspendido_at').order('nombre'),
+    sb.from('usuarios').select('cedula, nombre, departamento, lugar, created_at, ultimo_acceso, suspendido, suspendido_at, device_id').order('nombre'),
     sb.from('usuarios_baneados').select('cedula,baneado').eq('baneado', true)
   ]);
   if (error) { console.error(error); return; }
@@ -6198,7 +6198,7 @@ function _renderSuCollabProfileTimeCharts() {
 async function openSuCollabProfile(cedulaOrNombre) {
   if (!_suCollabListData.length) {
     if (!allUsers.length) await loadUsers();
-    _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at,ultimo_acceso:u.ultimo_acceso}));
+    _suCollabListData = allUsers.map(u=>({nombre:u.nombre,cedula:u.cedula,departamento:u.departamento,lugar:u.lugar,created_at:u.created_at,ultimo_acceso:u.ultimo_acceso,device_id:u.device_id}));
   }
   let user = _suCollabListData.find(u=>u.cedula===cedulaOrNombre||u.nombre===cedulaOrNombre);
   if (!user) {
@@ -6206,7 +6206,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
     // se arma una ficha mínima con lo que quedó guardado en usuarios_baneados.
     const banned = (allSuBanned || []).find(b => b.cedula === cedulaOrNombre || b.nombre === cedulaOrNombre);
     if (banned) {
-      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: banned.registrado_at || null, ultimo_acceso: banned.ultima_actividad_at || null, baneado_at: banned.baneado_at || null };
+      user = { nombre: banned.nombre, cedula: banned.cedula, departamento: banned.departamento, lugar: banned.lugar, created_at: banned.registrado_at || null, ultimo_acceso: banned.ultima_actividad_at || null, baneado_at: banned.baneado_at || null, device_id: banned.device_id || null };
     } else {
       showToast('No hay información de perfil para este usuario.', 'warn');
       return;
@@ -6245,6 +6245,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
         <div style="font-size:18px;font-weight:800;color:#143c5a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}${suspendedChip(user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
         <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}${eliminadoLine}</div>
+        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">📱 Device ID: <span style="font-family:monospace;">${esc(user.device_id||'—')}</span></div>
       </div>
       <button onclick="closeSuCollabProfile()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
     </div>

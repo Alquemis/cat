@@ -2064,12 +2064,15 @@ async function onLogin(session, isRestore = false) {
           device_id:    getDeviceId()
         });
         _logIntento(session.cedula, session.nombre, 'registro');
+        _trackDevice(session.cedula);
       }
     }
     localStorage.setItem('catalogo_session', JSON.stringify(session));
     // Registra la última vez que el colaborador entró a la app (login o restauración de sesión)
-    // y guarda/actualiza el device_id, para ir recopilando el dispositivo de cuentas ya existentes.
+    // y guarda/actualiza el device_id "rápido" (último usado) — el historial completo de
+    // dispositivos vive en dispositivos_colaborador vía _trackDevice().
     sb.from('usuarios').update({ ultimo_acceso: new Date().toISOString(), device_id: getDeviceId() }).eq('cedula', session.cedula).then(()=>{}).catch(()=>{});
+    _trackDevice(session.cedula);
   } catch(e) { /* si falla se usa lo que digitó */ }
 
   currentUser = session;
@@ -2202,6 +2205,15 @@ function getDeviceId() {
   }
   return id;
 }
+// Lleva el historial de TODOS los dispositivos que ha usado una cédula (no solo el
+// último) en `dispositivos_colaborador`. Se llama en cada registro/login exitoso.
+function _trackDevice(cedula) {
+  try {
+    sb.from('dispositivos_colaborador')
+      .upsert({ cedula, device_id: getDeviceId(), ultima_actividad_at: new Date().toISOString() }, { onConflict: 'cedula,device_id' })
+      .then(()=>{}).catch(()=>{});
+  } catch(e) {}
+}
 async function _logIntento(cedula, nombre, resultado) {
   try {
     await sb.from('intentos_acceso').insert({ device_id: getDeviceId(), cedula: cedula || null, nombre: nombre || null, resultado });
@@ -2234,7 +2246,7 @@ async function doVerifyCedula() {
     const deviceId = getDeviceId();
     const [{ data: baneo }, { data: baneoDevice }] = await Promise.all([
       sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', num).maybeSingle(),
-      sb.from('usuarios_baneados').select('cedula, baneado').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
+      sb.from('dispositivos_colaborador').select('device_id').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
     ]);
     if ((baneo && baneo.baneado) || baneoDevice) {
       statusEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
@@ -2242,10 +2254,12 @@ async function doVerifyCedula() {
       btn.disabled = false;
       btn.textContent = 'Verificar';
       _logIntento(num, data.nombre, 'bloqueado');
-      // Si el bloqueo fue por cédula y este dispositivo todavía no estaba capturado en el baneo,
-      // lo registramos ahora para que quede banneado también (sin pisar un device_id ya guardado).
+      // Si el bloqueo fue por cédula y este dispositivo todavía no estaba marcado como baneado,
+      // lo registramos ahora en el historial de dispositivos de esa cédula (ya baneado:true).
       if (baneo && baneo.baneado && !baneoDevice) {
-        sb.from('usuarios_baneados').update({ device_id: deviceId }).eq('cedula', num).is('device_id', null).then(()=>{}).catch(()=>{});
+        sb.from('dispositivos_colaborador')
+          .upsert({ cedula: num, device_id: deviceId, ultima_actividad_at: new Date().toISOString(), baneado: true, baneado_at: new Date().toISOString() }, { onConflict: 'cedula,device_id' })
+          .then(()=>{}).catch(()=>{});
       }
       return;
     }
@@ -2313,7 +2327,7 @@ async function doQuickLogin() {
   const [{ data: perfil }, { data: baneo }, { data: baneoDevice }] = await Promise.all([
     sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle(),
     sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', cedula).maybeSingle(),
-    sb.from('usuarios_baneados').select('cedula, baneado').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
+    sb.from('dispositivos_colaborador').select('device_id').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
   ]);
 
   btn.disabled = false; btn.textContent = 'Ingresar al catálogo';
@@ -2322,10 +2336,12 @@ async function doQuickLogin() {
     errEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
     errEl.classList.add('show');
     _logIntento(cedula, perfil ? perfil.nombre : null, 'bloqueado');
-    // Si el bloqueo fue por cédula y este dispositivo todavía no estaba capturado en el baneo,
-    // lo registramos ahora para que quede banneado también (sin pisar un device_id ya guardado).
+    // Si el bloqueo fue por cédula y este dispositivo todavía no estaba marcado como baneado,
+    // lo registramos ahora en el historial de dispositivos de esa cédula (ya baneado:true).
     if (baneo && baneo.baneado && !baneoDevice) {
-      sb.from('usuarios_baneados').update({ device_id: deviceId }).eq('cedula', cedula).is('device_id', null).then(()=>{}).catch(()=>{});
+      sb.from('dispositivos_colaborador')
+        .upsert({ cedula, device_id: deviceId, ultima_actividad_at: new Date().toISOString(), baneado: true, baneado_at: new Date().toISOString() }, { onConflict: 'cedula,device_id' })
+        .then(()=>{}).catch(()=>{});
     }
     return;
   }

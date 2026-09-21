@@ -4900,8 +4900,8 @@ async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar, regis
   // la cédula queda realmente en blanco, como si nunca se hubiera registrado.
   let error;
   if (baneado) {
-    // El banneo es por cédula Y por dispositivo: se busca el device_id más reciente
-    // asociado a esa cédula en `usuarios` para que el dispositivo quede bloqueado también.
+    // El banneo es por cédula Y por TODOS los dispositivos que haya usado esa cédula
+    // (historial completo en `dispositivos_colaborador`, no solo el último).
     let deviceId = null;
     try {
       const { data: u } = await sb.from('usuarios').select('device_id').eq('cedula', cedula).maybeSingle();
@@ -4913,8 +4913,10 @@ async function _suSetBaneado(cedula, nombre, baneado, departamento, lugar, regis
     if (registrado_at !== undefined) row.registrado_at = registrado_at || null;
     if (ultima_actividad_at !== undefined) row.ultima_actividad_at = ultima_actividad_at || null;
     ({ error } = await sb.from('usuarios_baneados').upsert(row));
+    sb.from('dispositivos_colaborador').update({ baneado: true, baneado_at: new Date().toISOString() }).eq('cedula', cedula).then(()=>{}).catch(()=>{});
   } else {
     ({ error } = await sb.from('usuarios_baneados').delete().eq('cedula', cedula));
+    sb.from('dispositivos_colaborador').update({ baneado: false, baneado_at: null }).eq('cedula', cedula).then(()=>{}).catch(()=>{});
   }
   if (error) { showToast('Error: ' + error.message); return false; }
   showToast(baneado ? `${nombre || cedula} baneado ✓` : 'Baneo removido ✓', 'ok');
@@ -6134,6 +6136,11 @@ async function openSuCollabProfile(cedulaOrNombre) {
     : '';
   const ini = (user.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const { count: wishlistCount } = await sb.from('family_wishlists').select('id', { count:'exact', head:true }).eq('colaborador_cedula', user.cedula);
+  // Historial completo de dispositivos usados por esta cédula (no solo el último)
+  const { data: devicesData } = await sb.from('dispositivos_colaborador').select('device_id, ultima_actividad_at, baneado').eq('cedula', user.cedula).order('ultima_actividad_at', { ascending: false });
+  const devicesHtml = (devicesData && devicesData.length)
+    ? devicesData.map(d => `<span style="display:inline-block;font-family:monospace;font-size:10px;background:${d.baneado ? '#fee2e2' : '#f3f4f6'};color:${d.baneado ? '#dc2626' : '#6b7280'};padding:2px 6px;border-radius:6px;margin:2px 4px 0 0;" title="${d.ultima_actividad_at ? new Date(d.ultima_actividad_at).toLocaleString('es-CR') : ''}">${d.baneado ? '🚫 ' : ''}${esc(d.device_id)}</span>`).join('')
+    : '<span style="color:#d1d5db;">—</span>';
   const prodMap={};
   activos.forEach(o=>(o.lineas_pedido||[]).forEach(l=>{const k=l.producto_codigo||l.producto_nombre;prodMap[k]=(prodMap[k]||0)+(l.cantidad||0);}));
   const topProds=Object.entries(prodMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -6151,7 +6158,7 @@ async function openSuCollabProfile(cedulaOrNombre) {
         <div style="font-size:18px;font-weight:800;color:#143c5a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(user.nombre||'—')}${moraUserChip(user.nombre,user.cedula||user.nombre)}${suspendedChip(user.cedula||user.nombre)}</div>
         <div style="font-size:13px;color:#9ca3af;">${esc(user.cedula||'—')} · ${esc(user.departamento||'—')} · ${esc(user.lugar||'—')}</div>
         <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Registrado el ${fechaReg} · Última actividad: ${fechaUA}${eliminadoLine}</div>
-        <div style="font-size:11px;color:#d1d5db;margin-top:2px;">📱 Device ID: <span style="font-family:monospace;">${esc(user.device_id||'—')}</span></div>
+        <div style="font-size:11px;color:#d1d5db;margin-top:4px;">📱 Dispositivos: ${devicesHtml}</div>
       </div>
       <button onclick="closeSuCollabProfile()" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;flex-shrink:0;">×</button>
     </div>

@@ -1160,6 +1160,8 @@ function deleteCfgUser(cedula, nombre) {
       if (registrado_at !== undefined) row.registrado_at = registrado_at || null;
       if (ultima_actividad_at !== undefined) row.ultima_actividad_at = ultima_actividad_at || null;
       await sb.from('usuarios_baneados').upsert(row);
+      // Banea TODOS los dispositivos que haya usado esta cédula, no solo el último.
+      sb.from('dispositivos_colaborador').update({ baneado: true, baneado_at: new Date().toISOString() }).eq('cedula', cedula).then(()=>{}).catch(()=>{});
       showToast(`${nombre} eliminado.`, 'ok');
       allCfgUsers = allCfgUsers.filter(u => u.cedula !== cedula);
       allCfgNuevos = allCfgNuevos.filter(u => u.cedula !== cedula);

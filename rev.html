@@ -432,8 +432,21 @@ function renderPendientes(list) {
 }
 
 async function resolverLinea(id) {
-  const { error } = await sb.from('lineas_revision')
-    .update({ estado: 'revisado', revisado_at: new Date().toISOString() }).eq('id', id);
+  // El objeto en memoria de Pendientes ya trae el precio EN VIVO del catálogo
+  // (ver _applyLivePrices). Se usa ese valor como "la corrección" que se
+  // guarda junto a la foto original (precio/descuento/impuesto/precio_final
+  // que nunca se tocan) para que Historial pueda mostrar antes → corregido.
+  const linea = allPendientes.find(l => l.id === id);
+  const updates = { estado: 'revisado', revisado_at: new Date().toISOString() };
+  if (linea) {
+    updates.precio_corregido               = linea.precio;
+    updates.descuento_corregido             = linea.descuento;
+    updates.descuento_porcentaje_corregido  = linea.descuento_porcentaje;
+    updates.impuesto_corregido              = linea.impuesto;
+    updates.iva_porcentaje_corregido        = linea.iva_porcentaje;
+    updates.precio_final_corregido          = linea.precio_final;
+  }
+  const { error } = await sb.from('lineas_revision').update(updates).eq('id', id);
   if (error) { showToast('Error: ' + error.message); return; }
   // Se recarga desde la base (no se reusa el objeto en memoria) para que el
   // historial guarde la foto original guardada en la BD, no el precio en vivo
@@ -463,6 +476,26 @@ function filterHistorial() {
   renderHistorial(list);
 }
 
+// Antes/corregido: si al marcar el check el precio en vivo ya era distinto
+// del que se envió a revisión originalmente, Historial muestra ambos (foto
+// anterior tachada en gris arriba, corrección abajo). Si no hubo corrección
+// (precio_final_corregido es igual al original o no quedó registrado), se
+// muestra un solo valor, igual que antes.
+function _montoPlain(monto) {
+  return '<span class="col-sign">₡</span>' + (monto||0).toLocaleString('es-CR');
+}
+function _montoPct(monto, pct) {
+  if (!(monto > 0)) return '—';
+  return '<span class="col-sign">₡</span>' + monto.toLocaleString('es-CR') + (pct > 0 ? ' <span style="color:#9ca3af;">(' + pct + '%)</span>' : '');
+}
+function _montoPctSiempre(monto, pct) {
+  return '<span class="col-sign">₡</span>' + (monto||0).toLocaleString('es-CR') + (pct != null ? ' <span style="color:#9ca3af;">(' + pct + '%)</span>' : '');
+}
+function _stackCell(antesHtml, corrHtml, corrigio) {
+  if (!corrigio) return antesHtml;
+  return '<div style="text-decoration:line-through;color:#9ca3af;font-size:12px;">' + antesHtml + '</div><div>' + corrHtml + '</div>';
+}
+
 function renderHistorial(list) {
   const tbody = document.getElementById('hist-tbody');
   if (list.length === 0) {
@@ -472,14 +505,15 @@ function renderHistorial(list) {
   tbody.innerHTML = list.map(l => {
     const fecha    = _fechaHora(l.fecha);
     const revisado = l.revisado_at ? _fechaHora(l.revisado_at) : '—';
+    const corrigio = l.precio_final_corregido != null && l.precio_final_corregido !== l.precio_final;
     return '<tr>' +
       '<td>' + fecha + '</td>' +
       '<td><code style="font-size:12px">' + esc(l.codigo||'—') + '</code></td>' +
       '<td>' + esc(l.nombre||'—') + '</td>' +
-      '<td><span class="col-sign">₡</span>' + (l.precio||0).toLocaleString('es-CR') + '</td>' +
-      '<td style="white-space:nowrap;">' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') + (l.descuento_porcentaje > 0 ? ' <span style="color:#9ca3af;">(' + l.descuento_porcentaje + '%)</span>' : '') : '—') + '</td>' +
-      '<td style="white-space:nowrap;"><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + (l.iva_porcentaje != null ? ' <span style="color:#9ca3af;">(' + l.iva_porcentaje + '%)</span>' : '') + '</td>' +
-      '<td style="font-weight:700"><span class="col-sign">₡</span>' + (l.precio_final||0).toLocaleString('es-CR') + '</td>' +
+      '<td>' + _stackCell(_montoPlain(l.precio), _montoPlain(l.precio_corregido), corrigio) + '</td>' +
+      '<td style="white-space:nowrap;">' + _stackCell(_montoPct(l.descuento, l.descuento_porcentaje), _montoPct(l.descuento_corregido, l.descuento_porcentaje_corregido), corrigio) + '</td>' +
+      '<td style="white-space:nowrap;">' + _stackCell(_montoPctSiempre(l.impuesto, l.iva_porcentaje), _montoPctSiempre(l.impuesto_corregido, l.iva_porcentaje_corregido), corrigio) + '</td>' +
+      '<td style="font-weight:700">' + _stackCell(_montoPlain(l.precio_final), _montoPlain(l.precio_final_corregido), corrigio) + '</td>' +
       '<td>' + revisado + '</td>' +
     '</tr>';
   }).join('');

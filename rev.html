@@ -325,6 +325,8 @@ function startRealtimeRevision() {
   if (_rtRevisionChannel || !sb.channel) return;
   _rtRevisionChannel = sb.channel('rt-lineas-revision')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'lineas_revision' }, _rtScheduleReload)
+    // Si alguien corrige el precio desde admin/su/su2, Pendientes debe reflejarlo sin recargar.
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, _rtScheduleReload)
     .subscribe();
 }
 document.addEventListener('visibilitychange', () => {
@@ -340,6 +342,49 @@ function showTab(tab) {
   if (tab === 'settings') loadConfig();
 }
 
+// ── PRECIOS EN VIVO ───────────────────────────────────────────
+// Pendientes muestra el precio ACTUAL del catálogo (no la foto congelada de
+// cuando se envió a revisión), para que el revisor vea si ya se corrigió
+// antes de marcarlo con el check. Historial sí conserva el dato original.
+function isScheduleActive(inicio, fin) {
+  const now = Date.now();
+  if (inicio && now < new Date(inicio).getTime()) return false;
+  if (fin && now > new Date(fin).getTime()) return false;
+  return true;
+}
+function _liveValsFromProducto(p) {
+  if (!p) return null;
+  const ivaPct       = p.iva != null ? p.iva : 13;
+  const ivaFactor     = 1 + ivaPct / 100;
+  const precioConIva  = p.precio || 0;
+  const precioSinIva  = Math.round(precioConIva / ivaFactor);
+  const descActivo    = !!p.descuento && isScheduleActive(p.descuento_inicio, p.descuento_fin);
+  const descPct       = descActivo ? (p.porcentaje_descuento || 0) : 0;
+  const finalConIva   = descActivo ? Math.round(precioConIva * (1 - descPct / 100)) : precioConIva;
+  const finalSinIva   = Math.round(finalConIva / ivaFactor);
+  return {
+    precio: precioSinIva,
+    descuento: precioSinIva - finalSinIva,
+    descuento_porcentaje: descPct,
+    impuesto: finalConIva - finalSinIva,
+    iva_porcentaje: ivaPct,
+    precio_final: finalConIva
+  };
+}
+async function _applyLivePrices(rows) {
+  const codigos = [...new Set(rows.map(r => r.codigo).filter(Boolean))];
+  if (!codigos.length) return rows;
+  const { data: productos } = await sb.from('productos')
+    .select('codigo, precio, iva, descuento, porcentaje_descuento, descuento_inicio, descuento_fin')
+    .in('codigo', codigos);
+  const prodMap = {};
+  (productos || []).forEach(p => { prodMap[p.codigo] = p; });
+  return rows.map(r => {
+    const live = _liveValsFromProducto(prodMap[r.codigo]);
+    return live ? { ...r, ...live } : r; // si el producto ya no existe, se deja la foto guardada
+  });
+}
+
 // ── PENDIENTES ────────────────────────────────────────────────
 async function loadPendientes(silent) {
   if (!silent) {
@@ -349,7 +394,7 @@ async function loadPendientes(silent) {
   const { data, error } = await sb.from('lineas_revision')
     .select('*').eq('estado', 'pendiente').order('fecha', { ascending: true });
   if (error) { console.error(error); return; }
-  allPendientes = data || [];
+  allPendientes = await _applyLivePrices(data || []);
   document.getElementById('stat-count').textContent = allPendientes.length;
   const badge = document.getElementById('badge-pendientes');
   badge.textContent = allPendientes.length;
@@ -390,15 +435,10 @@ async function resolverLinea(id) {
   const { error } = await sb.from('lineas_revision')
     .update({ estado: 'revisado', revisado_at: new Date().toISOString() }).eq('id', id);
   if (error) { showToast('Error: ' + error.message); return; }
-  const moved = allPendientes.find(l => l.id === id);
-  allPendientes = allPendientes.filter(l => l.id !== id);
-  if (moved) { moved.estado = 'revisado'; moved.revisado_at = new Date().toISOString(); allHistorial = [moved, ...allHistorial]; }
-  document.getElementById('stat-count').textContent = allPendientes.length;
-  const badge = document.getElementById('badge-pendientes');
-  badge.textContent = allPendientes.length;
-  badge.classList.toggle('hidden', allPendientes.length === 0);
-  filterPendientes();
-  filterHistorial();
+  // Se recarga desde la base (no se reusa el objeto en memoria) para que el
+  // historial guarde la foto original guardada en la BD, no el precio en vivo
+  // que se le pegó a Pendientes para la comparación visual.
+  await Promise.all([loadPendientes(true), loadHistorial(true)]);
   showToast('Línea revisada ✓', 'ok');
 }
 

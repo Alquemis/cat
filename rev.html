@@ -355,18 +355,20 @@ function isScheduleActive(inicio, fin) {
 function _liveValsFromProducto(p) {
   if (!p) return null;
   const ivaPct       = p.iva != null ? p.iva : 13;
-  const ivaFactor     = 1 + ivaPct / 100;
-  const precioConIva  = p.precio || 0;
-  const precioSinIva  = Math.round(precioConIva / ivaFactor);
+  // "Precio" es el precio BASE (sin IVA, sin descuento) — el mismo valor que
+  // se ve en el campo "Precio (¢)" de Editar Producto (productos.precio ya
+  // es esa base, no lleva IVA incluido). Orden correcto: base → se le resta
+  // el descuento → al resultado se le suma el IVA.
+  const precioBase    = p.precio || 0;
   const descActivo    = !!p.descuento && isScheduleActive(p.descuento_inicio, p.descuento_fin);
   const descPct       = descActivo ? (p.porcentaje_descuento || 0) : 0;
-  const finalConIva   = descActivo ? Math.round(precioConIva * (1 - descPct / 100)) : precioConIva;
-  const finalSinIva   = Math.round(finalConIva / ivaFactor);
+  const finalSinIva   = descActivo ? Math.round(precioBase * (1 - descPct / 100)) : precioBase;
+  const finalConIva   = Math.round(finalSinIva * (1 + ivaPct / 100));
   return {
-    precio: precioSinIva,
-    descuento: precioSinIva - finalSinIva,
+    precio: precioBase,
+    descuento: precioBase - finalSinIva,             // descuento aplicado sobre la base, sin IVA
     descuento_porcentaje: descPct,
-    impuesto: finalConIva - finalSinIva,
+    impuesto: finalConIva - finalSinIva,             // IVA sobre el precio ya descontado
     iva_porcentaje: ivaPct,
     precio_final: finalConIva
   };

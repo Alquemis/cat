@@ -1024,9 +1024,14 @@ async function confirmarEnvioRevision() {
   const descPct   = l.descuento_porcentaje || 0;
 
   const cantidad         = l.cantidad || 1;
-  const precioUnitSinIva = Math.round((l.precio_unitario||0) / ivaFactor);   // precio original (sin descuento), sin IVA
+  // "Precio" es el precio BASE (sin IVA, sin descuento) — el mismo valor que
+  // se ve en el campo "Precio (¢)" de Editar Producto. precio_unitario llega
+  // con IVA (así se guarda al hacer el pedido), así que se divide para
+  // recuperar la base. Orden correcto: base → se resta el descuento → se le
+  // suma el IVA sobre el monto YA descontado.
+  const precioUnitSinIva = Math.round((l.precio_unitario||0) / ivaFactor);   // precio base, sin descuento, sin IVA
   const finalUnitConIva  = Math.round((l.subtotal||0) / cantidad);            // precio final por unidad, con descuento e IVA
-  const finalUnitSinIva  = Math.round(finalUnitConIva / ivaFactor);
+  const finalUnitSinIva  = Math.round(finalUnitConIva / ivaFactor);           // precio con descuento, sin IVA
   const descUnit = precioUnitSinIva - finalUnitSinIva;                       // descuento aplicado (sin IVA)
   const ivaUnit  = finalUnitConIva - finalUnitSinIva;                         // IVA sobre el precio ya descontado
 

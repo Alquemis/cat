@@ -77,6 +77,23 @@
   .msg.err { background:#fef2f2; border:1px solid #fca5a5; color:#dc2626; }
   .msg.ok  { background:#f0fdf4; border:1px solid #86efac; color:#15803d; }
 
+  /* ── COMUNICADO ── */
+  .comunicado-box {
+    background:rgba(255,255,255,.95); border-radius:14px; padding:18px 20px;
+    max-height:48vh; overflow-y:auto; margin-bottom:16px; color:#1f2937;
+    border:1px solid rgba(255,255,255,.6);
+  }
+  .comunicado-title { font-size:16px; font-weight:800; color:#143c5a; text-align:center; }
+  .comunicado-subtitle { font-size:13.5px; font-weight:700; color:#143c5a; text-align:center; margin-bottom:12px; }
+  .comunicado-italic { font-style:italic; font-size:12.5px; line-height:1.55; margin-bottom:8px; text-align:center; color:#374151; }
+  .comunicado-divider { border:none; border-top:1px solid #d1d5db; margin:14px 0; }
+  .comunicado-h { font-size:13px; font-weight:700; margin-bottom:6px; color:#143c5a; text-decoration:underline; }
+  .comunicado-h-bold { font-size:13px; font-weight:800; margin:14px 0 6px; color:#143c5a; }
+  .comunicado-list { padding-left:20px; margin-bottom:10px; font-size:12.3px; line-height:1.55; color:#374151; }
+  .comunicado-list li { margin-bottom:5px; }
+  .comunicado-bold { font-weight:700; font-size:12.5px; line-height:1.5; margin:12px 0; color:#1f2937; }
+  .comunicado-center { text-align:center; }
+
   /* ── PANTALLA DE ÉXITO ── */
   .success-wrap { display:none; text-align:center; padding:44px 28px; }
   .success-wrap.show { display:block; }
@@ -109,7 +126,54 @@
   <div class="body">
 
     <!-- FORMULARIO -->
-    <form id="rsvp-form" onsubmit="return false;">
+    <!-- COMUNICADO -->
+    <div class="comunicado-wrap" id="comunicado-wrap">
+      <div class="comunicado-box">
+        <div class="comunicado-title">Comunicado General</div>
+        <div class="comunicado-subtitle">Hotel Fiesta Resort, el Roble de Puntarenas</div>
+        <p class="comunicado-italic">Tenemos el agrado de invitarlos a disfrutar de una experiencia diferente y única, para celebrar el cierre de un gran año laboral para nuestra empresa. Queremos agradecer y premiar todo su esfuerzo y compromiso en el cumplimiento de sus funciones.</p>
+        <p class="comunicado-italic">Esperamos que disfruten al máximo.</p>
+        <hr class="comunicado-divider">
+        <div class="comunicado-h">Datos importantes:</div>
+        <ul class="comunicado-list">
+          <li>El bus sale de la empresa, en Tres Ríos, a las 5:30 a.m.</li>
+          <li>El bus sale del Cedi, en Heredia, a las 5:30 a.m.</li>
+        </ul>
+        <p class="comunicado-italic">Les rogamos estar 15 minutos antes, ya que el bus será puntual con su salida.</p>
+        <ul class="comunicado-list">
+          <li>El transporte y el beneficio "Todo incluido" es únicamente para los colaboradores, no se permiten acompañantes.</li>
+          <li>Queda totalmente prohibido llevar y consumir licor en el bus, esto por disposiciones de la empresa autobusera y por reglamento de seguridad de la empresa. Tampoco se permite llevar hieleras.</li>
+          <li>El hotel brinda una toalla para el área de piscina y cuenta con área de duchas para que se puedan cambiar.</li>
+          <li>No tendremos acceso a habitaciones ni a casilleros, por lo que se les recomienda llevar solo lo indispensable y estar pendientes de sus pertenencias durante la estadía. (ni el Hotel ni la Empresa se hacen responsables de pérdidas o hurtos).</li>
+          <li>El Hotel tiene fácil acceso a la playa y al mar, por lo que pueden llevar balones para realizar actividades recreativas.</li>
+          <li>La salida del Hotel será a las 5:00 p.m., por lo que agradecemos estar listos para la salida a las 4:30 p.m. (es decir, deben estar cambiados y entregar el paño en el área de recepción).</li>
+        </ul>
+
+        <div class="comunicado-h-bold">Comportamiento en el transporte:</div>
+        <ul class="comunicado-list">
+          <li>Se debe mantener un comportamiento respetuoso durante todo el trayecto, tanto de ida como de regreso.</li>
+          <li>No se permitirá abordar el bus, ni continuar en él, a personas en evidente estado de embriaguez que pongan en riesgo la seguridad o el bienestar del resto de los pasajeros.</li>
+          <li>En caso de vómito, derrames de líquidos u otros daños ocasionados al bus por el estado de un colaborador, el costo de limpieza y/o reparación será asumido por la persona responsable del daño.</li>
+          <li>Se debe permanecer sentado y seguir en todo momento las indicaciones del conductor mientras el bus esté en movimiento.</li>
+          <li>Se solicita mantener el orden y la limpieza dentro del bus durante todo el recorrido.</li>
+        </ul>
+
+        <p class="comunicado-bold">Hacemos de su conocimiento las indicaciones que nos brinda el Hotel, las cuales les rogamos acatar para no tener complicaciones en nuestra estancia:</p>
+        <ol class="comunicado-list">
+          <li>Nos reservamos el derecho de admisión; si hay alguna persona que no cumpla con las normas de convivencia sociales o morales del establecimiento, será retirada del mismo.</li>
+          <li>El uso del brazalete es indispensable durante toda su estancia, el mismo debe entregarse a la salida. La pérdida de este tiene un costo de $25.</li>
+          <li>La pérdida de la toalla de piscina tiene un costo de $20.</li>
+          <li>El huésped tiene derecho a consumir todo el licor y alimento que desee mientras se encuentre en nuestras instalaciones, no se permite llevar recipientes para almacenar alimentos.</li>
+          <li>El hotel es un área de NO Fumado.</li>
+          <li>No incluye acceso a la zona Premium del hotel (Edificio 3).</li>
+        </ol>
+
+        <p class="comunicado-bold comunicado-center">Finalmente, les recordamos que vamos en representación de la Empresa, por lo que debemos tener un buen comportamiento y dejar una buena imagen en el hotel para tener la posibilidad de regresar.</p>
+      </div>
+      <button type="button" class="submit-btn" onclick="acceptComunicado()">Entendido, continuar</button>
+    </div>
+
+    <form id="rsvp-form" onsubmit="return false;" style="display:none;">
       <div class="field">
         <label>Número de cédula</label>
         <div style="display:flex;gap:8px;">
@@ -256,6 +320,11 @@ function showForm() {
   document.getElementById('rsvp-form').style.display = 'block';
 }
 
+function acceptComunicado() {
+  document.getElementById('comunicado-wrap').style.display = 'none';
+  document.getElementById('rsvp-form').style.display = 'block';
+}
+
 async function submitRsvp() {
   const nombre    = document.getElementById('f-nombre').value.trim();
   const cedula    = document.getElementById('f-cedula').value.trim();
@@ -296,6 +365,7 @@ async function submitRsvp() {
 // Si ya pasó el plazo, se bloquea el formulario desde el inicio.
 (function checkDeadline() {
   if (Date.now() > DEADLINE_UTC) {
+    document.getElementById('comunicado-wrap').style.display = 'none';
     document.getElementById('rsvp-form').style.display = 'none';
     document.getElementById('closed-wrap').classList.add('show');
   }

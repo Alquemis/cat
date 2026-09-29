@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Confirma tu asistencia — Viaje a la playa | Martimac</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(160deg,#0ea5b8 0%,#143c5a 55%,#0b2438 100%);
+    min-height: 100vh; display:flex; align-items:center; justify-content:center;
+    padding: 24px 16px;
+  }
+  .card {
+    background:#fff; border-radius:22px; width:100%; max-width:460px;
+    box-shadow:0 30px 70px rgba(0,0,0,.35); overflow:hidden;
+  }
+  .hero {
+    background:linear-gradient(135deg,#0ea5b8,#143c5a);
+    padding:30px 28px 24px; text-align:center; color:#fff;
+  }
+  .hero-emoji { font-size:38px; margin-bottom:6px; }
+  .hero-title { font-size:21px; font-weight:800; }
+  .hero-sub { font-size:13px; opacity:.9; margin-top:6px; line-height:1.5; }
+  .deadline-tag {
+    display:inline-block; margin-top:12px; background:rgba(255,255,255,.18);
+    border:1px solid rgba(255,255,255,.35); padding:6px 14px; border-radius:999px;
+    font-size:12px; font-weight:700; letter-spacing:.3px;
+  }
+  .body { padding:26px 28px 30px; }
+  .field { margin-bottom:18px; text-align:left; }
+  .field label { display:block; font-size:13px; font-weight:700; color:#143c5a; margin-bottom:7px; }
+  .field input {
+    width:100%; padding:12px 15px; border:1.5px solid #e5e7eb; border-radius:11px;
+    font-size:15px; outline:none; transition:border-color .2s; color:#111827;
+  }
+  .field input:focus { border-color:#0ea5b8; }
+  .lugar-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+  .lugar-opt {
+    display:flex; align-items:center; gap:12px; border:1.5px solid #e5e7eb; border-radius:12px;
+    padding:13px 15px; cursor:pointer; transition:all .15s;
+  }
+  .lugar-opt:hover { border-color:#0ea5b8; background:#f0fdfd; }
+  .lugar-opt.selected { border-color:#0ea5b8; background:#ecfeff; box-shadow:0 0 0 3px rgba(14,165,184,.12); }
+  .lugar-opt .dot {
+    width:20px; height:20px; border-radius:50%; border:2px solid #cbd5e1; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:all .15s;
+  }
+  .lugar-opt.selected .dot { border-color:#0ea5b8; background:#0ea5b8; }
+  .lugar-opt.selected .dot::after { content:''; width:8px; height:8px; border-radius:50%; background:#fff; }
+  .lugar-opt .txt { font-size:14.5px; font-weight:600; color:#1f2937; }
+  .lugar-opt .sub { font-size:11.5px; color:#9ca3af; margin-top:1px; }
+  .submit-btn {
+    width:100%; padding:15px; background:#143c5a; color:#fff; border:none; border-radius:12px;
+    font-size:15.5px; font-weight:700; cursor:pointer; margin-top:8px; transition:background .2s;
+  }
+  .submit-btn:hover { background:#0ea5b8; }
+  .submit-btn:disabled { background:#9ca3af; cursor:not-allowed; }
+  .msg {
+    border-radius:10px; padding:11px 14px; font-size:13px; margin-top:14px; display:none;
+  }
+  .msg.show { display:block; }
+  .msg.err { background:#fef2f2; border:1px solid #fca5a5; color:#dc2626; }
+  .msg.ok  { background:#f0fdf4; border:1px solid #86efac; color:#15803d; }
+
+  /* ── PANTALLA DE ÉXITO ── */
+  .success-wrap { display:none; text-align:center; padding:44px 28px; }
+  .success-wrap.show { display:block; }
+  .success-icon {
+    width:70px; height:70px; border-radius:50%; background:#dcfce7; color:#16a34a;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-size:34px;
+  }
+  .success-title { font-size:19px; font-weight:800; color:#143c5a; margin-bottom:8px; }
+  .success-sub { font-size:13.5px; color:#6b7280; line-height:1.6; margin-bottom:22px; }
+  .edit-link { background:none; border:none; color:#0ea5b8; font-size:13.5px; font-weight:700; cursor:pointer; text-decoration:underline; }
+
+  /* ── CIERRE DE PLAZO ── */
+  .closed-wrap { display:none; text-align:center; padding:50px 28px; }
+  .closed-wrap.show { display:block; }
+  .closed-icon { font-size:44px; margin-bottom:14px; }
+  .closed-title { font-size:19px; font-weight:800; color:#143c5a; margin-bottom:8px; }
+  .closed-sub { font-size:13.5px; color:#6b7280; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="hero">
+    <div class="hero-emoji">🏖️</div>
+    <div class="hero-title">¡Viaje a la playa!</div>
+    <div class="hero-sub">Confirma tu asistencia completando este formulario.<br>Solo toma un minuto.</div>
+    <div class="deadline-tag" id="deadline-tag">Puedes confirmar o cambiar tu respuesta hasta el 29 de octubre</div>
+  </div>
+
+  <div class="body">
+
+    <!-- FORMULARIO -->
+    <form id="rsvp-form" onsubmit="return false;">
+      <div class="field">
+        <label>Nombre completo</label>
+        <input type="text" id="f-nombre" placeholder="Tu nombre completo" autocomplete="name">
+      </div>
+      <div class="field">
+        <label>Cédula</label>
+        <input type="text" id="f-cedula" placeholder="Número de cédula" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="tel" id="f-telefono" placeholder="Número de teléfono" inputmode="tel" autocomplete="tel">
+      </div>
+      <div class="field">
+        <label>Lugar de salida</label>
+        <div class="lugar-grid" id="lugar-grid">
+          <div class="lugar-opt" data-val="Heredia" onclick="selectLugar('Heredia')">
+            <div class="dot"></div>
+            <div><div class="txt">Heredia</div></div>
+          </div>
+          <div class="lugar-opt" data-val="Tres Ríos" onclick="selectLugar('Tres Ríos')">
+            <div class="dot"></div>
+            <div><div class="txt">Tres Ríos</div></div>
+          </div>
+          <div class="lugar-opt" data-val="Transporte propio" onclick="selectLugar('Transporte propio')">
+            <div class="dot"></div>
+            <div><div class="txt">Transporte propio</div><div class="sub">Llego por mis propios medios</div></div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="submit-btn" id="submit-btn" onclick="submitRsvp()">Confirmar asistencia</button>
+      <div class="msg" id="form-msg"></div>
+    </form>
+
+    <!-- ÉXITO -->
+    <div class="success-wrap" id="success-wrap">
+      <div class="success-icon">✓</div>
+      <div class="success-title" id="success-title">¡Asistencia confirmada!</div>
+      <div class="success-sub" id="success-sub">Gracias por confirmar. Nos vemos en la playa 🏖️</div>
+      <button class="edit-link" onclick="showForm()">¿Necesitas corregir algún dato? Edita tu confirmación</button>
+    </div>
+
+    <!-- PLAZO CERRADO -->
+    <div class="closed-wrap" id="closed-wrap">
+      <div class="closed-icon">⏰</div>
+      <div class="closed-title">Ya no es posible cambiar tu confirmación de asistencia</div>
+      <div class="closed-sub">Por favor comuníquese con Recursos Humanos.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://jdifschnvycvxlcbexdl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkaWZzY2hudnljdnhsY2JleGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4Njk0ODcsImV4cCI6MjEwMzQ0NTQ4N30.sUfYan-cWLmFdSFh8mciFHlVin8Z7Pib8m3zcZIepJw';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Plazo: 29 de octubre 2026 a las 24 horas, hora de Costa Rica (UTC-6)
+// = 30 de octubre 00:00:00 CR = 30 de octubre 06:00:00 UTC.
+const DEADLINE_UTC = new Date('2026-10-30T06:00:00Z').getTime();
+
+let _selectedLugar = null;
+
+function selectLugar(val) {
+  _selectedLugar = val;
+  document.querySelectorAll('.lugar-opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.val === val);
+  });
+}
+
+function showMsg(text, ok) {
+  const el = document.getElementById('form-msg');
+  el.textContent = text;
+  el.className = 'msg show ' + (ok ? 'ok' : 'err');
+}
+
+function showForm() {
+  document.getElementById('success-wrap').classList.remove('show');
+  document.getElementById('closed-wrap').classList.remove('show');
+  document.getElementById('rsvp-form').style.display = 'block';
+}
+
+async function submitRsvp() {
+  const nombre    = document.getElementById('f-nombre').value.trim();
+  const cedula    = document.getElementById('f-cedula').value.trim();
+  const telefono  = document.getElementById('f-telefono').value.trim();
+
+  if (!nombre)   { showMsg('Escribe tu nombre completo.', false); return; }
+  if (!cedula)   { showMsg('Escribe tu número de cédula.', false); return; }
+  if (!telefono) { showMsg('Escribe tu número de teléfono.', false); return; }
+  if (!_selectedLugar) { showMsg('Selecciona tu lugar de salida.', false); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  // Si la cédula ya confirmó antes, se actualiza su registro (no se duplica) —
+  // así una persona puede corregir sus datos reenviando el formulario.
+  const { data: existente } = await sb.from('viaje_playa_rsvp')
+    .select('id').eq('cedula', cedula).limit(1);
+  const yaExistia = existente && existente.length > 0;
+
+  const { error } = await sb.from('viaje_playa_rsvp').upsert({
+    nombre, cedula, telefono,
+    lugar_salida: _selectedLugar,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'cedula' });
+
+  btn.disabled = false; btn.textContent = 'Confirmar asistencia';
+
+  if (error) { showMsg('No se pudo guardar tu confirmación: ' + error.message, false); return; }
+
+  document.getElementById('form-msg').classList.remove('show');
+  document.getElementById('success-title').textContent = yaExistia ? '¡Confirmación actualizada!' : '¡Asistencia confirmada!';
+  document.getElementById('success-sub').textContent = yaExistia
+    ? 'Actualizamos tus datos correctamente.'
+    : 'Gracias por confirmar. Nos vemos en la playa 🏖️';
+  document.getElementById('rsvp-form').style.display = 'none';
+  document.getElementById('success-wrap').classList.add('show');
+}
+
+// Si ya pasó el plazo, se bloquea el formulario desde el inicio.
+(function checkDeadline() {
+  if (Date.now() > DEADLINE_UTC) {
+    document.getElementById('rsvp-form').style.display = 'none';
+    document.getElementById('closed-wrap').classList.add('show');
+  }
+})();
+</script>
+
+</body>
+</html>

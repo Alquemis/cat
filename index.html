@@ -197,6 +197,40 @@
     50% { transform: scale(1.15); box-shadow: 0 0 0 4px rgba(22,163,74,0); }
   }
 
+  /* Familia — menú desplegable (Nuevos / Historial) */
+  .familia-menu-wrap { position: relative; }
+  .familia-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 190px;
+    overflow: hidden; display: none; z-index: 200;
+  }
+  .familia-menu-wrap.open .familia-dropdown { display: block; }
+  .familia-dropdown-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; padding: 12px 16px; background: none; border: none;
+    font-size: 14px; font-weight: 600; color: #374151;
+    cursor: pointer; text-align: left; transition: background 0.15s;
+  }
+  .familia-dropdown-item:hover { background: #f9fafb; }
+  .familia-dropdown-sep { height: 1px; background: #f3f4f6; margin: 0; }
+  .familia-dropdown-badge {
+    background: #16a34a; color: #fff; border-radius: 999px; font-size: 11px;
+    font-weight: 800; min-width: 18px; height: 18px; padding: 0 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .familia-tab-label {
+    font-size: 11px; font-weight: 800; color: #6b7280; background: #f3f4f6;
+    padding: 3px 9px; border-radius: 999px; margin-left: 8px; vertical-align: middle;
+  }
+  .fam-trash-btn {
+    width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid #e5e7eb;
+    background: #fff; cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; flex-shrink: 0; transition: all .15s;
+  }
+  .fam-trash-btn:hover { background: #fee2e2; border-color: #fca5a5; }
+  .fam-trash-btn svg { width: 15px; height: 15px; stroke: #dc2626; }
+
   /* ── Menú desplegable usuario ── MÓVIL: +30% tamaño ── */
   @media (max-width: 768px) {
     .user-dropdown {
@@ -204,6 +238,11 @@
       box-shadow: 0 12px 32px rgba(0,0,0,0.15);
     }
     .user-dropdown-item { font-size: 18px; padding: 16px 21px; gap: 13px; }
+    .familia-dropdown {
+      min-width: 234px; border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    }
+    .familia-dropdown-item { font-size: 18px; padding: 16px 21px; gap: 13px; }
   }
 
   /* ========== MIS PEDIDOS — LISTA ========== */
@@ -1192,15 +1231,27 @@
   <div class="topbar-right">
     <!-- campanita notificaciones -->
     <!-- familia topbar button -->
-    <button class="familia-topbar-btn" onclick="openFamiliaPanel()" id="familia-topbar-btn" style="display:none;" title="Familia">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="5.5" cy="7.2" r="2.1"/><path d="M1.8 18.5v-1.1a2.9 2.9 0 0 1 2.9-2.9h1.6a2.9 2.9 0 0 1 2.9 2.9v1.1"/>
-        <circle cx="18.5" cy="7.2" r="2.1"/><path d="M14.8 18.5v-1.1a2.9 2.9 0 0 1 2.9-2.9h1.6a2.9 2.9 0 0 1 2.9 2.9v1.1"/>
-        <circle cx="12" cy="5.8" r="2.5"/><path d="M7.6 19v-1.6a3.7 3.7 0 0 1 3.7-3.7h1.4a3.7 3.7 0 0 1 3.7 3.7V19"/>
-      </svg>
-      <span class="familia-topbar-text">Familia</span>
-      <span id="familia-badge" class="familia-badge">0</span>
-    </button>
+    <div class="familia-menu-wrap" id="familia-menu-wrap" style="display:none;">
+      <button class="familia-topbar-btn" onclick="toggleFamiliaMenu(event)" id="familia-topbar-btn" title="Familia">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5.5" cy="7.2" r="2.1"/><path d="M1.8 18.5v-1.1a2.9 2.9 0 0 1 2.9-2.9h1.6a2.9 2.9 0 0 1 2.9 2.9v1.1"/>
+          <circle cx="18.5" cy="7.2" r="2.1"/><path d="M14.8 18.5v-1.1a2.9 2.9 0 0 1 2.9-2.9h1.6a2.9 2.9 0 0 1 2.9 2.9v1.1"/>
+          <circle cx="12" cy="5.8" r="2.5"/><path d="M7.6 19v-1.6a3.7 3.7 0 0 1 3.7-3.7h1.4a3.7 3.7 0 0 1 3.7 3.7V19"/>
+        </svg>
+        <span class="familia-topbar-text">Familia</span>
+        <span id="familia-badge" class="familia-badge">0</span>
+      </button>
+      <div class="familia-dropdown">
+        <button class="familia-dropdown-item" onclick="openFamiliaPanel('nuevos')">
+          <span>🆕 Nuevos</span>
+          <span id="familia-menu-badge" class="familia-dropdown-badge" style="display:none;">0</span>
+        </button>
+        <div class="familia-dropdown-sep"></div>
+        <button class="familia-dropdown-item" onclick="openFamiliaPanel('historial')">🕐 Historial</button>
+        <div class="familia-dropdown-sep"></div>
+        <button class="familia-dropdown-item" onclick="openShareFamilyModal()">🔗 Compartir link</button>
+      </div>
+    </div>
     <!-- user menu -->
     <div class="user-menu-wrap" id="user-chip" style="display:none;">
       <button class="user-chip" onclick="toggleUserMenu(event)">
@@ -1307,12 +1358,11 @@
   <div class="mp-card">
     <div class="mp-header" style="align-items:flex-start;">
       <div>
-        <div class="mp-title">👪 Familia</div>
-        <div style="font-size:13px; font-weight:600; color:#143c5a; margin-top:4px;">Recuerda que solo tú puedes hacer el pago de los pedidos</div>
+        <div class="mp-title">👪 Familia<span id="familia-tab-label" class="familia-tab-label">Nuevos</span></div>
       </div>
       <button class="mp-close" onclick="closeFamiliaPanel()">✕</button>
     </div>
-    <div style="padding:12px 20px 0;">
+    <div style="padding:12px 20px 0;" id="familia-share-wrap">
       <button onclick="openShareFamilyModal()" style="width:100%; padding:11px; background:#f3f4f6; border:none; border-radius:10px; font-size:13px; font-weight:700; color:#143c5a; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;">🔗 Compartir con familia</button>
     </div>
     <div class="mp-body" id="familia-body">
@@ -1335,8 +1385,8 @@
     </div>
     <div class="mpd-body" id="famdet-body"></div>
     <div class="mpd-footer">
-      <button class="mpd-btn-del" onclick="descartarFamiliaWishlist()" title="Descartar">🗑 Descartar</button>
-      <button class="mpd-btn-dl" onclick="procesarFamiliaWishlist()">🛒 Cargar al carrito</button>
+      <button class="mpd-btn-del" id="famdet-btn-descartar" onclick="descartarFamiliaWishlist()" title="Descartar">🗑 Descartar</button>
+      <button class="mpd-btn-dl" id="famdet-btn-cargar" onclick="procesarFamiliaWishlist()">🛒 Cargar al carrito</button>
       <button class="mpd-btn-close" onclick="closeFamiliaDet()">Salir</button>
     </div>
   </div>
@@ -1346,7 +1396,10 @@
 <div id="modal-share-family" class="modal-overlay" onclick="if(event.target===this)closeShareFamilyModal()">
   <div class="mp-card" style="max-width:420px;">
     <div class="mp-header">
-      <div class="mp-title">🔗 Compartir con familia</div>
+      <div>
+        <div class="mp-title">🔗 Compartir con familia</div>
+        <div style="font-size:13px; font-weight:600; color:#143c5a; margin-top:4px;">Recuerda que solo tú puedes hacer el pago de los pedidos</div>
+      </div>
       <button class="mp-close" onclick="closeShareFamilyModal()">✕</button>
     </div>
     <div class="mp-body" style="padding:4px 20px 22px;">
@@ -2083,7 +2136,7 @@ async function onLogin(session, isRestore = false) {
   document.getElementById('user-avatar').textContent = nombre.charAt(0).toUpperCase();
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('cart-toggle').style.display = 'flex';
-  document.getElementById('familia-topbar-btn').style.display = 'flex';
+  document.getElementById('familia-menu-wrap').style.display = 'flex';
   document.getElementById('search-row').style.display = 'flex';
 
   // Ocultar overlay de login
@@ -2127,7 +2180,7 @@ function onLogout() {
   localStorage.removeItem('catalogo_session');
   document.getElementById('user-chip').style.display = 'none';
   document.getElementById('cart-toggle').style.display = 'none';
-  document.getElementById('familia-topbar-btn').style.display = 'none';
+  document.getElementById('familia-menu-wrap').style.display = 'none';
   document.getElementById('search-row').style.display = 'none';
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('login-error').classList.remove('show');
@@ -2762,6 +2815,7 @@ async function descargarPedidoDetalle() {
 ═══════════════════════════════════════════════════════════ */
 let _familiaWishlists = [];
 let _familiaDetActual = null; // { wishlist, workingItems: [{codigo,nombre,cantidad,precio_unitario}] }
+let _familiaTab = 'nuevos'; // 'nuevos' (pendiente) | 'historial' (procesada)
 
 async function refreshFamiliaBadge() {
   if (!currentUser) return;
@@ -2770,13 +2824,40 @@ async function refreshFamiliaBadge() {
     .eq('colaborador_cedula', currentUser.cedula)
     .eq('estado', 'pendiente');
   const badge = document.getElementById('familia-badge');
-  if (!badge) return;
-  badge.textContent = count || 0;
-  badge.classList.toggle('show', !!count);
+  if (badge) {
+    badge.textContent = count || 0;
+    badge.classList.toggle('show', !!count);
+  }
+  // Mismo número, reflejado también junto a "Nuevos" en el menú desplegable.
+  const menuBadge = document.getElementById('familia-menu-badge');
+  if (menuBadge) {
+    menuBadge.textContent = count || 0;
+    menuBadge.style.display = count ? 'inline-flex' : 'none';
+  }
 }
 
-async function openFamiliaPanel() {
+// ── FAMILIA — menú desplegable (Nuevos / Historial) ──────
+function toggleFamiliaMenu(e) {
+  e.stopPropagation();
   closeUserMenu();
+  closeNotifPanel();
+  document.getElementById('familia-menu-wrap').classList.toggle('open');
+}
+function closeFamiliaMenu() {
+  const wrap = document.getElementById('familia-menu-wrap');
+  if (wrap) wrap.classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('familia-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+});
+
+async function openFamiliaPanel(tab) {
+  closeUserMenu();
+  closeFamiliaMenu();
+  if (tab) _familiaTab = tab;
+  document.getElementById('familia-tab-label').textContent = _familiaTab === 'historial' ? 'Historial' : 'Nuevos';
+  document.getElementById('familia-share-wrap').style.display = _familiaTab === 'historial' ? 'none' : '';
   document.getElementById('modal-familia').classList.add('open');
   await loadFamiliaWishlists();
 }
@@ -2799,27 +2880,43 @@ async function loadFamiliaWishlists() {
 
 function renderFamiliaList() {
   const body = document.getElementById('familia-body');
-  if (!_familiaWishlists.length) {
-    body.innerHTML = '<div class="mp-empty">Todavía no te ha llegado ninguna lista de deseos.<br><br>Comparte el catálogo con tu familia desde 🔗 "Compartir con familia".</div>';
+  const list = _familiaWishlists.filter(w =>
+    _familiaTab === 'historial' ? w.estado === 'procesada' : w.estado === 'pendiente'
+  );
+  if (!list.length) {
+    body.innerHTML = _familiaTab === 'historial'
+      ? '<div class="mp-empty">Todavía no has enviado ninguna lista al carrito.</div>'
+      : '<div class="mp-empty">Todavía no te ha llegado ninguna lista de deseos.<br><br>Comparte el catálogo con tu familia desde 🔗 "Compartir con familia".</div>';
     return;
   }
-  body.innerHTML = _familiaWishlists.map(w => {
+  body.innerHTML = list.map(w => {
     const fecha  = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric' });
     const items  = w.items || [];
     const nItems = items.reduce((s, i) => s + (i.cantidad || 0), 0);
     const total  = items.reduce((s, i) => s + (i.precio_unitario || 0) * (i.cantidad || 0), 0);
     const procesada  = w.estado === 'procesada';
-    const statusStyle = procesada ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e';
+    const trailing = procesada
+      ? `<button class="fam-trash-btn" title="Eliminar" onclick="event.stopPropagation();eliminarFamiliaHistorial('${w.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`
+      : `<span class="mpc-arrow">›</span>`;
+    const statusChip = procesada ? '' : `<span class="mpc-status" style="background:#fef3c7;color:#92400e">Pendiente</span>`;
     return `<div class="mpc-row" onclick="openFamiliaDet('${w.id}')">
       <div class="mpc-left">
         <div class="mpc-num">Pedido de: ${escHtml(toTitleCase(w.familiar_nombre))}</div>
         <div class="mpc-date">${fecha} · ${nItems} producto${nItems === 1 ? '' : 's'}</div>
       </div>
-      <span class="mpc-status" style="${statusStyle}">${procesada ? 'En el carrito' : 'Pendiente'}</span>
+      ${statusChip}
       <span class="mpc-total"><span class="col-sign">₡</span>${total.toLocaleString('es-CR')}</span>
-      <span class="mpc-arrow">›</span>
+      ${trailing}
     </div>`;
   }).join('');
+}
+
+// Elimina directamente una lista ya enviada (Historial) — es solo de
+// referencia, no afecta el carrito ni ningún pedido ya facturado.
+async function eliminarFamiliaHistorial(id) {
+  await sb.from('family_wishlists').delete().eq('id', id);
+  _familiaWishlists = _familiaWishlists.filter(w => w.id !== id);
+  renderFamiliaList();
 }
 
 function openFamiliaDet(id) {
@@ -2830,8 +2927,15 @@ function openFamiliaDet(id) {
   document.getElementById('famdet-fecha').textContent = new Date(w.created_at).toLocaleDateString('es-CR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   const procesada = w.estado === 'procesada';
   const statusEl = document.getElementById('famdet-status');
-  statusEl.textContent = procesada ? 'En el carrito' : 'Pendiente';
-  statusEl.style.cssText = procesada ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e';
+  if (procesada) {
+    statusEl.style.cssText = 'display:none';
+  } else {
+    statusEl.textContent = 'Pendiente';
+    statusEl.style.cssText = 'background:#fef3c7;color:#92400e';
+  }
+  // En Historial la lista es solo de referencia: no se edita ni se vuelve a cargar.
+  document.getElementById('famdet-btn-descartar').style.display = procesada ? 'none' : '';
+  document.getElementById('famdet-btn-cargar').style.display = procesada ? 'none' : '';
   renderFamiliaDet();
   document.getElementById('modal-familia-det').classList.add('open');
 }
@@ -2843,6 +2947,7 @@ function closeFamiliaDet() {
 function renderFamiliaDet() {
   const body  = document.getElementById('famdet-body');
   const items = _familiaDetActual.workingItems;
+  const readOnly = _familiaDetActual.wishlist.estado === 'procesada';
   if (!items.length) {
     body.innerHTML = '<div class="mp-empty">Esta lista quedó vacía.</div>';
     return;
@@ -2851,19 +2956,26 @@ function renderFamiliaDet() {
     const sub = ((it.precio_unitario || 0) * it.cantidad).toLocaleString('es-CR');
     const prod = CATALOG.find(p => p.id === it.codigo);
     const descChip = (prod && prod.descuento) ? ` <span class="desc-tag" style="font-size:10px;">-${prod.descPct}%</span>` : '';
+    const imgHtml = prod && prod.img
+      ? `<img src="${escAttr(prod.img)}" alt="" onerror="this.style.display='none'">`
+      : (prod && (prod.b==='SEED'||prod.b==='SODIET') ? '🍪' : '🧴');
+    const qtyControls = readOnly
+      ? `<span class="qty-val">${it.cantidad}</span>`
+      : `<button class="qty-btn" onclick="famUpdateQty(${idx},-1)">−</button>
+         <span class="qty-val">${it.cantidad}</span>
+         <button class="qty-btn" onclick="famUpdateQty(${idx},1)">+</button>`;
     return `<div class="cart-item">
+      <div class="cart-item-img">${imgHtml}</div>
       <div class="cart-item-info">
         <div class="cart-item-name">${escHtml(it.nombre)}${descChip}</div>
         <div class="cart-item-price"><span class="col-sign">₡</span>${(it.precio_unitario || 0).toLocaleString('es-CR')} c/u</div>
         <div class="cart-qty-row">
-          <button class="qty-btn" onclick="famUpdateQty(${idx},-1)">−</button>
-          <span class="qty-val">${it.cantidad}</span>
-          <button class="qty-btn" onclick="famUpdateQty(${idx},1)">+</button>
+          ${qtyControls}
           <span style="flex:1"></span>
           <span class="cart-subtotal"><span class="col-sign">₡</span>${sub}</span>
         </div>
       </div>
-      <button class="cart-item-remove" onclick="famRemoveItem(${idx})" title="Eliminar">✕</button>
+      ${readOnly ? '' : `<button class="cart-item-remove" onclick="famRemoveItem(${idx})" title="Eliminar">✕</button>`}
     </div>`;
   }).join('');
 }
@@ -2913,6 +3025,8 @@ async function procesarFamiliaWishlist() {
   updateCartBadge();
   if (typeof refreshAddButtons === 'function') refreshAddButtons();
 
+  // Una vez enviada al carrito, la lista pasa a Historial como referencia
+  // (ya no cuenta como "Nuevos", pero queda disponible para consultarla).
   await sb.from('family_wishlists')
     .update({ estado: 'procesada', processed_at: new Date().toISOString() })
     .eq('id', _familiaDetActual.wishlist.id);
@@ -2936,6 +3050,7 @@ async function procesarFamiliaWishlist() {
 ═══════════════════════════════════════════════════════════ */
 async function openShareFamilyModal() {
   closeUserMenu();
+  closeFamiliaMenu();
   document.getElementById('modal-share-family').classList.add('open');
   document.getElementById('share-family-loading').style.display = 'block';
   document.getElementById('share-family-content').style.display = 'none';
@@ -3653,6 +3768,7 @@ async function submitOrder() {
   saveCart();
   updateCartBadge();
   refreshAddButtons();
+
   document.getElementById('modal-card').innerHTML = `
     <div class="order-success">
       <div class="order-success-icon">✅</div>

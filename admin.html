@@ -2598,6 +2598,8 @@ function renderProducts(list) {
     html +=   '<div class="pr-info"><div class="pr-name">' + nombre + '</div>';
     if (nombreCat) html += '<div class="pr-catalog-name">' + nombreCat + '</div>';
     if (meta) html += '<div class="pr-meta">' + meta + '</div>';
+    const creado = p.created_at ? new Date(p.created_at).toLocaleDateString('es-CR', {day:'2-digit', month:'2-digit', year:'2-digit'}) : '';
+    if (creado) html += '<div class="pr-meta">Creado: ' + creado + '</div>';
     html +=   '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">';
     html +=     '<div class="pr-code" style="margin-top:0;">' + codigo + '</div>';
     html +=     '<div class="pr-price-mob"><span class="col-sign">₡</span>' + precio + '</div>';

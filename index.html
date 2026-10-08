@@ -171,9 +171,14 @@
     position: absolute; top: calc(100% + 8px); right: 0;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 180px;
-    overflow: hidden; display: none; z-index: 200;
+    overflow: hidden; z-index: 200;
+    opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-8px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
   }
-  .user-menu-wrap.open .user-dropdown { display: block; }
+  .user-menu-wrap.open .user-dropdown {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0s;
+  }
   .user-dropdown-item {
     display: flex; align-items: center; gap: 10px;
     width: 100%; padding: 12px 16px; background: none; border: none;
@@ -203,9 +208,14 @@
     position: absolute; top: calc(100% + 8px); right: 0;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 190px;
-    overflow: hidden; display: none; z-index: 200;
+    overflow: hidden; z-index: 200;
+    opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-8px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
   }
-  .familia-menu-wrap.open .familia-dropdown { display: block; }
+  .familia-menu-wrap.open .familia-dropdown {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0s;
+  }
   .familia-dropdown-item {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     width: 100%; padding: 12px 16px; background: none; border: none;
@@ -370,12 +380,19 @@
   }
   .mpd-btn-dl:hover { background: #15803d; }
   .mpd-btn-dl:disabled { background: #86efac; cursor: not-allowed; }
-  .mpd-btn-close {
-    flex: 1; padding: 12px; background: #f3f4f6; color: #374151;
+  .mpd-btn-reorder {
+    flex: 1; padding: 12px; background: #143c5a; color: #fff;
     border: none; border-radius: 12px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s; text-align: center;
+  }
+  .mpd-btn-reorder:hover { background: #111827; }
+  .mpd-btn-reorder:disabled { background: #93a5b8; cursor: not-allowed; }
+  .mpd-btn-close {
+    flex: 1; padding: 12px; background: #fff; color: #143c5a;
+    border: 1.5px solid #143c5a; border-radius: 12px; font-size: 14px; font-weight: 700;
     cursor: pointer; transition: background 0.2s;
   }
-  .mpd-btn-close:hover { background: #e5e7eb; }
+  .mpd-btn-close:hover { background: #f3f4f6; }
   .mpd-btn-del {
     padding: 12px 14px; background: #fee2e2; color: #dc2626;
     border: none; border-radius: 12px; font-size: 16px;
@@ -494,10 +511,15 @@
     position:absolute; top:calc(100% + 10px); right:0;
     width:320px; background:#fff; border-radius:16px;
     border:1px solid #e5e7eb; box-shadow:0 12px 40px rgba(0,0,0,.15);
-    z-index:500; display:none; flex-direction:column; overflow:hidden;
+    z-index:500; display:flex; flex-direction:column; overflow:hidden;
     max-height:420px;
+    opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-8px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
   }
-  .notif-panel.open { display:flex; }
+  .notif-panel.open {
+    opacity:1; visibility:visible; pointer-events:auto; transform:translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0s;
+  }
   .notif-panel-hd {
     padding:14px 16px 10px; font-size:14px; font-weight:700;
     color:#143c5a; border-bottom:1px solid #f3f4f6; flex-shrink:0;
@@ -906,12 +928,18 @@
   .cart-total-label { font-size: 15px; color: #6b7280; }
   .cart-total-val { font-size: 22px; font-weight: 800; color: #143c5a; }
   .checkout-btn {
-    width: 100%; padding: 14px; background: #143c5a; color: #fff;
+    flex: 1; padding: 14px; background: #143c5a; color: #fff;
     border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
     cursor: pointer; transition: background 0.2s;
   }
   .checkout-btn:hover { background: #111827; }
   .checkout-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+  .checkout-close-btn {
+    flex-shrink: 0; padding: 14px 40px; background: #fff; color: #143c5a;
+    border: 1.5px solid #143c5a; border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .checkout-close-btn:hover { background: #f3f4f6; }
 
   /* ========== QUICK-ADD POPUP ========== */
   .qadd-overlay {
@@ -1345,10 +1373,29 @@
       </div>
     </div>
     <div class="mpd-body" id="mpd-body"></div>
-    <div class="mpd-footer">
-      <button class="mpd-btn-dl" id="mpd-btn-dl" onclick="descargarPedidoDetalle()">⬇ Descargar copia</button>
-      <button class="mpd-btn-close" onclick="closePedidoDet()">Cerrar</button>
-      <button class="mpd-btn-del" id="mpd-btn-del" onclick="pedidoDetDelete()" title="Eliminar de mi historial">🗑</button>
+    <div class="mpd-footer" style="flex-direction:column;">
+      <div style="display:flex;gap:10px;">
+        <button class="mpd-btn-reorder" id="mpd-btn-reorder" onclick="reorderPedidoConfirm()">↻ Volver a pedir</button>
+        <button class="mpd-btn-close" style="visibility:hidden;" tabindex="-1" aria-hidden="true">Cerrar</button>
+        <button class="mpd-btn-del" style="visibility:hidden;" tabindex="-1" aria-hidden="true">🗑</button>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="mpd-btn-dl" id="mpd-btn-dl" onclick="descargarPedidoDetalle()">⬇ Descargar copia</button>
+        <button class="mpd-btn-close" onclick="closePedidoDet()">Cerrar</button>
+        <button class="mpd-btn-del" id="mpd-btn-del" onclick="pedidoDetDelete()" title="Eliminar de mi historial">🗑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reorder-modal" style="z-index:900">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.2);">
+    <div style="font-size:34px;margin-bottom:12px;">↻</div>
+    <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:8px;">¿Volver a pedir?</div>
+    <div style="font-size:14px;color:#6b7280;margin-bottom:8px;">Este pedido se agregará completo a tu carrito. Ahí podrás editarlo antes de enviarlo a facturar.</div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button style="flex:1;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" onclick="closeReorderModal()">Cancelar</button>
+      <button style="flex:1;padding:12px;background:#143c5a;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;" id="reorder-confirm-btn" onclick="confirmReorderPedido()">Sí, agregar</button>
     </div>
   </div>
 </div>
@@ -1504,7 +1551,10 @@
         <span class="cart-total-label">Total</span>
         <span class="cart-total-val" id="cart-total"><span class="col-sign">₡</span>0</span>
       </div>
-      <button class="checkout-btn" id="cart-send-btn" onclick="openOrderModal()">Enviar pedido a Facturación →</button>
+      <div style="display:flex;gap:10px;">
+        <button class="checkout-btn" id="cart-send-btn" onclick="openOrderModal()">Enviar pedido a Facturación →</button>
+        <button class="checkout-close-btn" onclick="closeCart()">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2528,6 +2578,7 @@ function stopSessionWatchdog() {
 function toggleUserMenu(e) {
   e.stopPropagation();
   closeNotifPanel();
+  if (typeof closeFamiliaMenu === 'function') closeFamiliaMenu();
   const wrap = document.getElementById('user-chip');
   wrap.classList.toggle('open');
 }
@@ -2739,6 +2790,49 @@ function pedidoDeleteConfirm(idx) {
 function pedidoDetDelete() {
   if (_currentDetIdx === null) return;
   pedidoDeleteConfirm(_currentDetIdx);
+}
+
+// ── VOLVER A PEDIR — agrega el pedido completo al carrito actual ──
+function reorderPedidoConfirm() {
+  if (_currentDetIdx === null) return;
+  document.getElementById('reorder-modal').classList.add('open');
+}
+function closeReorderModal() {
+  document.getElementById('reorder-modal').classList.remove('open');
+}
+async function confirmReorderPedido() {
+  const o = window._myOrdersList && window._myOrdersList[_currentDetIdx];
+  if (!o) return;
+  const btn = document.getElementById('reorder-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Agregando…';
+
+  // Revalidar contra el catálogo actual (precio/stock/activo) — igual que
+  // al cargar una lista de Familia al carrito.
+  await ensureCatalog();
+  let agregados = 0, omitidos = 0;
+  for (const l of (o.lineas_pedido || [])) {
+    const p = CATALOG.find(x => x.id === l.producto_codigo);
+    if (!p) { omitidos++; continue; }
+    const existing = cart.find(c => c.product.id === p.id);
+    if (existing) existing.qty += l.cantidad;
+    else cart.push({ product: p, qty: l.cantidad });
+    agregados++;
+  }
+  saveCart();
+  updateCartBadge();
+  if (typeof refreshAddButtons === 'function') refreshAddButtons();
+
+  btn.disabled = false; btn.textContent = 'Sí, agregar';
+  closeReorderModal();
+  closePedidoDet();
+  closeMyOrders();
+
+  if (omitidos > 0) {
+    showToast(`${agregados} producto${agregados === 1 ? '' : 's'} agregado${agregados === 1 ? '' : 's'} · ${omitidos} ya no está${omitidos === 1 ? '' : 'n'} disponible${omitidos === 1 ? '' : 's'}`, 'warn');
+  } else {
+    showToast('Pedido agregado a tu carrito ✓', 'ok');
+  }
+  openCart();
 }
 
 function closeDelOrderModal() {
@@ -4947,6 +5041,8 @@ async function toggleNotifPanel(e) {
   if (panel.classList.contains('open')) {
     closeNotifPanel();
   } else {
+    closeUserMenu();
+    if (typeof closeFamiliaMenu === 'function') closeFamiliaMenu();
     await renderNotifList();
     panel.classList.add('open');
   }

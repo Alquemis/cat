@@ -2242,11 +2242,15 @@ async function doVerifyCedula() {
     const res  = await fetch('https://api.hacienda.go.cr/fe/ae?identificacion=' + encodeURIComponent(num));
     const data = await res.json();
     if (!data || !data.nombre) throw new Error('no_name');
-    // Chequear baneo antes que nada: una cédula baneada, o un dispositivo baneado, no puede registrarse de nuevo
+    // Chequear baneo antes que nada: una cédula baneada, o ESTA cédula usando un dispositivo
+    // que se le marcó baneado a ELLA, no puede registrarse de nuevo. Se filtra también por
+    // cédula (no solo por device_id) porque el dispositivo puede ser compartido por varios
+    // colaboradores — bloquear por device_id a secas castigaría a todos los que comparten
+    // el mismo equipo aunque su propia cédula nunca haya sido baneada.
     const deviceId = getDeviceId();
     const [{ data: baneo }, { data: baneoDevice }] = await Promise.all([
       sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', num).maybeSingle(),
-      sb.from('dispositivos_colaborador').select('device_id').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
+      sb.from('dispositivos_colaborador').select('device_id').eq('device_id', deviceId).eq('cedula', num).eq('baneado', true).limit(1).maybeSingle()
     ]);
     if ((baneo && baneo.baneado) || baneoDevice) {
       statusEl.textContent = 'Acceso restringido. Comunícate con tu administrador para más información.';
@@ -2327,7 +2331,7 @@ async function doQuickLogin() {
   const [{ data: perfil }, { data: baneo }, { data: baneoDevice }] = await Promise.all([
     sb.from('usuarios').select('*').eq('cedula', cedula).maybeSingle(),
     sb.from('usuarios_baneados').select('cedula, baneado').eq('cedula', cedula).maybeSingle(),
-    sb.from('dispositivos_colaborador').select('device_id').eq('device_id', deviceId).eq('baneado', true).limit(1).maybeSingle()
+    sb.from('dispositivos_colaborador').select('device_id').eq('device_id', deviceId).eq('cedula', cedula).eq('baneado', true).limit(1).maybeSingle()
   ]);
 
   btn.disabled = false; btn.textContent = 'Ingresar al catálogo';

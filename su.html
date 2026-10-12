@@ -5241,7 +5241,8 @@ function _updateRatingsStats() {
   const statProducts = document.getElementById('ratings-stat-products');
   const statTotal     = document.getElementById('ratings-stat-total');
   if (statProducts) statProducts.textContent = new Set(_ratingsAll.map(r=>r.producto_codigo)).size;
-  if (statTotal) statTotal.textContent = _ratingsAll.length;
+  // "Reseñas totales" = solo las valoraciones con comentario escrito (no todas las estrellas).
+  if (statTotal) statTotal.textContent = _ratingsAll.filter(r => (r.comentario||'').trim()).length;
 }
 
 async function toggleRatingsActivo() {

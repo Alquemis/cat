@@ -7516,6 +7516,35 @@ function _openNotifModal(title, subtitle, body, imageUrl) {
   else { imgWrap.style.display='none'; }
   modal.style.display = 'flex';
 }
+
+// ── PWA: Service Worker — refresco forzado de versión ───────────
+// Una pestaña de admin/su que queda abierta mucho tiempo sigue corriendo
+// el JS con el que se cargó originalmente — un service worker nuevo no la
+// actualiza solo. checkForAppUpdate() fuerza a revisar si hay una versión
+// nueva de sw.js cada vez que se vuelve a esta pestaña; en cuanto esa
+// versión nueva toma control (controllerchange), recargamos la página una
+// sola vez para que quede al día.
+let _swRegistration = null;
+let _swReloading = false;
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(reg => { _swRegistration = reg; })
+    .catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloading) return;
+    _swReloading = true;
+    window.location.reload();
+  });
+}
+function checkForAppUpdate() {
+  if (_swRegistration) _swRegistration.update().catch(() => {});
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) checkForAppUpdate();
+});
+window.addEventListener('pageshow', () => {
+  if (!document.hidden) checkForAppUpdate();
+});
 </script>
 </body>
 </html>

@@ -332,9 +332,21 @@
   .ud-line-qty { flex-shrink:0;font-weight:700;color:#143c5a; }
   .fraud-case-card { border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#fff; }
   .fraud-case-card:last-child { margin-bottom:0; }
-  .fraud-case-hd { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px; }
+  .fraud-case-hd { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap; }
   .fraud-risk-badge { font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap; }
-  .fraud-case-summary { font-size:13px;color:#374151;line-height:1.5;margin-bottom:12px; }
+  .fraud-case-date { font-size:11.5px;color:#9ca3af; }
+  .fraud-block-label { font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#9ca3af;margin-bottom:4px; }
+  .fraud-case-summary { font-size:13.5px;color:#374151;line-height:1.55;margin-bottom:12px; }
+  .fraud-case-summary p { margin:0 0 6px; }
+  .fraud-case-summary p:last-child { margin-bottom:0; }
+  .fraud-cuentas { margin:4px 0 0;padding-left:18px; }
+  .fraud-cuentas li { margin-bottom:4px; }
+  .fraud-status-chip { display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;vertical-align:1px; }
+  .fraud-todo { background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:10px; }
+  .fraud-todo-txt { font-size:13px;color:#374151;line-height:1.5;margin-bottom:10px; }
+  .fraud-todo-actions { display:flex;gap:8px;flex-wrap:wrap; }
+  .fraud-details summary { font-size:12px;font-weight:600;color:#143c5a;cursor:pointer;user-select:none;padding:2px 0; }
+  .fraud-details[open] summary { margin-bottom:6px; }
   .fraud-timeline { display:flex;flex-direction:column; }
   .fraud-event { display:flex;align-items:center;gap:10px;padding:6px 0; }
   .fraud-event-info { display:flex;flex-direction:column;gap:1px; }
@@ -4305,16 +4317,22 @@ async function loadFraudDevices() {
 
   if (!sospechosos.length) { wrap.innerHTML = '<div class="empty-table">Sin casos detectados en los últimos 30 días.</div>'; return; }
 
-  // Se consulta puntualmente cuáles cédulas están baneadas (en vez de depender
-  // de _suBannedSet, que puede no estar listo todavía por cargarse en paralelo).
+  // Se consulta puntualmente el estado actual de cada cédula involucrada:
+  // si está baneada (y desde cuándo) y si su cuenta está activa o suspendida.
+  // Así el resumen puede contar la historia completa y saber qué acciones
+  // tienen sentido (no ofrecer "suspender" a quien ya está suspendido).
   const todasCedulas = [...new Set(sospechosos.flatMap(c => c.eventos.map(e => e.cedula)))];
-  let bannedSet = new Set();
+  const bannedMap = {}, usersMap = {};
   if (todasCedulas.length) {
-    const { data: bdata } = await sb.from('usuarios_baneados').select('cedula').eq('baneado', true).in('cedula', todasCedulas);
-    bannedSet = new Set((bdata || []).map(b => b.cedula));
+    const [{ data: bdata }, { data: udata }] = await Promise.all([
+      sb.from('usuarios_baneados').select('cedula, nombre, baneado_at').eq('baneado', true).in('cedula', todasCedulas),
+      sb.from('usuarios').select('cedula, nombre, suspendido').in('cedula', todasCedulas)
+    ]);
+    (bdata || []).forEach(b => { bannedMap[b.cedula] = b; });
+    (udata || []).forEach(u => { usersMap[u.cedula] = u; });
   }
 
-  wrap.innerHTML = sospechosos.map(({ deviceId, eventos }) => renderFraudCase(deviceId, eventos, bannedSet)).join('');
+  wrap.innerHTML = sospechosos.map(({ deviceId, eventos }) => renderFraudCase(deviceId, eventos, bannedMap, usersMap)).join('');
 }
 
 // Formatea una diferencia de tiempo en ms como "5 min", "2 h" o "3 d",
@@ -4329,84 +4347,201 @@ function formatGap(ms) {
   return `${days} d`;
 }
 
-const _fraudVerbo = r => r === 'bloqueado' ? 'quedó bloqueado al usar la cuenta de' : r === 'registro' ? 'registró la cuenta de' : 'inició sesión con la cuenta de';
-const _fraudBadgeTxt = r => r === 'bloqueado' ? '🚫 bloqueado' : r === 'registro' ? '🆕 registro' : '🔑 login';
+const _fraudBadgeTxt = r => r === 'bloqueado' ? '🚫 Intento bloqueado' : r === 'registro' ? '🆕 Registró una cuenta nueva' : '🔑 Inició sesión';
+const _fraudFecha     = d => new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const _fraudFechaHora = d => new Date(d).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const _fraudDia       = d => new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit' });
+const _fraudVeces     = n => `${n} ${n === 1 ? 'vez' : 'veces'}`;
+const _fraudJoinY     = arr => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+const _fraudPrimerNombre = n => (n || '').trim().split(/\s+/)[0] || n;
 
-// Determina qué cédula es "la dueña" del dispositivo para narrar el caso en
-// torno a ella. Si una de las dos cuentas se creó justo en este dispositivo
-// (evento 'registro') y la otra ya existía de antes, se ancla en la cuenta
-// preexistente — es la que normalmente usa ese dispositivo, y lo sospechoso
-// es que desde ahí se creó/usó una cuenta distinta. Si no hay esa señal
-// (ambas ya existían, o ambas se crearon ahí), se usa el primer evento
-// cronológico como referencia.
-function pickAnchorCedula(eventos, cedulas) {
-  if (cedulas.length === 2) {
-    const [c1, c2] = cedulas;
-    const c1Registro = eventos.some(e => e.cedula === c1 && e.resultado === 'registro');
-    const c2Registro = eventos.some(e => e.cedula === c2 && e.resultado === 'registro');
-    if (c1Registro && !c2Registro) return c2;
-    if (c2Registro && !c1Registro) return c1;
-  }
-  return eventos[0].cedula;
+// index.html registra cada intento en dos pasos: primero al digitar la
+// cédula (todavía sin nombre) y luego al confirmar (con nombre). Eso hace
+// que un solo intento aparezca dos veces. Aquí se unen esos pares — un
+// evento sin nombre seguido, en menos de 1 min, por el mismo evento de la
+// misma cédula con nombre — para contar intentos reales.
+function _fraudDedupe(eventos) {
+  const out = [];
+  eventos.forEach(e => {
+    const prev = out[out.length - 1];
+    if (prev && !prev.nombre && e.nombre && prev.cedula === e.cedula && prev.resultado === e.resultado &&
+        (new Date(e.created_at) - new Date(prev.created_at)) < 60000) {
+      prev.nombre = e.nombre;
+      return;
+    }
+    out.push({ ...e });
+  });
+  return out;
 }
 
-// Renderiza un caso sospechoso como una tarjeta con: 1) resumen en una línea
-// narrado desde la cuenta "dueña" del dispositivo, 2) severidad (rojo si
-// alguna cédula involucrada está baneada, amarillo si no), y 3) la secuencia
-// real de eventos en orden cronológico con la brecha de tiempo entre cada
-// uno — para que se entienda la historia del dispositivo de un vistazo, en
-// vez de columnas sueltas sin relación visible entre sí.
-function renderFraudCase(deviceId, eventos, bannedSet) {
-  const cedulasInvolucradas = [...new Set(eventos.map(e => e.cedula))];
-  const hayBaneado = cedulasInvolucradas.some(c => bannedSet.has(c));
+// Estado actual de la cuenta de una cédula (independiente de este celular).
+function _fraudEstado(ced, bannedMap, usersMap) {
+  if (bannedMap[ced]) return { key: 'baneada',    label: 'Baneada',    bg: '#fee2e2', color: '#dc2626' };
+  const u = usersMap[ced];
+  if (!u)            return { key: 'sin_cuenta', label: 'Sin cuenta', bg: '#f3f4f6', color: '#6b7280' };
+  if (u.suspendido)  return { key: 'suspendida', label: 'Suspendida', bg: '#fef3c7', color: '#b45309' };
+  return               { key: 'activa',     label: 'Activa',     bg: '#dcfce7', color: '#15803d' };
+}
+const _fraudChip = est => `<span class="fraud-status-chip" style="background:${est.bg};color:${est.color};">Cuenta ${est.label.toLowerCase()}</span>`;
+
+// Describe en lenguaje normal lo que hizo una cédula desde este celular.
+function _fraudAccionesTxt(evs) {
+  const partes = [];
+  const reg = evs.find(e => e.resultado === 'registro');
+  if (reg) partes.push(`se registró como cuenta nueva el ${_fraudFechaHora(reg.created_at)}`);
+  const logins = evs.filter(e => e.resultado !== 'registro' && e.resultado !== 'bloqueado');
+  if (logins.length) partes.push(`inició sesión ${_fraudVeces(logins.length)}`);
+  const bloq = evs.filter(e => e.resultado === 'bloqueado');
+  if (bloq.length) {
+    const dias = [...new Set(bloq.map(e => _fraudDia(e.created_at)))];
+    partes.push(`intentó entrar ${_fraudVeces(bloq.length)} (${_fraudJoinY(dias)}) y el sistema bloqueó el acceso`);
+  }
+  return _fraudJoinY(partes);
+}
+
+// Renderiza un caso como una tarjeta pensada para entenderse sin deducir nada:
+//  1) Qué pasó — la historia contada en lenguaje normal, con el estado actual
+//     de cada cuenta.
+//  2) Qué hacer — la recomendación y botones directos (suspender / banear la
+//     cuenta sospechosa, o descartar la alerta).
+//  3) Detalle — la línea de tiempo cruda, plegada por defecto.
+function renderFraudCase(deviceId, eventosRaw, bannedMap, usersMap) {
+  const eventos = _fraudDedupe(eventosRaw);
+  const cedulas = [...new Set(eventos.map(e => e.cedula))];
+  const nombreDe = ced => toTitleCase(
+    (eventos.find(e => e.cedula === ced && e.nombre) || {}).nombre ||
+    (usersMap[ced] || {}).nombre || (bannedMap[ced] || {}).nombre || ced);
+  // Cierra una oración sin duplicar el punto (p. ej. si termina en "p. m.").
+  const fin = t => /\.$/.test(t) ? t : t + '.';
+  const evsDe = ced => eventos.filter(e => e.cedula === ced);
+
+  const baneadas = cedulas.filter(c => bannedMap[c]);
+  const otras    = cedulas.filter(c => !bannedMap[c]);
+  const hayBaneado = baneadas.length > 0;
   const riesgo = hayBaneado
     ? { icon: '🔴', label: 'Posible reincidencia de baneo', bg: '#fee2e2', color: '#dc2626' }
-    : { icon: '🟡', label: 'Posible dispositivo compartido', bg: '#fef3c7', color: '#b45309' };
+    : { icon: '🟡', label: 'Celular usado por varias cuentas', bg: '#fef3c7', color: '#b45309' };
 
-  const anchorCedula = pickAnchorCedula(eventos, cedulasInvolucradas);
-  const anchorNombre = (eventos.find(e => e.cedula === anchorCedula) || {}).nombre;
-  const anchorEventos = eventos.filter(e => e.cedula === anchorCedula);
-  const otrosEventos = eventos.filter(e => e.cedula !== anchorCedula);
-
-  let resumen;
-  if (cedulasInvolucradas.length === 2 && otrosEventos.length === 1) {
-    const otro = otrosEventos[0];
-    const anchorMasCercano = anchorEventos.reduce((best, a) =>
-      Math.abs(new Date(otro.created_at) - new Date(a.created_at)) < Math.abs(new Date(otro.created_at) - new Date(best.created_at)) ? a : best
-    );
-    const gapMs = Math.abs(new Date(otro.created_at) - new Date(anchorMasCercano.created_at));
-    const direccion = new Date(otro.created_at) < new Date(anchorMasCercano.created_at) ? 'antes' : 'después';
-    resumen = `El dispositivo asociado a la cuenta de <strong>${esc(anchorNombre || anchorCedula)}</strong> también ${_fraudVerbo(otro.resultado)} <strong>${esc(otro.nombre || otro.cedula)}</strong>, ${formatGap(gapMs)} ${direccion}.`;
+  // ── 1) Qué pasó ──
+  let historia = '';
+  if (hayBaneado) {
+    baneadas.forEach(b => {
+      const ban = bannedMap[b];
+      const desde = ban.baneado_at ? ` desde el ${_fraudFecha(ban.baneado_at)}` : '';
+      const acciones = _fraudAccionesTxt(evsDe(b));
+      historia += `<p><strong>${esc(nombreDe(b))}</strong> (${esc(b)}) tiene la cuenta <strong>baneada</strong>${desde}.${acciones ? ` Desde este celular ${fin(acciones)}` : ''}</p>`;
+    });
+    const nombreBan = _fraudPrimerNombre(nombreDe(baneadas[0]));
+    otras.forEach(o => {
+      const evs = evsDe(o);
+      const primero = evs[0];
+      const ultimoBanAntes = eventos.filter(e => bannedMap[e.cedula] && new Date(e.created_at) <= new Date(primero.created_at)).pop();
+      const est = _fraudEstado(o, bannedMap, usersMap);
+      const quien = `<strong>${esc(nombreDe(o))}</strong> (${esc(o)})`;
+      if (ultimoBanAntes) {
+        const gap = formatGap(new Date(primero.created_at) - new Date(ultimoBanAntes.created_at));
+        const accion = primero.resultado === 'registro' ? 'se registró una cuenta nueva'
+                     : primero.resultado === 'bloqueado' ? 'se intentó entrar con otra cuenta'
+                     : 'se inició sesión con otra cuenta';
+        historia += `<p><strong>${gap} después</strong> del último intento de ${esc(nombreBan)}, desde el mismo celular ${accion}: ${quien}. ${_fraudChip(est)}</p>`;
+      } else {
+        historia += `<p>Este mismo celular también lo usó ${quien}: ${fin(_fraudAccionesTxt(evs))} ${_fraudChip(est)}</p>`;
+      }
+    });
   } else {
-    resumen = `El dispositivo asociado a la cuenta de <strong>${esc(anchorNombre || anchorCedula)}</strong> tuvo actividad de ${cedulasInvolucradas.length - 1} cuenta(s) adicional(es) en los últimos 30 días.`;
+    historia += `<p>Desde un mismo celular se usaron <strong>${cedulas.length} cuentas distintas</strong> en los últimos 30 días:</p><ul class="fraud-cuentas">`;
+    cedulas.forEach(c => {
+      historia += `<li><strong>${esc(nombreDe(c))}</strong> (${esc(c)}): ${fin(_fraudAccionesTxt(evsDe(c)))} ${_fraudChip(_fraudEstado(c, bannedMap, usersMap))}</li>`;
+    });
+    historia += `</ul>`;
   }
 
+  // ── 2) Qué hacer ──
+  const btnAcciones = ced => {
+    const n = nombreDe(ced), pn = _fraudPrimerNombre(n);
+    return `
+      <button class="btn btn-secondary btn-sm" data-cedula="${esc(ced)}" data-nombre="${esc(n)}" onclick="fraudSuspender(this)">⏸ Suspender a ${esc(pn)}</button>
+      <button class="btn btn-danger btn-sm" data-cedula="${esc(ced)}" data-nombre="${esc(n)}" onclick="fraudBanear(this)">🚫 Banear a ${esc(pn)}</button>`;
+  };
+  const btnDescartar = `<button class="btn btn-secondary btn-sm" data-device="${esc(deviceId)}" onclick="deleteFraudCase(this.dataset.device)">✓ Descartar alerta</button>`;
+
+  let consejo = '', botones = '';
+  if (hayBaneado) {
+    const activas = otras.filter(o => _fraudEstado(o, bannedMap, usersMap).key === 'activa');
+    const nombreBan = esc(_fraudPrimerNombre(nombreDe(baneadas[0])));
+    if (activas.length) {
+      const nombresAct = _fraudJoinY(activas.map(a => `<strong>${esc(nombreDe(a))}</strong>`));
+      consejo = `Si ${nombresAct} es otra persona que comparte el celular con ${nombreBan} (familiar, pareja), no hace falta hacer nada: descarta la alerta. Si crees que es ${nombreBan} usando la cédula de otra persona para seguir comprando, suspende o banea esa cuenta.`;
+      botones = activas.map(btnAcciones).join('') + btnDescartar;
+    } else {
+      consejo = `Ya no queda ninguna cuenta activa sospechosa en este celular. Puedes descartar la alerta.`;
+      botones = btnDescartar;
+    }
+  } else {
+    const nuevasActivas = cedulas.filter(c => evsDe(c).some(e => e.resultado === 'registro') && _fraudEstado(c, bannedMap, usersMap).key === 'activa');
+    consejo = `Normalmente es un celular compartido (familia, pareja o compañeros de trabajo). Solo actúa si algo no te cuadra, por ejemplo una cuenta nueva que nadie reconoce.`;
+    botones = nuevasActivas.map(btnAcciones).join('') + btnDescartar;
+  }
+
+  // ── 3) Detalle (plegado) ──
   let timelineHtml = '';
   eventos.forEach((e, i) => {
     if (i > 0) {
       const gapMs = new Date(e.created_at) - new Date(eventos[i - 1].created_at);
       timelineHtml += `<div class="fraud-gap">↓ ${formatGap(gapMs)} después</div>`;
     }
-    const hora = new Date(e.created_at).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const nom = nombreDe(e.cedula);
     timelineHtml += `
       <div class="fraud-event">
-        ${userAvatar(e.nombre, e.cedula)}
+        ${userAvatar(nom, e.cedula)}
         <div class="fraud-event-info">
-          <div class="fraud-event-name">${esc(e.nombre || '—')} <span class="fraud-event-cedula">(${esc(e.cedula)})</span></div>
-          <div class="fraud-event-meta">${_fraudBadgeTxt(e.resultado)} · ${hora}</div>
+          <div class="fraud-event-name">${esc(nom)} <span class="fraud-event-cedula">(${esc(e.cedula)})</span></div>
+          <div class="fraud-event-meta">${_fraudBadgeTxt(e.resultado)} · ${_fraudFechaHora(e.created_at)}</div>
         </div>
       </div>`;
   });
 
+  const ultimo = eventos[eventos.length - 1];
   return `
     <div class="fraud-case-card">
       <div class="fraud-case-hd">
         <div class="fraud-risk-badge" style="background:${riesgo.bg};color:${riesgo.color};">${riesgo.icon} ${riesgo.label}</div>
-        <button class="btn btn-danger btn-sm" onclick="deleteFraudCase('${esc(deviceId)}')" title="Eliminar este caso">🗑</button>
+        <span class="fraud-case-date">Último evento: ${_fraudFechaHora(ultimo.created_at)}</span>
       </div>
-      <div class="fraud-case-summary">${resumen}</div>
-      <div class="fraud-timeline">${timelineHtml}</div>
+      <div class="fraud-block-label">Qué pasó</div>
+      <div class="fraud-case-summary">${historia}</div>
+      <div class="fraud-todo">
+        <div class="fraud-block-label">Qué hacer</div>
+        <div class="fraud-todo-txt">${consejo}</div>
+        <div class="fraud-todo-actions">${botones}</div>
+      </div>
+      <details class="fraud-details">
+        <summary>Ver detalle de eventos (${eventos.length})</summary>
+        <div class="fraud-timeline">${timelineHtml}</div>
+      </details>
     </div>`;
+}
+
+// Acciones directas desde la alerta. Reusan las mismas funciones que los
+// paneles de Suspendidos / Baneados, y al terminar recargan las alertas
+// para que el estado de la cuenta se vea actualizado en la tarjeta.
+function fraudSuspender(btn) {
+  const { cedula, nombre } = btn.dataset;
+  showConfirm(
+    `¿Suspender a ${nombre || cedula}?`,
+    'No podrá iniciar sesión mientras esté suspendido. Su cuenta e historial de pedidos se mantienen, y puedes reactivarlo cuando quieras desde Usuarios suspendidos.',
+    async () => { const ok = await _suSetSuspendido(cedula, nombre, true); if (ok) loadFraudDevices(); },
+    { icon: '⏸', okLabel: 'Suspender', okColor: '#dc2626' }
+  );
+}
+function fraudBanear(btn) {
+  const { cedula, nombre } = btn.dataset;
+  showConfirm(
+    `¿Banear a ${nombre || cedula}?`,
+    'No podrá iniciar sesión ni registrarse de nuevo con esta cédula mientras esté baneado.',
+    async () => { const ok = await _suSetBaneado(cedula, nombre, true); if (ok) loadFraudDevices(); },
+    { icon: '🚫', okLabel: 'Banear', okColor: '#dc2626' }
+  );
 }
 
 // Elimina del historial (tabla intentos_acceso) todos los registros de ese
@@ -4414,15 +4549,15 @@ function renderFraudCase(deviceId, eventos, bannedSet) {
 // falsos". No afecta baneos ni usuarios — solo el registro de detección.
 function deleteFraudCase(deviceId) {
   showConfirm(
-    '¿Eliminar este caso?',
-    'Se borrará el historial de intentos de acceso de este dispositivo. Dejará de aparecer en Posibles registros falsos.',
+    '¿Descartar esta alerta?',
+    'Se borrará el historial de intentos de acceso de este celular y la alerta dejará de aparecer. No cambia el estado de ninguna cuenta.',
     async () => {
       const { error } = await sb.from('intentos_acceso').delete().eq('device_id', deviceId);
       if (error) { showToast('Error: ' + error.message, 'error'); return; }
-      showToast('Caso eliminado ✓', 'ok');
+      showToast('Alerta descartada ✓', 'ok');
       loadFraudDevices();
     },
-    { icon: '🗑', okLabel: 'Eliminar', okColor: '#dc2626' }
+    { icon: '✓', okLabel: 'Descartar', okColor: '#143c5a' }
   );
 }
 

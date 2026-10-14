@@ -5387,28 +5387,31 @@ document.addEventListener('keydown', e => {
 const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const _isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 
+// La opción "Instalar app" del menú se muestra SIEMPRE que la página esté
+// abierta en una pestaña normal del navegador, y se oculta solo cuando corre
+// como app instalada (display-mode: standalone). Antes dependía de que el
+// navegador ofreciera el aviso nativo de instalación (beforeinstallprompt),
+// que Chrome no siempre vuelve a disparar tras desinstalar la app — y la
+// persona se quedaba sin forma de reinstalarla.
 function _updateInstallMenuBtn() {
   const btn = document.getElementById('menu-install-btn');
   if (!btn) return;
-  // Mostrar si no está instalada y (hay prompt disponible O es iOS)
-  if (!_isInstalled && (_installPrompt || _isIOS)) {
-    btn.style.display = 'block';
-  } else {
-    btn.style.display = 'none';
-  }
+  btn.style.display = _isInstalled ? 'none' : 'block';
+}
+
+// Muestra el banner de instalación con instrucciones manuales (sin botón
+// "Instalar"), para cuando no hay instalación nativa disponible.
+function _showInstallInstructions(texto) {
+  const banner = document.getElementById('install-banner');
+  banner.querySelector('.ib-sub').textContent = texto;
+  banner.querySelector('#install-btn').style.display = 'none';
+  banner.classList.add('show');
 }
 
 async function installAppFromMenu() {
   closeUserMenu();
-  if (_isIOS) {
-    // iOS: mostrar banner con instrucciones
-    const banner = document.getElementById('install-banner');
-    banner.querySelector('.ib-sub').textContent = 'Toca Compartir ⬆ → "Agregar a pantalla de inicio"';
-    banner.querySelector('#install-btn').style.display = 'none';
-    banner.classList.add('show');
-    localStorage.removeItem('pwa_dismissed');
-  } else if (_installPrompt) {
-    // Chrome/Android: disparar instalación nativa
+  if (_installPrompt) {
+    // Chrome/Android/escritorio: disparar instalación nativa
     _installPrompt.prompt();
     const { outcome } = await _installPrompt.userChoice;
     if (outcome === 'accepted') {
@@ -5416,7 +5419,12 @@ async function installAppFromMenu() {
       _showPwaInstalling(); // appinstalled cerrará el overlay con el check
     }
     _installPrompt = null;
-    _updateInstallMenuBtn();
+  } else if (_isIOS) {
+    _showInstallInstructions('Toca Compartir ⬆ → "Agregar a pantalla de inicio"');
+  } else {
+    // El navegador no ofreció la instalación nativa en este momento (p. ej.
+    // recién se desinstaló la app): se indica cómo hacerlo desde su menú.
+    _showInstallInstructions('Abre el menú ⋮ del navegador → "Instalar app" o "Agregar a pantalla principal"');
   }
 }
 
@@ -5450,14 +5458,19 @@ window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _installPrompt = e;
   _updateInstallMenuBtn();
+  // Hay instalación nativa disponible: el banner vuelve a su versión con
+  // botón "Instalar" (por si antes se usó para mostrar instrucciones).
+  const banner = document.getElementById('install-banner');
+  banner.querySelector('.ib-sub').textContent = 'Agrega Martimac a tu pantalla de inicio';
+  banner.querySelector('#install-btn').style.display = '';
   // Mostrar banner solo si no fue descartado antes
   if (!localStorage.getItem('pwa_dismissed')) {
-    setTimeout(() => document.getElementById('install-banner').classList.add('show'), 3000);
+    setTimeout(() => banner.classList.add('show'), 3000);
   }
 });
 
-// iOS: mostrar botón en menú si no está instalada
-if (_isIOS && !_isInstalled) {
+// Mostrar la opción del menú en cualquier navegador mientras no esté instalada
+if (!_isInstalled) {
   document.addEventListener('DOMContentLoaded', _updateInstallMenuBtn);
 }
 

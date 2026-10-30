@@ -3869,6 +3869,7 @@ const _SVG = {
   box:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><path d="M21 8V21H3V8"/><path d="M23 3H1v5h22V3z"/><path d="M10 12h4"/></svg>`,
   undo:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>`,
   trash:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
+  unpaid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg>`,
 };
 
 function renderAdminOrders(tbodyId, list, tab) {
@@ -3927,6 +3928,10 @@ function renderAdminOrders(tbodyId, list, tab) {
     const btnSinInv  = facturado && !sinInventario && !eliminado
       ? `<span class="tip" data-tip="Sin inventario"><button class="btn-icon" onclick="markAsSinInventario('${o.id}')" style="background:#fef3c7;color:#92400e;">${_SVG.box}</button></span>`
       : '';
+    // Revertir un pago marcado por error: el pedido vuelve a "Facturado" (pendiente de pago).
+    const btnNoPagado = pagado
+      ? `<span class="tip" data-tip="Marcar no pagado"><button class="btn-icon" onclick="markAsNoPagado('${o.id}','${num}')" style="background:#fef3c7;color:#92400e;">${_SVG.unpaid}</button></span>`
+      : '';
     const btnDevuelto = facturado && !sinInventario && !eliminado
       ? `<span class="tip" data-tip="Devuelto"><button class="btn-icon" onclick="markAsDevuelto('${o.id}')" style="background:#16a34a;color:#fff;">${_SVG.undo}</button></span>`
       : '';
@@ -3939,7 +3944,7 @@ function renderAdminOrders(tbodyId, list, tab) {
       <td>${esc(o.usuario_lugar||'—')}</td>
       <td style="${totalStyle}"><span class="col-sign">₡</span>${(o.total||0).toLocaleString('es-CR')}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}
+        <button class="btn btn-sm btn-secondary" onclick="openOrderDetail('${o.id}')">Ver detalle</button>${btnPagado}${btnSinInv}${btnDevuelto}${btnNoPagado}
         ${!eliminado && !sinInventario && !devuelto && !cancelado ? `<span class="tip" data-tip="Eliminar"><button class="btn-icon" onclick="confirmDeleteOrder('${o.id}','${num}','${o.usuario_email||''}')" style="background:#16a34a;color:#fff;">${_SVG.trash}</button></span>` : ''}
         ${eliminado || sinInventario ? `<span class="tip" data-tip="Eliminar"><button class="btn-icon" onclick="confirmDeleteEliminadoRow('${o.id}','${num}')" style="background:#16a34a;color:#fff;">${_SVG.trash}</button></span>` : ''}
       </td>
@@ -4013,6 +4018,23 @@ function markAsPagado(id) {
       await loadOrders();
     },
     { icon: '💳', okLabel: 'Confirmar pago', okColor: '#047857' }
+  );
+}
+
+// Deshace un "Pagado" marcado por error: el pedido regresa a "Facturado"
+// (pendiente de pago) y se borra la fecha de pago. La fecha de facturación
+// se conserva, así que la mora se sigue calculando desde la facturación.
+function markAsNoPagado(id, num) {
+  showConfirm(
+    `¿Marcar #${num} como no pagado?`,
+    'El pedido volverá a "Facturado" (pendiente de pago) y se quitará la fecha de pago.',
+    async () => {
+      const { error } = await sb.from('pedidos').update({ estado: 'facturado', pagado_at: null }).eq('id', id).eq('estado', 'pagado');
+      if (error) { showToast('Error: ' + error.message, false); return; }
+      showToast('Pedido marcado como no pagado.', true);
+      await loadOrders();
+    },
+    { icon: '↺', okLabel: 'Marcar no pagado', okColor: '#b45309' }
   );
 }
 

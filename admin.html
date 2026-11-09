@@ -1293,23 +1293,36 @@
             <div class="su-section-title" style="color:#b91c1c;">🔧 Modo mantenimiento</div>
             <div class="su-section-sub">Al activarlo, el catálogo y catálogo de familia (index y FL) muestran una pantalla de "Sitio en mantenimiento" y no se pueden crear pedidos nuevos. El sistema de pagos sí queda activo.</div>
           </div>
-          <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="openMaintenanceScheduler()" style="padding:7px 12px;">🗓 Programar</button>
+            <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
+          </div>
         </div>
 
         <!-- Mantenimiento programado (varios eventos) -->
         <div style="border-top:1px solid #fecaca;margin-top:14px;padding-top:12px;">
           <div style="font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:2px;">🗓 Mantenimiento programado</div>
           <div class="su-section-sub" style="margin-bottom:10px;">Se activa y se desactiva solo en las fechas que indiques. Puedes programar varios eventos.</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
-            <label style="font-size:12px;color:#6b7280;font-weight:600;display:flex;flex-direction:column;gap:4px;">Inicio
-              <input type="datetime-local" id="maint-ev-inicio" style="padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;">
-            </label>
-            <label style="font-size:12px;color:#6b7280;font-weight:600;display:flex;flex-direction:column;gap:4px;">Fin
-              <input type="datetime-local" id="maint-ev-fin" style="padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;">
-            </label>
-            <button class="btn btn-primary btn-sm" id="maint-ev-add-btn" onclick="addMaintenanceEvent()" style="padding:9px 14px;">+ Programar</button>
-          </div>
           <div id="maint-ev-list"><div style="font-size:12.5px;color:#9ca3af;">Cargando…</div></div>
+        </div>
+      </div>
+
+      <!-- Popup para programar un mantenimiento -->
+      <div id="maint-sched-modal" onclick="if(event.target===this)closeMaintenanceScheduler()"
+        style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;display:none;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:380px;box-shadow:0 25px 60px rgba(0,0,0,.2);box-sizing:border-box;">
+          <div style="font-size:17px;font-weight:700;color:#143c5a;margin-bottom:4px;">🗓 Programar mantenimiento</div>
+          <div style="font-size:12.5px;color:#6b7280;margin-bottom:16px;">El sitio entrará en mantenimiento al inicio y volverá a funcionar al final, sin que tengas que hacer nada.</div>
+          <label style="font-size:12px;color:#6b7280;font-weight:600;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">Inicio
+            <input type="datetime-local" id="maint-ev-inicio" style="padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff;">
+          </label>
+          <label style="font-size:12px;color:#6b7280;font-weight:600;display:flex;flex-direction:column;gap:4px;margin-bottom:18px;">Fin
+            <input type="datetime-local" id="maint-ev-fin" style="padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff;">
+          </label>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="closeMaintenanceScheduler()">Cancelar</button>
+            <button class="btn btn-primary" style="flex:1;" id="maint-ev-add-btn" onclick="addMaintenanceEvent()">Programar</button>
+          </div>
         </div>
       </div>
 
@@ -5387,6 +5400,15 @@ function renderMaintenanceEvents() {
   }).join('');
 }
 
+function openMaintenanceScheduler() {
+  document.getElementById('maint-ev-inicio').value = '';
+  document.getElementById('maint-ev-fin').value = '';
+  document.getElementById('maint-sched-modal').style.display = 'flex';
+}
+function closeMaintenanceScheduler() {
+  document.getElementById('maint-sched-modal').style.display = 'none';
+}
+
 async function addMaintenanceEvent() {
   const iniVal = document.getElementById('maint-ev-inicio').value;
   const finVal = document.getElementById('maint-ev-fin').value;
@@ -5402,8 +5424,7 @@ async function addMaintenanceEvent() {
     const actual = await _fetchMaintenanceEvents();
     actual.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), inicio: ini.toISOString(), fin: fin.toISOString() });
     _maintEvents = await _saveMaintenanceEvents(actual);
-    document.getElementById('maint-ev-inicio').value = '';
-    document.getElementById('maint-ev-fin').value = '';
+    closeMaintenanceScheduler();
     renderMaintenanceEvents();
   } catch (e) {
     alert('No se pudo guardar: ' + (e.message || e));

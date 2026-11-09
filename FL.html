@@ -1070,21 +1070,66 @@ async function loadFlRatingReviews(codigo) {
   }).join('');
 }
 
-// ── MODO MANTENIMIENTO — chequeo antes de arrancar la app ──
+// ── MODO MANTENIMIENTO ─────────────────────────────────────
+// Dos fuentes, ambas en app_config:
+//  · 'mantenimiento_activo'  → interruptor manual ('true'/'false')
+//  · 'mantenimiento_eventos' → eventos programados, JSON [{ id, inicio, fin }]
+// Se revisa al abrir y luego cada minuto (y al volver a la pestaña): si entra
+// en mantenimiento con la app abierta, se muestra la pantalla encima; cuando
+// termina, la página se recarga sola para arrancar normal.
 // Bypass automático cuando se abre el archivo local (file://) o desde un
 // servidor local (localhost/127.0.0.1), para poder previsualizar cambios
 // sin depender del flag de mantenimiento en producción.
+const _maintIsLocal = location.protocol === 'file:' ||
+                      location.hostname === 'localhost' ||
+                      location.hostname === '127.0.0.1';
+let _maintShown = false;
+
+async function _getMaintenanceState() {
+  const { data, error } = await sb.from('app_config').select('key, value')
+    .in('key', ['mantenimiento_activo', 'mantenimiento_eventos']);
+  if (error) throw error;
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  if (cfg.mantenimiento_activo === 'true') return { activo: true, evento: null };
+  let eventos = [];
+  try { eventos = JSON.parse(cfg.mantenimiento_eventos || '[]'); } catch (e) {}
+  const now = Date.now();
+  const evento = (Array.isArray(eventos) ? eventos : []).find(e =>
+    e && e.inicio && e.fin &&
+    new Date(e.inicio).getTime() <= now && now < new Date(e.fin).getTime()) || null;
+  return { activo: !!evento, evento };
+}
+
+function _showMaintenance(evento) {
+  const loading = document.getElementById('fl-loading');
+  if (loading) loading.style.display = 'none';
+  document.getElementById('maintenance-overlay').style.display = 'flex';
+  _maintShown = true;
+}
+
+async function _recheckMaintenance() {
+  if (_maintIsLocal) return;
+  try {
+    const st = await _getMaintenanceState();
+    if (st.activo) _showMaintenance(st.evento);
+    else if (_maintShown) location.reload();   // terminó el mantenimiento
+  } catch (e) { /* sin conexión: se reintenta en el próximo ciclo */ }
+}
+
+function _startMaintenanceWatch() {
+  if (_maintIsLocal) return;
+  setInterval(() => { if (!document.hidden) _recheckMaintenance(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) _recheckMaintenance(); });
+}
+
 async function checkMaintenanceAndBoot() {
-  const isLocal = location.protocol === 'file:' ||
-                  location.hostname === 'localhost' ||
-                  location.hostname === '127.0.0.1';
-  if (!isLocal) {
+  if (!_maintIsLocal) {
     try {
-      const { data: cfg } = await sb.from('app_config').select('value').eq('key','mantenimiento_activo').maybeSingle();
-      if (cfg && cfg.value === 'true') {
-        const loading = document.getElementById('fl-loading');
-        if (loading) loading.style.display = 'none';
-        document.getElementById('maintenance-overlay').style.display = 'flex';
+      const st = await _getMaintenanceState();
+      if (st.activo) {
+        _showMaintenance(st.evento);
+        _startMaintenanceWatch();
         return; // no arrancar la app normal
       }
     } catch (e) {
@@ -1092,6 +1137,7 @@ async function checkMaintenanceAndBoot() {
     }
   }
   flInit();
+  _startMaintenanceWatch();
 }
 checkMaintenanceAndBoot();
 

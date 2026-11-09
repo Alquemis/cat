@@ -382,8 +382,20 @@ async function _applyLivePrices(rows) {
   const prodMap = {};
   (productos || []).forEach(p => { prodMap[p.codigo] = p; });
   return rows.map(r => {
-    const live = _liveValsFromProducto(prodMap[r.codigo]);
-    return live ? { ...r, ...live } : r; // si el producto ya no existe, se deja la foto guardada
+    const prod = prodMap[r.codigo];
+    const live = _liveValsFromProducto(prod);
+    if (!live) return r; // si el producto ya no existe, se deja la foto guardada
+    // Si la línea se facturó CON descuento y hoy el catálogo ya no lo tiene
+    // vigente, la diferencia no es un error de precio: simplemente venció la
+    // promoción. Se marca para mostrar una nota y que el revisor no lo tome
+    // como una corrección.
+    const pctGuardado = r.descuento_porcentaje || 0;
+    let descVencido = null;
+    if (pctGuardado > 0 && live.descuento_porcentaje === 0) {
+      const fin = prod.descuento_fin && new Date(prod.descuento_fin).getTime() < Date.now() ? prod.descuento_fin : null;
+      descVencido = { pct: pctGuardado, fin };
+    }
+    return { ...r, ...live, _descVencido: descVencido };
   });
 }
 
@@ -412,6 +424,17 @@ function filterPendientes() {
   renderPendientes(list);
 }
 
+// Nota bajo el nombre cuando el descuento con que se facturó la línea ya venció.
+function _descVencidoNota(l) {
+  const d = l._descVencido;
+  if (!d) return '';
+  const txt = d.fin
+    ? 'El descuento de ' + d.pct + '% de este item venció el ' +
+      new Date(d.fin).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    : 'El descuento de ' + d.pct + '% de este item ya no está vigente';
+  return '<div style="font-size:11px;color:#b45309;font-weight:600;margin-top:3px;">⚠ ' + txt + '</div>';
+}
+
 function renderPendientes(list) {
   const tbody = document.getElementById('pend-tbody');
   if (list.length === 0) {
@@ -423,7 +446,7 @@ function renderPendientes(list) {
     return '<tr>' +
       '<td>' + fecha + '</td>' +
       '<td><code style="font-size:12px">' + esc(l.codigo||'—') + '</code></td>' +
-      '<td>' + esc(l.nombre||'—') + '</td>' +
+      '<td>' + esc(l.nombre||'—') + _descVencidoNota(l) + '</td>' +
       '<td><span class="col-sign">₡</span>' + (l.precio||0).toLocaleString('es-CR') + '</td>' +
       '<td style="white-space:nowrap;">' + (l.descuento > 0 ? '<span class="col-sign">₡</span>' + l.descuento.toLocaleString('es-CR') + (l.descuento_porcentaje > 0 ? ' <span style="color:#9ca3af;">(' + l.descuento_porcentaje + '%)</span>' : '') : '—') + '</td>' +
       '<td style="white-space:nowrap;"><span class="col-sign">₡</span>' + (l.impuesto||0).toLocaleString('es-CR') + (l.iva_porcentaje != null ? ' <span style="color:#9ca3af;">(' + l.iva_porcentaje + '%)</span>' : '') + '</td>' +

@@ -1295,6 +1295,22 @@
           </div>
           <button class="promo-rule-toggle off" id="maintenance-activo-btn" onclick="toggleMaintenanceActivo()">Inactivo</button>
         </div>
+
+        <!-- Mantenimiento programado (varios eventos) -->
+        <div style="border-top:1px solid #fecaca;margin-top:14px;padding-top:12px;">
+          <div style="font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:2px;">🗓 Mantenimiento programado</div>
+          <div class="su-section-sub" style="margin-bottom:10px;">Se activa y se desactiva solo en las fechas que indiques. Puedes programar varios eventos.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+            <label style="font-size:12px;color:#6b7280;font-weight:600;display:flex;flex-direction:column;gap:4px;">Inicio
+              <input type="datetime-local" id="maint-ev-inicio" style="padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;">
+            </label>
+            <label style="font-size:12px;color:#6b7280;font-weight:600;display:flex;flex-direction:column;gap:4px;">Fin
+              <input type="datetime-local" id="maint-ev-fin" style="padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;">
+            </label>
+            <button class="btn btn-primary btn-sm" id="maint-ev-add-btn" onclick="addMaintenanceEvent()" style="padding:9px 14px;">+ Programar</button>
+          </div>
+          <div id="maint-ev-list"><div style="font-size:12.5px;color:#9ca3af;">Cargando…</div></div>
+        </div>
       </div>
 
       <!-- Contraseñas — 2 columnas en desktop -->
@@ -5313,6 +5329,102 @@ async function loadMaintenanceToggle() {
   const { data: cfg } = await sb.from('app_config').select('value').eq('key','mantenimiento_activo').maybeSingle();
   _maintenanceActivo = !!cfg && cfg.value === 'true';
   _setMaintenanceToggleUI();
+  loadMaintenanceEvents();
+}
+
+// ── Mantenimiento programado ──
+// Los eventos se guardan en app_config (key 'mantenimiento_eventos') como un
+// JSON [{ id, inicio, fin }] con fechas ISO. index.html y FL.html los leen al
+// abrir y cada minuto: si la hora actual cae dentro de alguno, muestran la
+// pantalla de mantenimiento; al terminar, recargan solas.
+let _maintEvents = [];
+
+async function _fetchMaintenanceEvents() {
+  const { data, error } = await sb.from('app_config').select('value').eq('key','mantenimiento_eventos').maybeSingle();
+  if (error) throw error;
+  let list = [];
+  try { list = JSON.parse((data && data.value) || '[]'); } catch (e) {}
+  return Array.isArray(list) ? list.filter(e => e && e.inicio && e.fin) : [];
+}
+
+async function _saveMaintenanceEvents(list) {
+  // Se descartan solos los eventos que terminaron hace más de 30 días.
+  const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const clean = list.filter(e => new Date(e.fin).getTime() > limite)
+                    .sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+  const { error } = await sb.from('app_config').upsert({ key: 'mantenimiento_eventos', value: JSON.stringify(clean) });
+  if (error) throw error;
+  return clean;
+}
+
+async function loadMaintenanceEvents() {
+  try { _maintEvents = await _fetchMaintenanceEvents(); }
+  catch (e) { console.error(e); _maintEvents = []; }
+  renderMaintenanceEvents();
+}
+
+function renderMaintenanceEvents() {
+  const wrap = document.getElementById('maint-ev-list');
+  if (!wrap) return;
+  if (!_maintEvents.length) {
+    wrap.innerHTML = '<div style="font-size:12.5px;color:#9ca3af;">No hay mantenimientos programados.</div>';
+    return;
+  }
+  const now = Date.now();
+  const fmt = d => new Date(d).toLocaleString('es-CR', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const list = [..._maintEvents].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+  wrap.innerHTML = list.map(e => {
+    const ini = new Date(e.inicio).getTime(), fin = new Date(e.fin).getTime();
+    const st = now >= fin ? { t: 'Finalizado', bg: '#f3f4f6', c: '#6b7280' }
+             : now >= ini ? { t: 'En curso',   bg: '#fee2e2', c: '#b91c1c' }
+             :              { t: 'Programado', bg: '#dbeafe', c: '#1d4ed8' };
+    return `
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid #f1d5d5;border-radius:10px;background:#fff;margin-bottom:6px;${now >= fin ? 'opacity:.6;' : ''}">
+        <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:${st.bg};color:${st.c};white-space:nowrap;">${st.t}</span>
+        <span style="font-size:13px;color:#374151;flex:1;min-width:200px;"><strong>${fmt(e.inicio)}</strong> → <strong>${fmt(e.fin)}</strong></span>
+        <button class="btn btn-danger btn-sm" title="Eliminar evento" onclick="deleteMaintenanceEvent('${esc(e.id)}')">🗑</button>
+      </div>`;
+  }).join('');
+}
+
+async function addMaintenanceEvent() {
+  const iniVal = document.getElementById('maint-ev-inicio').value;
+  const finVal = document.getElementById('maint-ev-fin').value;
+  if (!iniVal || !finVal) { alert('Indica la fecha y hora de inicio y de fin.'); return; }
+  const ini = new Date(iniVal), fin = new Date(finVal);   // datetime-local = hora local del navegador
+  if (isNaN(ini) || isNaN(fin)) { alert('Fecha no válida.'); return; }
+  if (fin <= ini) { alert('La hora de fin debe ser posterior a la de inicio.'); return; }
+  if (fin.getTime() <= Date.now()) { alert('Ese período ya terminó.'); return; }
+  const btn = document.getElementById('maint-ev-add-btn');
+  if (btn) btn.disabled = true;
+  try {
+    // Se relee la lista justo antes de guardar, por si otro panel la cambió.
+    const actual = await _fetchMaintenanceEvents();
+    actual.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), inicio: ini.toISOString(), fin: fin.toISOString() });
+    _maintEvents = await _saveMaintenanceEvents(actual);
+    document.getElementById('maint-ev-inicio').value = '';
+    document.getElementById('maint-ev-fin').value = '';
+    renderMaintenanceEvents();
+  } catch (e) {
+    alert('No se pudo guardar: ' + (e.message || e));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function deleteMaintenanceEvent(id) {
+  const ev = _maintEvents.find(e => e.id === id);
+  const enCurso = ev && Date.now() >= new Date(ev.inicio).getTime() && Date.now() < new Date(ev.fin).getTime();
+  if (!confirm(enCurso
+    ? 'Este mantenimiento está en curso. Si lo eliminas, el sitio vuelve a funcionar en el próximo minuto. ¿Eliminar?'
+    : '¿Eliminar este mantenimiento programado?')) return;
+  try {
+    const actual = await _fetchMaintenanceEvents();
+    _maintEvents = await _saveMaintenanceEvents(actual.filter(e => e.id !== id));
+    renderMaintenanceEvents();
+  } catch (e) {
+    alert('No se pudo eliminar: ' + (e.message || e));
+  }
 }
 
 function _setMaintenanceToggleUI() {

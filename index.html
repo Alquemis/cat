@@ -3221,8 +3221,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Como es un sitio estático (sin cron en servidor), la vigencia se
 // evalúa aquí mismo cada vez que se carga o refresca el catálogo,
 // comparando la hora actual contra el rango guardado.
-function isScheduleActive(inicio, fin) {
-  const now = Date.now();
+function isScheduleActive(inicio, fin, nowTs) {
+  const now = nowTs != null ? nowTs : Date.now();
   if (inicio && now < new Date(inicio).getTime()) return false;
   if (fin && now > new Date(fin).getTime()) return false;
   return true;
@@ -3247,7 +3247,7 @@ function refreshScheduledFlags() {
 // Convierte una fila cruda de la tabla `productos` al objeto que usa el
 // catálogo, evaluando la vigencia de promo/descuento/límite por horario.
 // Se comparte entre la carga inicial y el refresco puntual al agregar al carrito.
-function mapProductRow(r) {
+function mapProductRow(r, nowTs) {
   const promoRaw = !!r.promocion;
   const descRaw  = !!r.descuento;
   const limRaw   = r.limite_por_usuario != null ? r.limite_por_usuario : null;
@@ -3257,11 +3257,11 @@ function mapProductRow(r) {
     pr: r.precio, img: r.imagen,
     iva: r.iva != null ? r.iva : 13,
     activo: r.activo !== false,
-    promo: promoRaw && isScheduleActive(r.promo_inicio, r.promo_fin),
+    promo: promoRaw && isScheduleActive(r.promo_inicio, r.promo_fin, nowTs),
     stock: r.stock != null ? r.stock : null,
-    descuento: descRaw && isScheduleActive(r.descuento_inicio, r.descuento_fin),
+    descuento: descRaw && isScheduleActive(r.descuento_inicio, r.descuento_fin, nowTs),
     descPct: r.porcentaje_descuento || 0,
-    limite: (limRaw != null && isScheduleActive(r.limite_inicio, r.limite_fin)) ? limRaw : null,
+    limite: (limRaw != null && isScheduleActive(r.limite_inicio, r.limite_fin, nowTs)) ? limRaw : null,
     // Config cruda + ventanas, para reevaluar vigencia sin volver a consultar la BD
     _promoRaw: promoRaw, _promoIni: r.promo_inicio, _promoFin: r.promo_fin,
     _descRaw:  descRaw,  _descIni:  r.descuento_inicio, _descFin: r.descuento_fin,
@@ -3275,7 +3275,7 @@ async function loadProductsFromDB() {
       .select('*').eq('activo', true).order('nombre');
     if (error) throw error;
     if (data && data.length > 0) {
-      CATALOG = data.map(mapProductRow);
+      CATALOG = data.map(r => mapProductRow(r));
       const tabPromo = document.getElementById('tab-promociones');
       if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
       positionConfetti();
@@ -3300,6 +3300,10 @@ async function refreshProductFromDB(productId) {
       return null;
     }
     if (idx !== -1) CATALOG[idx] = fresh; else CATALOG.push(fresh);
+    // El carrito debe apuntar al MISMO objeto que el catálogo: si se quedara con
+    // la copia vieja, el chequeo de vigencia por horario ya no la actualizaría
+    // y un descuento vencido podría seguir aplicándose al enviar el pedido.
+    cart.forEach(i => { if (i.product.id === productId && !i.product.agotado) i.product = fresh; });
     return fresh;
   } catch(e) {
     return CATALOG.find(p => p.id === productId) || null;
@@ -3692,17 +3696,109 @@ function renderCartItems() {
 // ============================================================
 //  PEDIDO
 // ============================================================
-function openOrderModal() {
-  const activeItems = cart.filter(i => !i.product.agotado);
-  if (activeItems.length === 0) return;
+// ── REVALIDACIÓN DEL CARRITO CONTRA LA BD ─────────────────
+// Antes de mostrar el resumen y antes de enviar el pedido se vuelven a
+// consultar los productos del carrito y se recalcula su precio con la
+// vigencia REAL de promociones/descuentos. La hora de referencia es la del
+// servidor (cabecera Date de la respuesta de Supabase), no la del celular,
+// para que un reloj mal configurado no mantenga descuentos vencidos.
+// Devuelve { ok, changes } — changes describe qué cambió para avisarle al
+// colaborador antes de confirmar.
+let _orderPriceChanges = [];   // cambios a mostrar en el resumen del pedido
+let _orderShownPrices  = {};   // precio unitario mostrado en el resumen, por código
+let _orderModalBusy    = false;
+
+async function revalidateCart() {
+  const items = cart.filter(i => !i.product.agotado);
+  if (!items.length) return { ok: true, changes: [] };
+  let rows, serverNow = Date.now();
+  try {
+    const lista = items.map(i => '"' + String(i.product.id).replace(/"/g, '\\"') + '"').join(',');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*&codigo=in.(${encodeURIComponent(lista)})`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    rows = await res.json();
+    const d = Date.parse(res.headers.get('date') || '');
+    if (!isNaN(d)) serverNow = d;   // si el navegador no expone la cabecera, se usa la hora local
+  } catch (e) {
+    console.error('Error revalidando carrito:', e);
+    return { ok: false, changes: [] };
+  }
+
+  const changes = [];
+  items.forEach(item => {
+    const before = item.product;
+    const row = rows.find(r => r.codigo === before.id);
+    const fresh = row ? mapProductRow(row, serverNow) : null;
+    if (!fresh || !fresh.activo) {
+      item.product = Object.assign({}, before, { agotado: true });
+      changes.push({ id: before.id, nombre: before.n, tipo: 'no_disponible' });
+      return;
+    }
+    const antes = priceEffective(before), ahora = priceEffective(fresh);
+    if (antes !== ahora) {
+      changes.push({
+        id: fresh.id, nombre: fresh.n, tipo: 'precio', antes, ahora,
+        motivo: before.descuento && !fresh.descuento ? 'terminó el descuento'
+              : !before.descuento && fresh.descuento ? 'ahora tiene descuento'
+              : 'se actualizó el precio'
+      });
+    }
+    item.product = fresh;
+    const idx = CATALOG.findIndex(p => p.id === fresh.id);
+    if (idx !== -1) CATALOG[idx] = fresh; else CATALOG.push(fresh);
+  });
+  saveCart();
+  updateCartBadge();
+  refreshAddButtons();
+  return { ok: true, changes };
+}
+
+async function openOrderModal() {
+  if (_orderModalBusy) return;
+  if (cart.filter(i => !i.product.agotado).length === 0) return;
+  _orderModalBusy = true;
+  const sendBtn = document.getElementById('cart-send-btn');
+  const sendTxt = sendBtn ? sendBtn.textContent : '';
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Verificando precios…'; }
+  const rv = await revalidateCart();
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = sendTxt; }
+  _orderModalBusy = false;
+  if (!rv.ok) { showToast('No se pudieron verificar los precios. Revisa tu conexión e intenta de nuevo.'); return; }
+  if (cart.filter(i => !i.product.agotado).length === 0) {
+    // Todo lo del carrito dejó de estar disponible: mostrar el carrito actualizado
+    renderCartItems();
+    showToast('Los productos de tu carrito ya no están disponibles.');
+    return;
+  }
+  _orderPriceChanges = rv.changes;
   closeCart();
   closeQadd();
   showOrderForm();
   document.getElementById('order-modal').classList.add('open');
 }
 
+// Aviso dentro del resumen cuando algún precio cambió desde que se agregó al carrito.
+function _orderChangesHtml() {
+  if (!_orderPriceChanges.length) return '';
+  const fmt = n => '<span class="col-sign">₡</span>' + n.toLocaleString('es-CR');
+  const rows = _orderPriceChanges.map(c => c.tipo === 'no_disponible'
+    ? `<li><strong>${escHtml(c.nombre)}</strong> ya no está disponible y no se incluirá.</li>`
+    : `<li><strong>${escHtml(c.nombre)}</strong>: ${c.motivo}, ahora ${fmt(c.ahora)} c/u (antes ${fmt(c.antes)}).</li>`
+  ).join('');
+  return `
+    <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-size:12.5px;color:#92400e;line-height:1.5;">
+      <div style="font-weight:700;margin-bottom:4px;">⚠ Algunos precios cambiaron desde que los agregaste</div>
+      <ul style="margin:0;padding-left:18px;">${rows}</ul>
+    </div>`;
+}
+
 function showOrderForm() {
   const activeCart = cart.filter(i => !i.product.agotado);
+  _orderShownPrices = {};
+  activeCart.forEach(i => { _orderShownPrices[i.product.id] = priceEffective(i.product); });
   const total = activeCart.reduce((s, i) => s + priceEffective(i.product) * i.qty, 0);
   const totalBruto = activeCart.reduce((s, i) => s + priceIva(i.product) * i.qty, 0);
   const totalDescuento = totalBruto - total;
@@ -3722,6 +3818,7 @@ function showOrderForm() {
       <div class="modal-title">📋 Confirmar Pedido</div>
       <div class="modal-sub">Revisa tu pedido. Será enviado a Facturación.</div>
     </div>
+    ${_orderChangesHtml()}
     <div class="modal-items">${itemsHtml}</div>
     <div class="modal-ft">
       <div class="modal-summary-item" style="color:#6b7280;">
@@ -3763,6 +3860,47 @@ function closeMoraWarn() {
 async function submitOrder() {
   if (!currentUser) return;
 
+  const confirmBtnV = document.getElementById('modal-confirm-btn');
+  if (confirmBtnV) { confirmBtnV.disabled = true; confirmBtnV.textContent = 'Verificando…'; }
+  const rv = await revalidateCart();
+  if (confirmBtnV) { confirmBtnV.disabled = false; confirmBtnV.textContent = 'Confirmar y Enviar'; }
+  if (!rv.ok) { showToast('No se pudieron verificar los precios. Revisa tu conexión e intenta de nuevo.'); return; }
+
+  // Precios congelados en este instante (recién validados contra la BD). Se usan
+  // para el total y las líneas, así ningún cambio posterior en memoria los altera.
+  const precios = {};
+  cart.filter(i => !i.product.agotado).forEach(i => {
+    const p = i.product;
+    precios[p.id] = { unit: priceEffective(p), orig: priceIva(p), pct: (p.descuento && p.descPct) ? p.descPct : 0 };
+  });
+
+  // Si algo cambió respecto a lo que la persona vio en el resumen, no se envía:
+  // se actualiza el resumen con el aviso y tiene que confirmar de nuevo.
+  const cambios = [];
+  rv.changes.filter(c => c.tipo === 'no_disponible').forEach(c => cambios.push(c));
+  Object.keys(precios).forEach(id => {
+    const visto = _orderShownPrices[id];
+    if (visto !== precios[id].unit) {
+      const c = rv.changes.find(x => x.id === id && x.tipo === 'precio');
+      const item = cart.find(i => i.product.id === id);
+      cambios.push({ id, nombre: item ? item.product.n : id, tipo: 'precio',
+        antes: visto != null ? visto : (c ? c.antes : precios[id].unit), ahora: precios[id].unit,
+        motivo: c ? c.motivo : 'se actualizó el precio' });
+    }
+  });
+  if (cambios.length) {
+    _orderPriceChanges = cambios;
+    renderCartItems();
+    if (!cart.some(i => !i.product.agotado)) {
+      closeOrderModal();
+      showToast('Los productos de tu carrito ya no están disponibles.');
+      return;
+    }
+    showOrderForm();
+    showToast('Algunos precios cambiaron. Revisa el total y confirma de nuevo.');
+    return;
+  }
+
   // Verificar stock de productos con límite
   const cartItems = cart.filter(i => !i.product.agotado);
   const promoConStock = cartItems.filter(i => i.product.stock != null);
@@ -3801,8 +3939,8 @@ async function submitOrder() {
   confirmBtn.textContent = 'Enviando…';
 
   const notas      = (document.getElementById('order-notes')?.value || '').trim();
-  const activeCart = cart.filter(i => !i.product.agotado);
-  const total      = activeCart.reduce((s, i) => s + priceEffective(i.product) * i.qty, 0);
+  const activeCart = cart.filter(i => !i.product.agotado && precios[i.product.id]);
+  const total      = activeCart.reduce((s, i) => s + precios[i.product.id].unit * i.qty, 0);
 
   // Insertar pedido (sin usuario_id — auth libre)
   const { data: pedido, error: pedErr } = await sb.from('pedidos').insert({
@@ -3828,9 +3966,9 @@ async function submitOrder() {
     producto_codigo:      item.product.id,
     producto_nombre:      item.product.n,
     cantidad:             item.qty,
-    precio_unitario:      priceIva(item.product),              // precio original sin descuento
-    subtotal:             priceEffective(item.product) * item.qty, // precio final × cantidad
-    descuento_porcentaje: (item.product.descuento && item.product.descPct) ? item.product.descPct : 0
+    precio_unitario:      precios[item.product.id].orig,              // precio original sin descuento
+    subtotal:             precios[item.product.id].unit * item.qty,   // precio final × cantidad
+    descuento_porcentaje: precios[item.product.id].pct
   }));
   await sb.from('lineas_pedido').insert(lineas);
 
@@ -3851,13 +3989,16 @@ async function submitOrder() {
   _lastOrder = {
     id:      pedido.id,
     fecha:   new Date().toLocaleString('es-CR'),
-    items:   activeCart,
+    // Copias fijas: el recibo debe mostrar los precios con que se envió el
+    // pedido, aunque después cambie la vigencia de algún descuento.
+    items:   activeCart.map(i => ({ product: Object.assign({}, i.product), qty: i.qty })),
     total:   total,
     usuario: { ...currentUser },
     estado:  'pendiente'
   };
 
   // Éxito — limpiar carrito completo (incluyendo agotados)
+  _orderPriceChanges = [];
   cart = [];
   saveCart();
   updateCartBadge();
@@ -5245,6 +5386,10 @@ async function pollPromoStock(force = false) {
     if (tabPromo) tabPromo.classList.toggle('has-promo', CATALOG.some(p => p.promo || p.descuento));
     positionConfetti();
     reRenderCurrentView();
+    // Si el carrito o la ventana de cantidad están abiertos, refrescarlos para
+    // que el precio cambie en vivo al terminar (o empezar) un descuento.
+    if (document.getElementById('cart-overlay').classList.contains('open')) renderCartItems();
+    if (document.getElementById('qadd-overlay').classList.contains('open')) renderQadd();
   }
 
   if (!force) {
@@ -5560,19 +5705,64 @@ if (window.visualViewport) {
   });
 }
 
-// ── MODO MANTENIMIENTO — chequeo antes de arrancar la app ──
+// ── MODO MANTENIMIENTO ─────────────────────────────────────
+// Dos fuentes, ambas en app_config:
+//  · 'mantenimiento_activo'  → interruptor manual ('true'/'false')
+//  · 'mantenimiento_eventos' → eventos programados, JSON [{ id, inicio, fin }]
+// Se revisa al abrir y luego cada minuto (y al volver a la pestaña): si entra
+// en mantenimiento con la app abierta, se muestra la pantalla encima; cuando
+// termina, la página se recarga sola para arrancar normal.
 // Bypass automático cuando se abre el archivo local (file://) o desde un
 // servidor local (localhost/127.0.0.1), para poder previsualizar cambios
 // sin depender del flag de mantenimiento en producción.
+const _maintIsLocal = location.protocol === 'file:' ||
+                      location.hostname === 'localhost' ||
+                      location.hostname === '127.0.0.1';
+let _maintShown = false;
+
+async function _getMaintenanceState() {
+  const { data, error } = await sb.from('app_config').select('key, value')
+    .in('key', ['mantenimiento_activo', 'mantenimiento_eventos']);
+  if (error) throw error;
+  const cfg = {};
+  (data || []).forEach(r => { cfg[r.key] = r.value; });
+  if (cfg.mantenimiento_activo === 'true') return { activo: true, evento: null };
+  let eventos = [];
+  try { eventos = JSON.parse(cfg.mantenimiento_eventos || '[]'); } catch (e) {}
+  const now = Date.now();
+  const evento = (Array.isArray(eventos) ? eventos : []).find(e =>
+    e && e.inicio && e.fin &&
+    new Date(e.inicio).getTime() <= now && now < new Date(e.fin).getTime()) || null;
+  return { activo: !!evento, evento };
+}
+
+function _showMaintenance(evento) {
+    document.getElementById('maintenance-overlay').style.display = 'flex';
+  _maintShown = true;
+}
+
+async function _recheckMaintenance() {
+  if (_maintIsLocal) return;
+  try {
+    const st = await _getMaintenanceState();
+    if (st.activo) _showMaintenance(st.evento);
+    else if (_maintShown) location.reload();   // terminó el mantenimiento
+  } catch (e) { /* sin conexión: se reintenta en el próximo ciclo */ }
+}
+
+function _startMaintenanceWatch() {
+  if (_maintIsLocal) return;
+  setInterval(() => { if (!document.hidden) _recheckMaintenance(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) _recheckMaintenance(); });
+}
+
 async function checkMaintenanceAndBoot() {
-  const isLocal = location.protocol === 'file:' ||
-                  location.hostname === 'localhost' ||
-                  location.hostname === '127.0.0.1';
-  if (!isLocal) {
+  if (!_maintIsLocal) {
     try {
-      const { data: cfg } = await sb.from('app_config').select('value').eq('key','mantenimiento_activo').maybeSingle();
-      if (cfg && cfg.value === 'true') {
-        document.getElementById('maintenance-overlay').style.display = 'flex';
+      const st = await _getMaintenanceState();
+      if (st.activo) {
+        _showMaintenance(st.evento);
+        _startMaintenanceWatch();
         return; // no arrancar la app normal
       }
     } catch (e) {
@@ -5582,6 +5772,7 @@ async function checkMaintenanceAndBoot() {
   ensureCatalog(); // arrancar descarga del catálogo de inmediato, en paralelo al login
   ensureRatingsSummary(); // ídem para el resumen de valoraciones
   initAuth();
+  _startMaintenanceWatch();
 }
 checkMaintenanceAndBoot();
 

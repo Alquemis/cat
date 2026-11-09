@@ -4758,15 +4758,22 @@ function goToFullCatalog(silent) {
 //  BÚSQUEDA
 // ============================================================
 let _lastSearchQuery = '';
+// Normaliza texto para buscar sin distinguir tildes, diéresis ni eñes:
+// "crema", "Créma" y "CREMÁ" coinciden, igual que "pina" / "piña".
+// NFD separa cada letra de su acento (á → a + ´) y luego se quitan los acentos.
+function _normSearch(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
 function runSearch(q) {
   q = (q||'').trim().toLowerCase();
   if (!q) { _lastSearchQuery = ''; goHome(); return; }
   _lastSearchQuery = q;
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('home-btn').classList.remove('active');
+  const qNorm = _normSearch(q);
   const results = _sortProducts(CATALOG.filter(p => {
-    const hay = (p.n+' '+p.id+' '+(p.b||'')+' '+(p.c||'')+' '+(p.s||'')+' '+(p.spc||'')).toLowerCase();
-    return hay.includes(q);
+    const hay = _normSearch(p.n+' '+p.id+' '+(p.b||'')+' '+(p.c||'')+' '+(p.s||'')+' '+(p.spc||''));
+    return hay.includes(qNorm);
   }));
   document.getElementById('banner-area').innerHTML = '';
   document.getElementById('dynamic-area').innerHTML = `

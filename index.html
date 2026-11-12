@@ -1645,7 +1645,7 @@ function toTitleCase(str) { if (!str) return str; return str.toLowerCase().repla
 /* ── Validación de texto plano: rechaza letras decorativas Unicode
    (p. ej. ℙ𝕣𝕠𝕕𝕦𝕔𝕔𝕚𝕠𝕟) en campos de formulario. No altera registros
    ya guardados. Solo validación en el navegador. ── */
-const MENSAJE_TEXTO_DECORATIVO = 'Este campo no admite letras decorativas o de estilo especial (por ejemplo ℙ𝕣𝕠𝕕𝕦𝕔𝕔𝕚𝕠𝕟). Escríbelo con letras normales; sí se permiten tildes, la ñ y signos habituales.';
+const MENSAJE_TEXTO_DECORATIVO = 'Este campo no admite letras decorativas o de estilo especial. Escríbelo con letras normales.';
 const IDS_CAMPOS_TEXTO_PLANO = { 'login-depto': 1, 'rating-comment-input': 1, 'order-notes': 1 };
 
 function esCampoTextoPlano(el) {

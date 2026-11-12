@@ -54,6 +54,18 @@
     transition: border-color 0.2s; color: #143c5a;
   }
   .login-field input:focus { border-color: #143c5a; }
+
+  /* Error accesible para letras decorativas Unicode en campos de texto libre */
+  input.campo-texto-invalido,
+  textarea.campo-texto-invalido {
+    border-color: #dc2626 !important;
+  }
+  .campo-texto-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.45;
+  }
   .login-btn {
     width: 100%; padding: 13px; background: #143c5a; color: #fff;
     border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
@@ -1217,7 +1229,7 @@
       <!-- Departamento -->
       <div class="login-field" id="reg-depto-field" style="display:none;">
         <label for="login-depto">Departamento</label>
-        <input type="text" id="login-depto" placeholder="" autocomplete="organization-title" autocapitalize="words">
+        <input type="text" id="login-depto" data-texto-plano="1" placeholder="" autocomplete="organization-title" autocapitalize="words">
       </div>
       <!-- Lugar de trabajo -->
       <div class="login-field" id="reg-lugar-field" style="display:none;">
@@ -1608,7 +1620,7 @@
             <span class="rating-picker-star" data-val="4" onclick="setRatingPick(4)">★</span>
             <span class="rating-picker-star" data-val="5" onclick="setRatingPick(5)">★</span>
           </div>
-          <textarea id="rating-comment-input" placeholder="Deja un comentario acerca de este producto" rows="3"
+          <textarea id="rating-comment-input" data-texto-plano="1" placeholder="Deja un comentario acerca de este producto" rows="3"
             style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;outline:none;margin-top:12px;box-sizing:border-box;"></textarea>
           <div class="modal-btns" style="margin-top:14px;">
             <button class="modal-cancel" onclick="closeRatingModal()">Cerrar</button>
@@ -1629,6 +1641,99 @@
 let _toastTimer = null;
 // Normaliza nombres: todo a minúscula y cada inicial en mayúscula
 function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
+
+/* ── Validación de texto plano: rechaza letras decorativas Unicode
+   (p. ej. ℙ𝕣𝕠𝕕𝕦𝕔𝕔𝕚𝕠𝕟) en campos de formulario. No altera registros
+   ya guardados. Solo validación en el navegador. ── */
+const MENSAJE_TEXTO_DECORATIVO = 'Este campo no admite letras decorativas o de estilo especial (por ejemplo ℙ𝕣𝕠𝕕𝕦𝕔𝕔𝕚𝕠𝕟). Escríbelo con letras normales; sí se permiten tildes, la ñ y signos habituales.';
+const IDS_CAMPOS_TEXTO_PLANO = { 'login-depto': 1, 'rating-comment-input': 1, 'order-notes': 1 };
+
+function esCampoTextoPlano(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (el.getAttribute('data-texto-plano') === '1') return true;
+  return !!(el.id && IDS_CAMPOS_TEXTO_PLANO[el.id]);
+}
+
+function contieneTextoDecorativo(str) {
+  if (!str) return false;
+  // Símbolos habituales del bloque Letterlike que no son “letras de adorno”
+  const SIMBOLOS_LETTERLIKE_PERMITIDOS = /[™℠℡℅℃℉№℗Ω℧ℹ℞℄℔℮]/;
+  for (const ch of String(str)) {
+    const cp = ch.codePointAt(0);
+    // Mathematical Alphanumeric Symbols (negrita, cursiva, double-struck, mono, etc.)
+    if (cp >= 0x1D400 && cp <= 0x1D7FF) return true;
+    // Latinos y dígitos de ancho completo usados como otra “fuente”
+    if ((cp >= 0xFF10 && cp <= 0xFF19) || (cp >= 0xFF21 && cp <= 0xFF3A) || (cp >= 0xFF41 && cp <= 0xFF5A)) return true;
+    // Letras latinas circuladas
+    if (cp >= 0x24B6 && cp <= 0x24E9) return true;
+    // Enclosed Alphanumeric Supplement (letras en recuadro y similares)
+    if (cp >= 0x1F110 && cp <= 0x1F1AD) return true;
+    // Letterlike Symbols: NFKC solo como detector, con excepciones de símbolos comunes
+    if (cp >= 0x2100 && cp <= 0x214F) {
+      if (SIMBOLOS_LETTERLIKE_PERMITIDOS.test(ch)) continue;
+      const n = ch.normalize('NFKC');
+      if (n !== ch && /[A-Za-z0-9]/.test(n)) return true;
+    }
+  }
+  return false;
+}
+
+function setCampoTextoError(el, msg) {
+  if (!el) return;
+  const errId = el.id ? el.id + '-texto-error' : '';
+  let err = errId ? document.getElementById(errId) : null;
+  if (!err) {
+    err = document.createElement('div');
+    if (errId) err.id = errId;
+    err.className = 'campo-texto-error';
+    err.setAttribute('role', 'alert');
+    err.setAttribute('aria-live', 'polite');
+    el.insertAdjacentElement('afterend', err);
+  }
+  if (msg) {
+    err.textContent = msg;
+    err.hidden = false;
+    el.setAttribute('aria-invalid', 'true');
+    if (errId) el.setAttribute('aria-describedby', errId);
+    el.classList.add('campo-texto-invalido');
+  } else {
+    err.textContent = '';
+    err.hidden = true;
+    el.removeAttribute('aria-invalid');
+    el.classList.remove('campo-texto-invalido');
+  }
+}
+
+function validarCampoTextoPlano(el) {
+  if (!el) return true;
+  if (contieneTextoDecorativo(el.value || '')) {
+    setCampoTextoError(el, MENSAJE_TEXTO_DECORATIVO);
+    return false;
+  }
+  setCampoTextoError(el, '');
+  return true;
+}
+
+function initValidacionTextoPlano() {
+  const revalidar = (e) => {
+    const el = e.target;
+    if (!esCampoTextoPlano(el)) return;
+    if (e.type === 'paste') {
+      setTimeout(() => validarCampoTextoPlano(el), 0);
+      return;
+    }
+    validarCampoTextoPlano(el);
+  };
+  document.addEventListener('input', revalidar, true);
+  document.addEventListener('paste', revalidar, true);
+  document.addEventListener('change', revalidar, true);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initValidacionTextoPlano);
+} else {
+  initValidacionTextoPlano();
+}
+
 // Nombre corto que se muestra como identidad del colaborador en toda la app
 // (chip de la topbar, etc.): primer nombre + penúltima palabra si tiene 3+
 // palabras, o el nombre completo si tiene menos. Se usa también como el
@@ -2505,6 +2610,8 @@ function doLogin() {
   const nombre = document.getElementById('login-nombre').value.trim();
   if (!nombre) { showLoginError('No se pudo obtener el nombre. Verifica el número de identificación.'); return; }
   if (!depto)   { showLoginError('Por favor ingresa tu departamento.'); return; }
+  const deptoEl = document.getElementById('login-depto');
+  if (!validarCampoTextoPlano(deptoEl)) { showLoginError(MENSAJE_TEXTO_DECORATIVO); deptoEl.focus(); return; }
   if (!lugar)   { showLoginError('Selecciona tu lugar de trabajo.'); return; }
 
   btn.disabled = true; btn.textContent = 'Ingresando…';
@@ -3938,7 +4045,15 @@ async function submitOrder() {
   confirmBtn.disabled = true;
   confirmBtn.textContent = 'Enviando…';
 
-  const notas      = (document.getElementById('order-notes')?.value || '').trim();
+  const notesEl    = document.getElementById('order-notes');
+  if (notesEl && !validarCampoTextoPlano(notesEl)) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirmar y Enviar';
+    showToast(MENSAJE_TEXTO_DECORATIVO, 'warn');
+    notesEl.focus();
+    return;
+  }
+  const notas      = (notesEl?.value || '').trim();
   const activeCart = cart.filter(i => !i.product.agotado && precios[i.product.id]);
   const total      = activeCart.reduce((s, i) => s + precios[i.product.id].unit * i.qty, 0);
 
@@ -4440,7 +4555,9 @@ async function submitRating() {
   if (!_ratingPickValue) { showToast('Selecciona de 1 a 5 estrellas', 'warn'); return; }
   const codigo = _ratingModalCodigo;
   if (!codigo) return;
-  const comentario = document.getElementById('rating-comment-input').value.trim() || null;
+  const commentEl = document.getElementById('rating-comment-input');
+  if (!validarCampoTextoPlano(commentEl)) { showToast(MENSAJE_TEXTO_DECORATIVO, 'warn'); commentEl.focus(); return; }
+  const comentario = commentEl.value.trim() || null;
   const btn = document.getElementById('rating-accept-btn');
   btn.disabled = true;
   // Siempre inserta una reseña NUEVA — un mismo colaborador puede valorar el

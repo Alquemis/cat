@@ -193,6 +193,18 @@
     width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 14px; outline: none;
   }
   .fl-name-field input:focus { border-color: #143c5a; }
+
+  /* Error accesible para letras decorativas Unicode en campos de texto libre */
+  input.campo-texto-invalido,
+  textarea.campo-texto-invalido {
+    border-color: #dc2626 !important;
+  }
+  .campo-texto-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.45;
+  }
   .fl-submit-btn {
     width: 100%; padding: 13px; margin-top: 10px; background: #143c5a; color: #fff; border: none;
     border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
@@ -417,7 +429,7 @@
       <div class="fl-cart-total"><span>Total</span><span id="fl-cart-total-val">₡0</span></div>
       <div class="fl-name-field">
         <label>Tu nombre</label>
-        <input type="text" id="fl-name-input" placeholder="Ej: María Rodríguez" maxlength="80">
+        <input type="text" id="fl-name-input" data-texto-plano="1" placeholder="Ej: María Rodríguez" maxlength="80">
       </div>
       <button class="fl-submit-btn" id="fl-submit-btn" onclick="flSubmitWishlist()">📤 Enviar lista de deseos</button>
     </div>
@@ -450,9 +462,9 @@
           </div>
           <div class="fl-name-field" style="margin-top:0;">
             <label>Tu nombre</label>
-            <input type="text" id="fl-rating-name-input" placeholder="Ej: María Rodríguez" maxlength="80">
+            <input type="text" id="fl-rating-name-input" data-texto-plano="1" placeholder="Ej: María Rodríguez" maxlength="80">
           </div>
-          <textarea id="fl-rating-comment-input" placeholder="Deja un comentario acerca de este producto" rows="3"
+          <textarea id="fl-rating-comment-input" data-texto-plano="1" placeholder="Deja un comentario acerca de este producto" rows="3"
             style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;outline:none;margin-top:12px;box-sizing:border-box;"></textarea>
           <div class="modal-btns" style="margin-top:14px;">
             <button class="modal-cancel" onclick="flCloseRatingModal()">Cerrar</button>
@@ -631,6 +643,99 @@ function escAttr(s) { return escHtml(s).replace(/"/g, '&quot;'); }
 /* ── Nombre: mismo formato que el chip de usuario del catálogo original
    (toTitleCase + nombre corto para compuestos de 3+ palabras). ── */
 function toTitleCase(str) { if (!str) return str; return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
+
+/* ── Validación de texto plano: rechaza letras decorativas Unicode
+   (p. ej. ℙ𝕣𝕠𝕕𝕦𝕔𝕔𝕚𝕠𝕟) en campos de formulario. No altera registros
+   ya guardados. Solo validación en el navegador. ── */
+const MENSAJE_TEXTO_DECORATIVO = 'Este campo no admite letras decorativas o de estilo especial (por ejemplo ℙ𝕣𝕠𝕕𝕦𝕔𝕔𝕚𝕠𝕟). Escríbelo con letras normales; sí se permiten tildes, la ñ y signos habituales.';
+const IDS_CAMPOS_TEXTO_PLANO = { 'fl-name-input': 1, 'fl-rating-name-input': 1, 'fl-rating-comment-input': 1 };
+
+function esCampoTextoPlano(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (el.getAttribute('data-texto-plano') === '1') return true;
+  return !!(el.id && IDS_CAMPOS_TEXTO_PLANO[el.id]);
+}
+
+function contieneTextoDecorativo(str) {
+  if (!str) return false;
+  // Símbolos habituales del bloque Letterlike que no son “letras de adorno”
+  const SIMBOLOS_LETTERLIKE_PERMITIDOS = /[™℠℡℅℃℉№℗Ω℧ℹ℞℄℔℮]/;
+  for (const ch of String(str)) {
+    const cp = ch.codePointAt(0);
+    // Mathematical Alphanumeric Symbols (negrita, cursiva, double-struck, mono, etc.)
+    if (cp >= 0x1D400 && cp <= 0x1D7FF) return true;
+    // Latinos y dígitos de ancho completo usados como otra “fuente”
+    if ((cp >= 0xFF10 && cp <= 0xFF19) || (cp >= 0xFF21 && cp <= 0xFF3A) || (cp >= 0xFF41 && cp <= 0xFF5A)) return true;
+    // Letras latinas circuladas
+    if (cp >= 0x24B6 && cp <= 0x24E9) return true;
+    // Enclosed Alphanumeric Supplement (letras en recuadro y similares)
+    if (cp >= 0x1F110 && cp <= 0x1F1AD) return true;
+    // Letterlike Symbols: NFKC solo como detector, con excepciones de símbolos comunes
+    if (cp >= 0x2100 && cp <= 0x214F) {
+      if (SIMBOLOS_LETTERLIKE_PERMITIDOS.test(ch)) continue;
+      const n = ch.normalize('NFKC');
+      if (n !== ch && /[A-Za-z0-9]/.test(n)) return true;
+    }
+  }
+  return false;
+}
+
+function setCampoTextoError(el, msg) {
+  if (!el) return;
+  const errId = el.id ? el.id + '-texto-error' : '';
+  let err = errId ? document.getElementById(errId) : null;
+  if (!err) {
+    err = document.createElement('div');
+    if (errId) err.id = errId;
+    err.className = 'campo-texto-error';
+    err.setAttribute('role', 'alert');
+    err.setAttribute('aria-live', 'polite');
+    el.insertAdjacentElement('afterend', err);
+  }
+  if (msg) {
+    err.textContent = msg;
+    err.hidden = false;
+    el.setAttribute('aria-invalid', 'true');
+    if (errId) el.setAttribute('aria-describedby', errId);
+    el.classList.add('campo-texto-invalido');
+  } else {
+    err.textContent = '';
+    err.hidden = true;
+    el.removeAttribute('aria-invalid');
+    el.classList.remove('campo-texto-invalido');
+  }
+}
+
+function validarCampoTextoPlano(el) {
+  if (!el) return true;
+  if (contieneTextoDecorativo(el.value || '')) {
+    setCampoTextoError(el, MENSAJE_TEXTO_DECORATIVO);
+    return false;
+  }
+  setCampoTextoError(el, '');
+  return true;
+}
+
+function initValidacionTextoPlano() {
+  const revalidar = (e) => {
+    const el = e.target;
+    if (!esCampoTextoPlano(el)) return;
+    if (e.type === 'paste') {
+      setTimeout(() => validarCampoTextoPlano(el), 0);
+      return;
+    }
+    validarCampoTextoPlano(el);
+  };
+  document.addEventListener('input', revalidar, true);
+  document.addEventListener('paste', revalidar, true);
+  document.addEventListener('change', revalidar, true);
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initValidacionTextoPlano);
+} else {
+  initValidacionTextoPlano();
+}
+
 function shortName(str) {
   const nombre = toTitleCase(str || '');
   const nw = nombre.trim().split(/\s+/);
@@ -871,8 +976,10 @@ function flRenderQaddCard() {
 }
 
 async function flSubmitWishlist() {
-  const nombre = (document.getElementById('fl-name-input').value || '').trim();
+  const nombreEl = document.getElementById('fl-name-input');
+  const nombre = (nombreEl.value || '').trim();
   if (!nombre) { flToast('Escribe tu nombre para poder identificar tu lista'); return; }
+  if (!validarCampoTextoPlano(nombreEl)) { flToast(MENSAJE_TEXTO_DECORATIVO); nombreEl.focus(); return; }
   if (!flCart.length) { flToast('Tu lista está vacía'); return; }
 
   const btn = document.getElementById('fl-submit-btn');
@@ -1016,12 +1123,16 @@ function flUpdateRatingPickerUI() {
 }
 
 async function flSubmitRating() {
-  const nombre = (document.getElementById('fl-rating-name-input').value || '').trim();
+  const nombreEl = document.getElementById('fl-rating-name-input');
+  const nombre = (nombreEl.value || '').trim();
   if (!nombre) { flToast('Escribe tu nombre'); return; }
+  if (!validarCampoTextoPlano(nombreEl)) { flToast(MENSAJE_TEXTO_DECORATIVO); nombreEl.focus(); return; }
   if (!_flRatingPickValue) { flToast('Selecciona de 1 a 5 estrellas'); return; }
   const codigo = _flRatingModalCodigo;
   if (!codigo) return;
-  const comentario = document.getElementById('fl-rating-comment-input').value.trim() || null;
+  const commentEl = document.getElementById('fl-rating-comment-input');
+  if (!validarCampoTextoPlano(commentEl)) { flToast(MENSAJE_TEXTO_DECORATIVO); commentEl.focus(); return; }
+  const comentario = commentEl.value.trim() || null;
   const btn = document.getElementById('fl-rating-accept-btn');
   btn.disabled = true;
   const { error } = await sb.from('valoraciones').insert({

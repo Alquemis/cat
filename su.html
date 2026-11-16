@@ -2146,6 +2146,19 @@
 </div>
 
 <!-- RULE MODAL -->
+<!-- Detalle de productos de una regla (lista + exportar a Excel) -->
+<div class="modal-overlay" id="rule-prods-modal" onclick="if(event.target===this)closeRuleProds()">
+  <div class="modal-card" style="max-width:760px;">
+    <div class="modal-title" id="rule-prods-title">Detalle</div>
+    <div id="rule-prods-sub" style="font-size:12.5px;color:#6b7280;margin:-6px 0 14px;"></div>
+    <div id="rule-prods-body" style="max-height:55vh;overflow:auto;border:1.5px solid #e5e7eb;border-radius:10px;"></div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="exportRuleProds()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar lista</button>
+      <button class="btn btn-secondary" onclick="closeRuleProds()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="rule-modal">
   <div class="modal-card" style="max-width:640px;">
     <div class="modal-title" id="rule-modal-title">Nueva regla</div>
@@ -2613,9 +2626,9 @@ function filterProducts() {
     const matchQ = !q || (p.nombre||'').toLowerCase().includes(q) || (p.codigo||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
     if (!matchQ) return false;
     if (!anyFilter) return true;
-    if (_prodFilter.promo  && p.promocion) return true;
-    if (_prodFilter.desc   && p.descuento) return true;
-    if (_prodFilter.limite && p.limite_por_usuario != null) return true;
+    if (_prodFilter.promo  && p.promocion && _schedVigente(p.promo_fin)) return true;
+    if (_prodFilter.desc   && p.descuento && _schedVigente(p.descuento_fin)) return true;
+    if (_prodFilter.limite && p.limite_por_usuario != null && _schedVigente(p.limite_fin)) return true;
     return false;
   });
   const counter = document.getElementById('prod-count');
@@ -2648,11 +2661,11 @@ function renderProducts(list) {
       ? '<img src="' + esc(p.imagen) + '" class="pr-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="pr-thumb-empty" style="display:none">📦</div>'
       : '<div class="pr-thumb-empty">📦</div>';
     const chips = [];
-    if (p.promocion)
+    if (p.promocion && _schedVigente(p.promo_fin))
       chips.push('<span class="' + tipCls(p.promo_inicio, p.promo_fin) + '" data-tip="En Promoción' + schedSuffix(p.promo_inicio, p.promo_fin) + '"><span class="pr-chip pr-chip-promo">🏷</span></span>');
-    if (p.descuento && p.porcentaje_descuento)
+    if (p.descuento && p.porcentaje_descuento && _schedVigente(p.descuento_fin))
       chips.push('<span class="' + tipCls(p.descuento_inicio, p.descuento_fin) + '" data-tip="Descuento −' + p.porcentaje_descuento + '%' + schedSuffix(p.descuento_inicio, p.descuento_fin) + '"><span class="pr-chip pr-chip-desc">%</span></span>');
-    if (p.limite_por_usuario != null)
+    if (p.limite_por_usuario != null && _schedVigente(p.limite_fin))
       chips.push('<span class="' + tipCls(p.limite_inicio, p.limite_fin) + '" data-tip="Límite: ' + p.limite_por_usuario + ' por usuario' + schedSuffix(p.limite_inicio, p.limite_fin) + '"><span class="pr-chip pr-chip-limite">⊘</span></span>');
     html += '<div class="product-row">';
     html +=   '<div style="display:flex;align-items:center;flex-shrink:0">' + imgHtml + '</div>';
@@ -2874,6 +2887,11 @@ function schedSuffix(inicio, fin) {
   return '\nFin: ' + fmt(fin);
 }
 function tipCls(inicio, fin) { return (inicio || fin) ? 'tip tip-sched' : 'tip'; }
+// Una configuración programada (descuento / promoción / límite) cuya fecha
+// de fin ya pasó está vencida: los campos siguen guardados en la BD, pero ya
+// no aplican en el catálogo, así que no se marcan con chip ni cuentan en los
+// filtros. Las programadas a futuro sí se muestran (chip con borde de programada).
+function _schedVigente(fin) { return !fin || Date.now() <= new Date(fin).getTime(); }
 
 // ============================================================
 //  PROMOCIONES — reglas de Descuento / Límite / Promoción
@@ -2963,6 +2981,7 @@ function renderPromoRulesList() {
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;align-items:center;">
           <button class="promo-rule-toggle ${r.activo ? 'on' : 'off'}" ${scheduled ? 'disabled title="Programada por fecha: se activa y desactiva sola"' : ''} onclick="toggleRuleManual('${r.id}')">${r.activo ? 'Activa' : 'Inactiva'}</button>
           <button class="btn btn-purple btn-sm" onclick="openRuleDashboard('${r.id}')">📊 Dashboard</button>
+          <button class="btn btn-secondary btn-sm" onclick="openRuleProds('${r.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Detalle</button>
           <button class="btn btn-secondary btn-sm" onclick="openRuleModal('${r.id}')">✎ Editar</button>
           <button class="btn btn-danger btn-sm" onclick="deleteRule('${r.id}')">🗑</button>
         </div>
@@ -3003,6 +3022,87 @@ function openRuleModal(ruleId) {
   renderRuleProductPicker();
 
   document.getElementById('rule-modal').classList.add('open');
+}
+
+// ── DETALLE DE PRODUCTOS DE UNA REGLA ─────────────────────
+// Lista los productos asignados a la regla (los que están o estuvieron en
+// esa promoción) en una ventana flotante, con opción de exportarla a Excel.
+// Columnas: Código, Nombre, Precio s/IVA, Precio c/IVA y, según el tipo,
+// Precio c/desc. c/IVA (con el % de la regla) o el límite por usuario.
+// Los precios se calculan igual que el catálogo (index.html).
+let _ruleProdsId = null;
+
+function _ruleProdsData(rule) {
+  const codigos = _promoRuleProducts[rule.id] || [];
+  const prods = codigos.map(c => allProducts.find(p => p.codigo === c)).filter(Boolean)
+    .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || ''));
+  const header = ['Código', 'Nombre', 'Precio s/IVA', 'Precio c/IVA'];
+  if (rule.tipo === 'descuento') header.push('Precio c/desc. c/IVA');
+  if (rule.tipo === 'limite')    header.push('Límite por usuario');
+  const rows = prods.map(p => {
+    const base = p.precio || 0;
+    const iva  = (p.iva != null ? p.iva : 13) / 100;
+    const row  = [p.codigo, p.nombre_catalogo || p.nombre || '', base, Math.round(base * (1 + iva))];
+    if (rule.tipo === 'descuento') row.push(Math.round(base * (1 - (rule.valor || 0) / 100) * (1 + iva)));
+    if (rule.tipo === 'limite')    row.push(rule.valor);
+    return row;
+  });
+  return { header, rows, ultimaColPrecio: rule.tipo === 'descuento' ? 4 : 3 };
+}
+
+async function openRuleProds(id) {
+  const rule = _promoRules.find(r => r.id === id);
+  if (!rule) return;
+  if (!allProducts.length) await loadProducts();
+  _ruleProdsId = id;
+  const { header, rows, ultimaColPrecio } = _ruleProdsData(rule);
+  let valorStr = rule.tipo === 'descuento' ? `−${rule.valor}%` : rule.tipo === 'limite' ? `Límite: ${rule.valor} por usuario` : 'En promoción';
+  document.getElementById('rule-prods-title').textContent = `${rule.nombre} · ${valorStr}`;
+  const fechas = (rule.inicio || rule.fin)
+    ? schedSuffix(rule.inicio, rule.fin).replace(/\n/g, ' · ').replace(/^\s*·\s*/, '')
+    : 'Sin programar (manual)';
+  document.getElementById('rule-prods-sub').textContent = `${fechas} · ${rows.length} producto${rows.length === 1 ? '' : 's'}`;
+  const body = document.getElementById('rule-prods-body');
+  if (!rows.length) {
+    body.innerHTML = '<div class="empty-table" style="padding:30px 20px;color:#9ca3af;">Esta regla no tiene productos asignados.</div>';
+  } else {
+    const th = header.map((h, i) => `<th style="${i >= 2 ? 'text-align:right;' : ''}">${esc(h)}</th>`).join('');
+    const tr = rows.map(r => '<tr>' + r.map((v, i) => {
+      if (i === 0) return `<td><code style="font-size:12px">${esc(v)}</code></td>`;
+      if (i === 1) return `<td>${esc(v)}</td>`;
+      const txt = (i <= ultimaColPrecio) ? '<span class="col-sign">₡</span>' + Number(v).toLocaleString('es-CR') : esc(v);
+      const bold = (i === header.length - 1 && i <= ultimaColPrecio && header.length === 5) ? 'font-weight:700;color:#047857;' : '';
+      return `<td style="text-align:right;white-space:nowrap;${bold}">${txt}</td>`;
+    }).join('') + '</tr>').join('');
+    body.innerHTML = `<table style="width:100%;"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
+  }
+  document.getElementById('rule-prods-modal').classList.add('open');
+}
+
+function closeRuleProds() {
+  document.getElementById('rule-prods-modal').classList.remove('open');
+  _ruleProdsId = null;
+}
+
+function exportRuleProds() {
+  const rule = _promoRules.find(r => r.id === _ruleProdsId);
+  if (!rule) return;
+  const { header, rows, ultimaColPrecio } = _ruleProdsData(rule);
+  if (!rows.length) { showToast('Esta regla no tiene productos asignados.', 'warn'); return; }
+  const aoa = [header, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 11 }, { wch: 46 }, { wch: 13 }, { wch: 13 }, { wch: 18 }];
+  for (let r = 1; r < aoa.length; r++) {
+    for (let c = 2; c <= ultimaColPrecio; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      if (cell) cell.z = '#,##0';
+    }
+  }
+  const nombreHoja = (rule.nombre || 'Regla').replace(/[\\\/?*\[\]:]/g, '').slice(0, 31) || 'Regla';
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+  const nombreArchivo = (rule.nombre || 'Regla').replace(/[\\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+  XLSX.writeFile(wb, `Regla_${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 function closeRuleModal() {
@@ -6338,8 +6438,8 @@ async function openSuWishlistsModal(filterCedula, filterNombre) {
   _suWlDiscMap = {};
   const allCodigos = [...new Set(_suWlAllData.flatMap(w => (w.items||[]).map(i => i.codigo)).filter(Boolean))];
   if (allCodigos.length) {
-    const { data: prodRows } = await sb.from('productos').select('codigo,descuento,porcentaje_descuento').in('codigo', allCodigos);
-    (prodRows||[]).forEach(p => { if (p.descuento && p.porcentaje_descuento) _suWlDiscMap[p.codigo] = p.porcentaje_descuento; });
+    const { data: prodRows } = await sb.from('productos').select('codigo,descuento,porcentaje_descuento,descuento_inicio,descuento_fin').in('codigo', allCodigos);
+    (prodRows||[]).forEach(p => { if (p.descuento && p.porcentaje_descuento && _schedVigente(p.descuento_fin) && (!p.descuento_inicio || Date.now() >= new Date(p.descuento_inicio).getTime())) _suWlDiscMap[p.codigo] = p.porcentaje_descuento; });
   }
 
   filterSuWishlistsModal();
